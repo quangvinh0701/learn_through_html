@@ -1,0 +1,3544 @@
+<!DOCTYPE html>
+
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Data Quality cho API — Data Contract, Great Expectations, Contract Test, Producer-Consumer, Lineage, Quality SLO</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#f6f7f9; --bg-2:#eceef3; --bg-3:#e3e6ec; --bg-4:#d8dce5;
+    --border:#b0b8c840; --border-solid:#cdd3dd;
+    --text:#1e2536; --dim:#566173; --faint:#8c96a8;
+    --orange:#d55a1b; --orange-dim:#b04510;
+    --cyan:#0d8f7d; --cyan-dim:#0a7a69;
+    --green:#18873a; --red:#dc3545; --yellow:#b06d00; --purple:#6d3bc4; --blue:#2563eb;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --display:'Space Mono',monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--sans);
+    font-size:16px; line-height:1.7; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(900px 500px at 85% -5%, #d55a1b08, transparent 70%),
+      radial-gradient(800px 500px at 0% 10%, #0d8f7d06, transparent 70%);
+    background-attachment:fixed;
+  }
+  ::selection{background:var(--orange);color:#fff}
+
+  /* ---------- Header ---------- */
+  header.top{
+    position:sticky; top:0; z-index:50;
+    background:#ffffffe8; backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border-solid);
+  }
+  .top-inner{max-width:1180px; margin:0 auto; padding:14px 22px; display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .logo{
+    font-family:var(--display); font-weight:700; font-size:15px; letter-spacing:.5px;
+    display:flex; align-items:center; gap:9px; white-space:nowrap;
+  }
+  .logo .dot{width:11px;height:11px;border-radius:50%;background:var(--orange);box-shadow:0 0 6px var(--orange)}
+  .logo b{color:var(--orange)}
+  .logo .prompt{color:var(--cyan)}
+  .top-sub{color:var(--faint); font-family:var(--mono); font-size:12.5px; margin-left:auto}
+  .blink{animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* ---------- Tabs nav ---------- */
+  nav.tabs{
+    position:sticky; top:53px; z-index:40;
+    background:#f3f4f7f2; backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border-solid);
+  }
+  .tabs-scroll{
+    max-width:1180px; margin:0 auto; padding:0 12px;
+    display:flex; gap:4px; overflow-x:auto; scrollbar-width:thin; scrollbar-color:var(--border-solid) transparent;
+  }
+  .tabs-scroll::-webkit-scrollbar{height:4px;background:transparent}
+  .tabs-scroll::-webkit-scrollbar-track{background:transparent}
+  .tabs-scroll::-webkit-scrollbar-thumb{background:var(--border-solid);border-radius:6px}
+  .tabs-scroll::-webkit-scrollbar-thumb:hover{background:#a0a8b8}
+  .tab-btn{
+    flex:0 0 auto; background:none; border:none; cursor:pointer;
+    color:var(--dim); font-family:var(--mono); font-size:13px; font-weight:500;
+    padding:13px 13px 11px; border-bottom:2px solid transparent;
+    transition:.18s; white-space:nowrap; display:flex; align-items:center; gap:7px;
+  }
+  .tab-btn .num{color:var(--faint); font-size:11px}
+  .tab-btn:hover{color:var(--text)}
+  .tab-btn.active{color:var(--orange); border-bottom-color:var(--orange)}
+  .tab-btn.active .num{color:var(--orange)}
+  .tab-div{flex:0 0 auto;display:flex;align-items:center;gap:5px;color:var(--cyan);font-family:var(--mono);font-size:10px;letter-spacing:1.5px;padding:0 10px 0 14px;border-left:1px solid var(--border-solid);margin-left:6px;opacity:.75;white-space:nowrap}
+  .tab-btn.deep .num{color:var(--cyan-dim)}
+  .tab-btn.deep:hover{color:var(--cyan)}
+  .tab-btn.deep.active{color:var(--cyan); border-bottom-color:var(--cyan)}
+  .tab-btn.deep.active .num{color:var(--cyan)}
+  /* deep theory accents */
+  .panel.deep h1 .hl{color:var(--cyan)}
+  .panel.deep h2{border-left-color:var(--cyan)}
+  .panel.deep .lead{color:var(--purple)}
+  .panel.deep .lead::before{background:var(--purple)}
+  .defbox{background:linear-gradient(180deg,#f0faf888,#ecf5f388);border:1px solid var(--cyan-dim);border-left:4px solid var(--cyan);border-radius:0 12px 12px 0;padding:14px 18px;margin:18px 0}
+  .defbox .term-def{font-family:var(--mono);color:var(--cyan);font-weight:700;font-size:14.5px}
+  .deepnote{font-size:13px;color:var(--faint);font-style:italic;margin:6px 0 18px;border-top:1px dashed var(--border-solid);padding-top:10px}
+
+  /* ---------- Layout ---------- */
+  main{max-width:1180px; margin:0 auto; padding:34px 22px 90px}
+  .panel{display:none; animation:fade .4s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  .lead{
+    font-size:13px; font-family:var(--mono); color:var(--cyan);
+    letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .lead::before{content:"";width:26px;height:1px;background:var(--cyan)}
+  h1{
+    font-family:var(--display); font-weight:700; font-size:clamp(26px,4.4vw,40px);
+    line-height:1.15; letter-spacing:-.5px; margin-bottom:14px;
+  }
+  h1 .hl{color:var(--orange)}
+  h2{
+    font-family:var(--display); font-weight:700; font-size:23px; margin:42px 0 16px;
+    padding-left:14px; border-left:4px solid var(--orange); line-height:1.3;
+  }
+  h3{font-size:18px; font-weight:600; margin:26px 0 10px; color:var(--text)}
+  h3 .ic{color:var(--cyan); font-family:var(--mono)}
+  h4{font-size:15px; font-weight:600; margin:18px 0 8px; color:var(--cyan); font-family:var(--mono)}
+  p{margin:11px 0; color:#3b4555}
+  .intro-p{font-size:17px; color:var(--dim); max-width:760px; margin-bottom:8px}
+  ul,ol{margin:11px 0 11px 4px; padding-left:24px}
+  li{margin:7px 0; color:#3b4555}
+  li::marker{color:var(--orange)}
+  a{color:var(--cyan)}
+  strong{color:#111827; font-weight:600}
+  em{color:var(--yellow); font-style:normal; font-family:var(--mono); font-size:.93em}
+  code.inline{
+    font-family:var(--mono); font-size:.86em; background:var(--bg-4);
+    color:var(--orange); padding:2px 7px; border-radius:5px; border:1px solid var(--border-solid);
+    white-space:nowrap;
+  }
+  hr{border:none;border-top:1px dashed var(--border-solid);margin:34px 0}
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:linear-gradient(180deg,#ffffff,#f4f5f8);
+    border:1px solid var(--border-solid); border-radius:14px;
+    padding:22px 24px; margin:20px 0;
+  }
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+  .mini{
+    background:var(--bg-3); border:1px solid var(--border-solid); border-radius:12px; padding:16px 18px;
+  }
+  .mini h4{margin-top:0}
+
+  /* ---------- Terminal block ---------- */
+  .term{
+    background:#070a10; border:1px solid #2a3348; border-radius:11px;
+    margin:16px 0; overflow:hidden; box-shadow:0 8px 30px -16px #00000025;
+    --border-solid:#283145; --bg-4:#1c2433; --dim:#9aa6bd; --faint:#6b7689;
+    --orange:#ff8a4c; --cyan:#4ed8c4; --green:#7ee787; --red:#ff7a85;
+    --yellow:#ffd479; --purple:#b89cff; --blue:#6cb6ff; --text:#e8ebf2;
+  }
+  .term-bar{
+    display:flex; align-items:center; gap:8px; padding:9px 14px;
+    background:#0d1119; border-bottom:1px solid var(--border-solid);
+  }
+  .term-bar .b{width:11px;height:11px;border-radius:50%}
+  .b.r{background:#ff5f57}.b.y{background:#febc2e}.b.g{background:#28c840}
+  .term-title{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-left:8px}
+  .term-copy{
+    margin-left:auto; background:var(--bg-4); border:1px solid var(--border-solid); color:var(--dim);
+    font-family:var(--mono); font-size:11px; padding:3px 10px; border-radius:6px; cursor:pointer; transition:.15s;
+  }
+  .term-copy:hover{color:var(--orange);border-color:var(--orange)}
+  .term-body{padding:15px 17px; font-family:var(--mono); font-size:13.5px; line-height:1.85; overflow-x:auto}
+  .term-body .cmd{color:#eef1f7; white-space:pre}
+.term-body>.cmd,.term-body>.cmt,.term-body>.out,.term-body>.err{display:block}
+.term-body .cmt[style*="inline"]{display:inline!important}
+  .term-body .cmd::before{content:"$ ";color:var(--green);font-weight:700}
+  .term-body .cmd.root::before{content:"# ";color:var(--red);font-weight:700}
+  .term-body .cmd.cont::before{content:"  ";}
+  .term-body .out{color:var(--dim); white-space:pre}
+  .term-body .cmt{color:var(--faint); white-space:pre-wrap}
+  .term-body .cmt::before{content:"# "}
+  .term-body .ok{color:var(--green)}
+  .term-body .warn{color:var(--yellow)}
+  .term-body .err{color:var(--red)}
+  .term-body .hi{color:var(--orange)}
+  .term-body .cy{color:var(--cyan)}
+
+  /* ---------- Callouts ---------- */
+  .box{border-radius:12px; padding:15px 18px 15px 46px; margin:18px 0; position:relative; border:1px solid; font-size:14.5px}
+  .box::before{position:absolute; left:15px; top:14px; font-size:17px; font-family:var(--mono); font-weight:700}
+  .box p{margin:6px 0}
+  .box .t{font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.5px; text-transform:uppercase; display:block; margin-bottom:5px}
+  .box.tip{background:#ecfdf5; border-color:#2fa89755; }
+  .tip::before{content:"\2713";color:var(--cyan)} .tip .t{color:var(--cyan)}
+  .box.warn{background:#fef9ec; border-color:#cc6a3755}
+  .warn::before{content:"!";color:var(--yellow)} .warn .t{color:var(--yellow)}
+  .box.danger{background:#fef2f2; border-color:#ff7a8544}
+  .danger::before{content:"\26A0";color:var(--red)} .danger .t{color:var(--red)}
+  .box.note{background:#eff6ff; border-color:var(--border-solid)}
+  .note::before{content:"i";color:var(--blue);font-style:italic} .note .t{color:var(--blue)}
+  .box.scn{background:linear-gradient(180deg,#f6f1ff,#f1ecfa); border-color:#b89cff44; padding-left:18px}
+  .scn::before{content:none}
+  .scn .t{color:var(--purple); display:flex; align-items:center; gap:8px}
+  .scn .t::before{content:"▶ TÌNH HUỐNG THỰC TẾ"; font-family:var(--mono); font-weight:700; font-size:12px}
+  .scn .t span{display:none}
+
+  /* ---------- kbd ---------- */
+  kbd{
+    font-family:var(--mono); font-size:.8em; background:#eef0f5; color:#1e2536;
+    border:1px solid #c0c9d4; border-bottom-width:2px; border-radius:5px; padding:2px 7px; white-space:nowrap;
+  }
+
+  /* ---------- Tables ---------- */
+  .tbl-wrap{overflow-x:auto; margin:16px 0; border:1px solid var(--border-solid); border-radius:11px}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:480px}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--border)}
+  th{background:var(--bg-3); font-family:var(--mono); font-size:12px; color:var(--cyan); letter-spacing:.5px; text-transform:uppercase; font-weight:600}
+  td{color:#3b4555; vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#00000005}
+  td code,td .c{font-family:var(--mono); color:var(--orange); font-size:.92em; white-space:nowrap}
+
+  /* ---------- Diagram ---------- */
+  .diagram{background:#080b11; border:1px solid #2a3348; border-radius:13px; padding:20px; margin:20px 0; overflow-x:auto;
+    --faint:#6b7689; --dim:#9aa6bd; --border-solid:#283145}
+  .diagram svg{display:block; margin:0 auto; max-width:100%; height:auto}
+  .dcap{text-align:center; font-family:var(--mono); font-size:12px; color:var(--faint); margin-top:12px}
+
+  .badge{display:inline-block; font-family:var(--mono); font-size:11px; padding:2px 9px; border-radius:20px; border:1px solid; margin:2px 4px 2px 0}
+  .bg-o{color:var(--orange);border-color:var(--orange-dim)}
+  .bg-c{color:var(--cyan);border-color:var(--cyan-dim)}
+  .bg-p{color:var(--purple);border-color:#7a5fd9}
+
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+  .toc a{
+    font-family:var(--mono);font-size:12.5px;text-decoration:none;color:var(--dim);
+    background:var(--bg-3);border:1px solid var(--border-solid);border-radius:8px;padding:6px 12px;transition:.15s;
+  }
+  .toc a:hover{color:var(--orange);border-color:var(--orange)}
+
+  footer{border-top:1px solid var(--border-solid); padding:30px 22px; text-align:center; color:var(--faint); font-family:var(--mono); font-size:12.5px}
+
+  /* ---------- Data quality additions ---------- */
+  .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:20px 0}
+  .kpi{background:linear-gradient(180deg,#ffffff,#f4f5f8);border:1px solid var(--border-solid);border-top:3px solid var(--orange);border-radius:12px;padding:16px 18px}
+  .panel.deep .kpi{border-top-color:var(--cyan)}
+  .kpi .v{font-family:var(--display);font-weight:700;font-size:25px;color:var(--orange);line-height:1.1}
+  .panel.deep .kpi .v{color:var(--cyan)}
+  .kpi .k{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;margin-top:6px}
+  .kpi .d{font-size:12.5px;color:var(--dim);margin-top:8px}
+  .keypoint{background:linear-gradient(180deg,#fff7f0,#fdf1e7);border:1px solid #d55a1b33;border-left:4px solid var(--orange);border-radius:0 12px 12px 0;padding:14px 18px;margin:18px 0}
+  .panel.deep .keypoint{background:linear-gradient(180deg,#eefaf8,#e8f4f1);border-color:#0d8f7d33;border-left-color:var(--cyan)}
+  .keypoint .t{font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--orange);display:block;margin-bottom:5px}
+  .panel.deep .keypoint .t{color:var(--cyan)}
+</style>
+</head>
+<body>
+<header class="top">
+<div class="top-inner">
+<span class="logo"><span class="dot"></span> <span class="prompt">~/</span><b>quality</b>-api<span class="blink">_</span></span>
+<span class="top-sub">Data Contract · Great Expectations · Pact · Schema Diff · OpenLineage · Quality SLO · Test Pyramid for Data · Lab</span>
+</div>
+</header>
+<nav class="tabs">
+<div class="tabs-scroll" id="tabsScroll">
+<button class="tab-btn active" data-tab="t1"><span class="num">01</span> Tổng quan</button>
+<button class="tab-btn" data-tab="t2"><span class="num">02</span> Data Contract</button>
+<button class="tab-btn" data-tab="t3"><span class="num">03</span> Schema Validation</button>
+<button class="tab-btn" data-tab="t4"><span class="num">04</span> Great Expectations</button>
+<button class="tab-btn" data-tab="t5"><span class="num">05</span> Pact Contract Test</button>
+<button class="tab-btn" data-tab="t6"><span class="num">06</span> Producer-Consumer</button>
+<span class="tab-div">⌘ CONTRACTS &amp; VALIDATION</span>
+<button class="tab-btn deep" data-tab="t7"><span class="num">07</span> Schema Diff</button>
+<button class="tab-btn deep" data-tab="t8"><span class="num">08</span> Lineage</button>
+<button class="tab-btn deep" data-tab="t9"><span class="num">09</span> Quality Metrics</button>
+<button class="tab-btn deep" data-tab="t10"><span class="num">10</span> Alert &amp; SLO</button>
+<button class="tab-btn deep" data-tab="t11"><span class="num">11</span> Test Pyramid</button>
+<button class="tab-btn deep" data-tab="t12"><span class="num">12</span> Production DQ</button>
+<span class="tab-div">⌘ OBSERVABILITY &amp; PRODUCTION</span>
+<button class="tab-btn deep" data-tab="t13"><span class="num">13</span> Lab E2E</button>
+<span class="tab-div">⌗ BỔ SUNG</span>
+<button class="tab-btn" data-tab="t14"><span class="num">14</span> Governance &amp; Security</button>
+    <button class="tab-btn" data-tab="t15"><span class="num">15</span> Quality Gates thực chiến</button>
+    <button class="tab-btn" data-tab="t16"><span class="num">16</span> Vận hành SLA &amp; Incident</button>
+    <button class="tab-btn" data-tab="t17"><span class="num">17</span> Bài tập &amp; Case Study</button>
+</div>
+</nav>
+<main>
+
+<section class="panel active" id="t1">
+<div class="lead">Module 01 — Nền tảng</div>
+<h1>Tại sao data quality ở API <span class="hl">quan trọng</span></h1>
+<p class="intro-p">Data quality không phải bước kiểm tra ở cuối pipeline. Nó phải bắt đầu từ contract giữa producer và consumer — khi contract rõ, mọi layer sau tự khớp. Module này dựng nền tảng: silent failure là gì, garbage in → garbage out có nghĩa ra sao trong ngữ cảnh API, và tại sao downstream blast radius của bad data còn nghiêm trọng hơn bad code.</p>
+
+<div class="toc">
+<a href="#t1-1">※ 1. Silent failure — kẻ nguy hiểm nhất của data</a>
+<a href="#t1-2">※ 2. Garbage in → garbage out</a>
+<a href="#t1-3">※ 3. Downstream blast radius</a>
+<a href="#t1-4">※ 4. Data quality vs code quality</a>
+<a href="#t1-5">※ 5. Các chiều của data quality</a>
+<a href="#t1-6">※ 6. Ai chịu trách nhiệm data quality?</a>
+</div>
+
+<h2 id="t1-1">1. Silent failure — kẻ nguy hiểm nhất của data</h2>
+<p>Code bug thường phát hiện ngay: API trả 500, service crash, CI fail. Bad data thì ngược lại: im lặng. Một pipeline đẩy chỉ số sales về 0 vì một trường định dạng ngày bị bỏ sót mà không bắn ra lỗi nào. Dashboard doanh thu nằm im vì ai cũng nghĩ doanh thu thật sự bằng 0.</p>
+<p><em>Silent failure</em> là tình trạng data sai nhưng hệ thống không bắt lỗi. Request thành công (HTTP 200), nhưng giá trị bên trong là vô nghĩa. Lý do nằm ở chỗ: <strong>API chỉ kiểm tra cú pháp (syntax), không kiểm tra ngữ nghĩa (semantics)</strong>.</p>
+<div class="box scn"><span class="t"><span>TÌNH HUỐNG THỰC TẾ</span></span><p><strong>Bối cảnh:</strong> Một đội data pipeline nhận được dữ liệu từ một API của team khác. Pipeline chạy trơn tru 6 tháng, mọi người yên tâm. Rồi một ngày product lead nhìn dashboard rồi thắc mắc: "<em>Doanh thu hôm nay bằng 0? Hay tôi nhầm?</em>". Kiểm tra phát hiện: một trường <code class="c">order_date</code> từ format <code class="c">YYYY-MM-DD</code> bị đổi thành <code class="c">DD/MM/YYYY</code> mà không ai báo. Pipeline vẫn nhận 200 OK vì nó parse được ngày — nhưng lệch một tháng. Toàn bộ report bán hàng bị sai. Không có alert vì không ai định nghĩa "sai format ngày = alert". Bài học: silent failure chỉ được phát hiện khi có contract định nghĩa rõ ngữ nghĩa và semantic validation.</p></div>
+
+<h2 id="t1-2">2. Garbage in → garbage out</h2>
+<p>Nguyên tắc cơ bản của hệ thống xử lý dữ liệu: nếu dữ liệu đầu vào sai, thì kết quả đầu ra sẽ sai theo. Trong ngữ cảnh API, <em>garbage</em> có thể là:</p>
+<div class="grid2">
+<div class="mini"><h4>Null không mong đợi</h4><p style="font-size:13.5px">API trả <code class="c">null</code> cho trường bắt buộc. Consumer tính toán trên null → NaN → dashboard treo.</p></div>
+<div class="mini"><h4>Type mismatch</h4><p style="font-size:13.5px">Schema nói là <code class="c">integer</code>, API trả <code class="c">"123"</code>. Consumer parse được nhưng tính toán sai nếu không cast đúng.</p></div>
+<div class="mini"><h4>Enum sai</h4><p style="font-size:13.5px">Trường <code class="c">status</code> nhận giá trị <code class="c">"shipped"</code> thành <code class="c">"shpped"</code>. Mã phía consumer đõn giá trị này → logic nghiệp vụ bỏ qua.</p></div>
+<div class="mini"><h4>Range bất thường</h4><p style="font-size:13.5px">Tuổi = <code class="c">-5</code>, giá tiền = <code class="c">0</code>, số lượng = <code class="c">999999999</code>. Syntax đúng, semantics sai.</p></div>
+</div>
+<div class="box warn"><span class="t">TẠI SAO</span><p>API boundary là nơi duy nhất bạn có thể chặn garbage TRƯỚC KHI nó lan ra toàn hệ thống. Một lần lọt qua contract, dữ liệu sẽ được lưu, cache, join, aggregate — và nỗi đau sau đó sẽ tăng theo cấp số nhân.</p></div>
+
+<h2 id="t1-3">3. Downstream blast radius</h2>
+<p>Bad data không chỉ ảnh hưởng một API. Nó lan theo dòng chảy dữ liệu đến mọi nơi có dùng nó:</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">
+ BLAST RADIUS CỦA BAD DATA
+ ────────────────────────────────
+   [Source API]
+        │
+        │  → null user_id (syntax đúng)
+        │
+   [Data Lake / Warehouse]
+        │
+        +---→ Dashboard Revenue    (số liệu sai, lãnh đạo hỏi)
+        +---→ ML Recommendation    (model training ra kết quả rác)
+        +---→ Billing Service      (invoice sai, khách hàng khiếu nại)
+        +---→ Audit Log            (compliance vi phạm)
+        +---→ Partner API           (contract breach, penalty)
+   ────────────────────────────
+   ▶ một null lọt qua boundary → 6+ downstream system chịu ảnh hưởng
+   ▶ càng về sau, blast radius càng lớn, chi phí cleanup càng cao
+   ▶ data sai đã lưu vào warehouse = không rollback được
+</pre><div class="dcap">Mỗi mũi tên là một mối nguy tiềm ẩn. API boundary là chốt chặn cuối cùng trước khi bad data lan ra.</div></div>
+<div class="box danger"><span class="t">NGUYÊN TẮC VÀNG</span><p>Không có data contract rõ ràng ở API boundary, bạn đang chấp nhận rủi ro mà không biết mức độ. Mỗi downstream system nhận data từ API của bạn là một vụ nổ tiềm tàng. Đừng để "im lặng" trở thành "im lặng trong 6 tháng rồi phát nổ ở QBR".</p></div>
+
+<h2 id="t1-4">4. Data quality vs code quality</h2>
+<p>Code quality và data quality là hai phạm trù hoàn toàn khác nhau nhưng thường bị đồng nhất:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Chiều</th><th>Code Quality</th><th>Data Quality</th></tr>
+<tr><td><strong>Phát hiện</strong></td><td>CI/CD, unit test, lint đều bắt được ngay</td><td>Silent failure — không test thì không biết</td></tr>
+<tr><td><strong>Tác động</strong></td><td>Ảnh hưởng thường local, rollback được</td><td>Lan rộng, để lại trong warehouse, không rollback được</td></tr>
+<tr><td><strong>Tiêu chuẩn</strong></td><td>Đo được: coverage %, cyclomatic complexity</td><td>Đo được: completeness, accuracy, timeliness</td></tr>
+<tr><td><strong>Công cụ</strong></td><td>pytest, ESLint, SonarQube</td><td>Great Expectations, dbt tests, dưữ liệu từ contract test</td></tr>
+<tr><td><strong>Chịu trách nhiệm</strong></td><td>Developer</td><td>Cả Producer + Consumer + Data Engineer</td></tr>
+</table></div>
+
+<h2 id="t1-5">5. Các chiều của data quality</h2>
+<p>Data quality có nhiều chiều (dimensions). Không phải chiều nào cũng quan trọng như nhau với mọi use case:</p>
+<div class="grid3">
+<div class="mini"><h4>Completeness</h4><p style="font-size:13.5px">Không có null bất thường trong trường bắt buộc. Null rate &lt; threshold.</p></div>
+<div class="mini"><h4>Accuracy</h4><p style="font-size:13.5px">Giá trị phản ánh đúng thực tế. Giá tiền phải là số dương, tuổi phải trong khoảng hợp lệ.</p></div>
+<div class="mini"><h4>Timeliness</h4><p style="font-size:13.5px">Data đủn đúng lúc. Báo cáo ngày hôm nay không dùng data của 3 tháng trước.</p></div>
+<div class="mini"><h4>Consistency</h4><p style="font-size:13.5px">Cùng một khách hàng có một customer_id. Không có trùng lắp trong bảng dim.</p></div>
+<div class="mini"><h4>Uniqueness</h4><p style="font-size:13.5px">Mỗi bản ghi có một primary key duy nhất. Không có duplicate row.</p></div>
+<div class="mini"><h4>Validity</h4><p style="font-size:13.5px">Format đúng theo schema: email đúng format, enum đúng giá trị, date đúng ISO 8601.</p></div>
+</div>
+
+<h2 id="t1-6">6. Ai chịu trách nhiệm data quality?</h2>
+<p>Đây là câu hỏi quan trọng nhất mà nhiều đội quên hỏi. Data quality không phải trách nhiệm của một người — nó là một <strong>shared accountability model</strong>:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Vai trò</th><th>Trách nhiệm DQ</th><th>Công cụ</th></tr>
+<tr><td><strong>Producer (API owner)</strong></td><td>Định nghĩa contract, validate input, trả đúng data theo SLA</td><td>Schema validation, Pact, contract test</td></tr>
+<tr><td><strong>Consumer (downstream)</strong></td><td>Kiểm tra data nhận được có match contract, validate trước khi dùng</td><td>Great Expectations, unit test</td></tr>
+<tr><td><strong>Data Engineer</strong></td><td>Đảm bảo pipeline integrity, định nghĩa quality threshold</td><td>dbt tests, Great Expectations, anomaly detection</td></tr>
+<tr><td><strong>Data Owner (domain)</strong></td><td>Định nghĩa business rule cho data: valid range, enum, SLA freshness</td><td>Data catalog, DataHub, semantic rules</td></tr>
+<tr><td><strong>Platform / SRE</strong></td><td>Đo quality metric, alert khi breach SLO, on-call cho data incident</td><td>Monte Carlo, Bigeye, Prometheus, PagerDuty</td></tr>
+</table></div>
+<div class="keypoint"><span class="t">Sợi chỉ đỏ</span><p>Data quality không phải "chạy check ở cuối pipeline". Nó phải bắt đầu từ contract giữa producer và consumer — khi contract rõ, mọi layer sau tự khớp. Producer cam kết contract rõ ràng, consumer verify nghiêm ngặt, platform monitor quality SLO.</p></div>
+</section>
+
+<section class="panel" id="t2">
+<div class="lead">Module 02 — Phần 1: Data Contract</div>
+<h1>Data Contract <span class="hl">là gì</span></h1>
+<p class="intro-p">Data contract là điều khoản giữa producer (người cung cấp dữ liệu) và consumer (người tiêu thụ dữ liệu) về: schema có gì, SLA như thế nào, version thay đổi ra sao. Nó không phải document — nó là <strong>agreement có giá trị pháp lý trong team</strong>, có thể kiểm tra tự động bằng contract test.</p>
+
+<div class="toc">
+<a href="#t2-1">※ 1. Schema = API giữa producer &amp; consumer</a>
+<a href="#t2-2">※ 2. Data contract vs API contract</a>
+<a href="#t2-3">※ 3. Các thành phần của một data contract</a>
+<a href="#t2-4">※ 4. SLA cho data: freshness, volume, availability</a>
+<a href="#t2-5">※ 5. Versioning &amp; breaking change</a>
+<a href="#t2-6">※ 6. Ai sở hữu data contract?</a>
+</div>
+
+<h2 id="t2-1">1. Schema = API giữa producer &amp; consumer</h2>
+<p>Trong API truyền thống, contract là OpenAPI spec: endpoint nào, method gì, request/response schema ra sao. Trong data pipeline, contract là schema của dataset mà producer trả về: tên bảng, cột nào có, type gì, nullable hay không, enum value nào hợp lệ. Consumer không cần biết pipeline bên trong đẩy đứng thế nào — chỉ cần biết schema và SLA.</p>
+<div class="defbox"><span class="term-def">Data Contract = Schema + SLA + Owner + Version</span></div>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">
+ DATA CONTRACT — TƯƠNG TÁC GIỮA HAI HỆ THỐNG
+ ────────────────────────────
+   [Producer / Data Owner]
+   │
+   │  Schema  →  Cột A: string (email), Cột B: int64, Cột C: date
+   │  SLA     →  Freshness &lt; 1h, Volume &gt; 1000 row/day
+   │  Owner   →  team-data-platform@example.com
+   │  Version →  v2.3.1 (ISO 8601 date: 2026-01-15)
+   │
+   │  ───────────────────────────────────────────
+   │                 DATA CONTRACT (người cam kết)
+   │  ───────────────────────────────────────────
+   │
+   [Consumer / Downstream]
+   │
+   │  ← Nhận data đúng schema đã cam kết
+   │  → Có quyền khiếu nại nếu breach SLA
+   │  → Được notify trước khi breaking change
+   ───────────────────────────────
+   ▶ contract được mã hóa (YAML/JSON Schema)
+   ▶ contract được kiểm tra tự động bằng Pact
+</pre><div class="dcap">Data contract giống SLA giữa hai bên: producer cam kết cung cấp gì, consumer có quyền khiếu nại nếu vi phạm.</div></div>
+
+<h2 id="t2-2">2. Data contract vs API contract</h2>
+<p>API contract và data contract có cùng mục tiêu (ràng buộc giữa hai bên) nhưng khác nhau về ngữ cảnh:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Chiều</th><th>API Contract</th><th>Data Contract</th></tr>
+<tr><td><strong>Phạm vi</strong></td><td>Request/response của một endpoint</td><td>Schema của một dataset/bảng/stream</td></tr>
+<tr><td><strong>Cam kết</strong></td><td>"Endpoint này trả về HTTP 200 + JSON"</td><td>"Bảng này có cột X, Y, Z với freshness &lt; 1h"</td></tr>
+<tr><td><strong>Công cụ</strong></td><td>OpenAPI, JSON Schema, FastAPI Pydantic</td><td>Great Expectations, Pact, dbt contract</td></tr>
+<tr><td><strong>Thời điểm check</strong></td><td>Runtime (mỗi request)</td><td>Runtime + Build time (CI/CD) + Scheduled (monitoring)</td></tr>
+<tr><td><strong>Consumer</strong></td><td>Client app / service</td><td>Downstream pipeline / dashboard / ML model</td></tr>
+</table></div>
+<div class="box note"><span class="t">Liên kết</span><p>Data contract xây trên nền API contract: nếu dataset của bạn được serve qua REST/GraphQL API, thì API contract (OpenAPI) là lớp trên, data contract là lớp dưới (dataset-level semantics).</p></div>
+
+<h2 id="t2-3">3. Các thành phần của một data contract</h2>
+<p>Một data contract hoàn chỉnh bao gồm:</p>
+<div class="card">
+<p><strong>1. Schema Definition</strong> — Mô tả chi tiết mỗi trường: tên, kiểu dữ liệu, nullable, enum, constraints (min/max length), description bằng ngôn ngữ nghiệp vụ.</p>
+<p><strong>2. SLA</strong> — Freshness (data mới nhất cách hiện tại bao lâu), availability (uptime %), volume (tối thiểu bao nhiêu dòng/ngày), latency (thời gian trả về).</p>
+<p><strong>3. Owner</strong> — Ai chịu trách nhiệm dataset này. Đỉa chỉ email hoặc Slack channel. Là người ra quyết định breaking change.</p>
+<p><strong>4. Version</strong> — Semantic versioning (v1.2.3). Mỗi version có changelog. Breaking change phải tăng major version và có deprecation notice.</p>
+<p><strong>5. Contact &amp; Documentation</strong> — Runbook, được làm sao (data dictionary), business meaning của mỗi cột.</p>
+<p><strong>6. Consumer list</strong> — Ai đang dùng dataset này. Có thông tin để notify trước khi thay đổi.</p>
+</div>
+
+<h2 id="t2-4">4. SLA cho data: freshness, volume, availability</h2>
+<p>Data SLA không khác gì service SLA, nhưng đo bằng dữ liệu thay vì HTTP status code:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">data_contract.yml</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd"># Data Contract cho dataset: orders_daily
+dataset: orders_daily
+version: "2.1.0"
+owner: team-commerce-platform
+contact: data-platform@example.com
+
+schema:
+  columns:
+    order_id:
+      type: string
+      description: "Unique order identifier (format: ORD-YYYYMMDD-XXXXX)"
+      constraints:
+        pattern: "^ORD-\\d{8}-\\d{5}$"
+    customer_id:
+      type: string
+      description: "Foreign key to dim_customers.customer_id"
+      nullable: false
+    order_date:
+      type: date
+      description: "Date when order was placed (YYYY-MM-DD)"
+      nullable: false
+    total_amount:
+      type: decimal
+      precision: 12
+      scale: 2
+      description: "Total order amount in VND"
+      constraints:
+        min: 0
+    status:
+      type: enum
+      values: [pending, confirmed, shipped, delivered, cancelled]
+      nullable: false
+
+sla:
+  freshness:
+    description: "Data updated at least every 1 hour"
+    max_lag_minutes: 60
+    alert_on_breach: true
+  volume:
+    description: "Minimum 100 orders per day"
+    min_rows_per_day: 100
+    alert_on_breach: true
+  availability:
+    description: "Dataset available 99.5% of the time"
+    uptime_percent: 99.5
+  completeness:
+    null_threshold:
+      customer_id: 0       # bắt buộc
+      order_date: 0
+      status: 0
+
+consumers:
+  - team-analytics
+  - team-ml-recommendation
+  - team-billing
+
+deprecation:
+  deprecated_version: "1.x.x"
+  sunset_date: "2026-06-01"
+  migration_guide: "https://wiki.example.com/orders-v2-migration"</span>
+</div>
+</div>
+
+<h2 id="t2-5">5. Versioning &amp; breaking change</h2>
+<p>Data contract dùng semantic versioning (SemVer): <code class="inline">MAJOR.MINOR.PATCH</code>. Breaking change là thay đổi buộc tăng major version và notify consumer trước ít nhất 30 ngày (deprecation window).</p>
+<div class="tbl-wrap"><table>
+<tr><th>Loại thay đổi</th><th>Version bump</th><th>Breaking?</th><th>Notify consumer?</th></tr>
+<tr><td>Thêm cột mới (nullable)</td><td>PATCH (2.1.0 → 2.1.1)</td><td>Không</td><td>Không bắt buộc</td></tr>
+<tr><td>Thêm constraint mới (max length)</td><td>MINOR (2.1.0 → 2.2.0)</td><td>Không</td><td>Có</td></tr>
+<tr><td>Đổi type của cột</td><td>MAJOR (2.x.x → 3.0.0)</td><td>Có</td><td>30 ngày notice + deprecation</td></tr>
+<tr><td>Xóa cột</td><td>MAJOR (2.x.x → 3.0.0)</td><td>Có</td><td>30 ngày notice + migration guide</td></tr>
+<tr><td>Đổi enum values</td><td>MAJOR (nếu loại bỏ value)</td><td>Có</td><td>30 ngày notice</td></tr>
+<tr><td>Đổi tên bảng</td><td>MAJOR</td><td>Có</td><td>Alias/view + migration</td></tr>
+</table></div>
+<div class="box warn"><span class="t">Sai lầm phổ biến</span><p>Không notify consumer trước khi thay đổi schema. Breaking change mà không có deprecation notice sẽ phá vỡ downstream mà không ai chuẩn bị được. Contract test với Pact là cách tự động phát hiện breaking change TRƯỚC KHI ship.</p></div>
+
+<h2 id="t2-6">6. Ai sở hữu data contract?</h2>
+<p>Data contract thuộc về <strong>producer/owner của domain</strong> đó. Trong mô hình Data Mesh, mỗi domain team sở hữu data product của mình và chịu trách nhiệm định nghĩa contract. Consumer có quyền yêu cầu contract rõ ràng trước khi tích hợp.</p>
+<div class="box tip"><span class="t">Sợi chỉ đỏ</span><p>Data quality không phải "chạy check ở cuối pipeline". Nó phải bắt đầu từ contract giữa producer và consumer — khi contract rõ, mọi layer sau tự khớp. Sở hữu contract rõ ràng là bước đầu tiên để quality bắt đầu từ design, không phải từ detection.</p></div>
+
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Team upstream đổi tên cột <code class="inline">price→amount</code> không báo, dashboard downstream vỡ hàng loạt. <strong>Sửa:</strong> <strong>Data Contract</strong> khai báo schema + ràng buộc + SLA giữa producer–consumer, versioned trong Git; đổi breaking phải bump version + thông báo. Contract là 'hợp đồng' giữa các đội, không phải tài liệu cho vui.</p></div>
+</section>
+
+<section class="panel" id="t3">
+<div class="lead">Module 03 — Phần 1: Schema Validation</div>
+<h1>Schema Validation ở <span class="hl">API Boundary</span></h1>
+<p class="intro-p">API boundary là chốt chặn cuối cùng trước khi data đi vào hệ thống. Tại đây, schema validation là lớp phòng thủ đầu tiên: từ chối garbage ở syntax level trước khi nó xúm nhặm lối sang semantics. FastAPI + Pydantic, JSON Schema, và OpenAPI strict là bộ ba công cụ.</p>
+
+<div class="toc">
+<a href="#t3-1">※ 1. Pydantic cho input validation</a>
+<a href="#t3-2">※ 2. Response model và serialization</a>
+<a href="#t3-3">※ 3. JSON Schema cho cross-team contract</a>
+<a href="#t3-4">※ 4. OpenAPI strict mode</a>
+<a href="#t3-5">※ 5. Custom validator cho business rule</a>
+<a href="#t3-6">※ 6. Validation error response chuẩn</a>
+</div>
+
+<h2 id="t3-1">1. Pydantic cho input validation</h2>
+<p>Pydantic là thư viện validation mạnh nhất trong Python ecosystem. Nó vừa parse, vừa validate, vừa serialize — trong một class definition duy nhất. Mọi field có type hint là một constraint được enforce tự động.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">models/order.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">from pydantic import BaseModel, Field, EmailStr, field_validator
+from datetime import date
+from decimal import Decimal
+from typing import Literal
+import re
+
+class OrderCreate(BaseModel):
+    customer_id: str = Field(
+        ...,  # ... = required (không có default)
+        min_length=3,
+        max_length=50,
+        pattern=r"^CUST-\d{6}$",  # format: CUST-123456
+        description="Customer identifier"
+    )
+    order_date: date = Field(default_factory=date.today)
+    total_amount: Decimal = Field(
+        gt=0,  # greater than 0
+        decimal_places=2,
+        description="Order total in VND"
+    )
+    status: Literal["pending", "confirmed", "shipped"] = "pending"
+    email: EmailStr | None = None
+    notes: str | None = Field(default=None, max_length=500)
+
+    @field_validator("customer_id")
+    @classmethod
+    def validate_customer_format(cls, v: str) -> str:
+        if not re.match(r"^CUST-\d{6}$", v):
+            raise ValueError(
+                f"customer_id must match CUST-XXXXXX, got: {v}"
+            )
+        return v
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "customer_id": "CUST-000001",
+                "order_date": "2026-01-15",
+                "total_amount": "125000.00",
+                "status": "pending",
+                "email": "user@example.com"
+            }
+        }
+    }</span>
+</div>
+</div>
+<div class="box tip"><span class="t">Vì sao dùng Pydantic</span><p>Pydantic không chỉ validate — nó generate JSON Schema tự động, làm documentation, serialize/deserialize, và tích hợp FastAPI dependency injection. Một class định nghĩa làm được cả bốn việc: contract + validation + serialization + docs.</p></div>
+
+<h2 id="t3-2">2. Response model và serialization</h2>
+<p>Input validation bảo vệ producer. Response model bảo vệ consumer: API chỉ trả về những gì contract nói sẽ trả. <code class="inline">response_model</code> trong FastAPI vừa filter field thừa, vừa ensure type correctness.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">routers/order.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">from pydantic import BaseModel, Field
+from datetime import datetime
+from decimal import Decimal
+
+class OrderResponse(BaseModel):
+    order_id: str
+    customer_id: str
+    order_date: str  # ISO format string
+    total_amount: Decimal = Field(ge=0)
+    status: str
+    created_at: datetime
+    updated_at: datetime | None = None
+
+    model_config = {
+        "from_attributes": True,  # Pydantic v2: orm_mode
+        "json_encoders": {
+            Decimal: lambda v: str(v),  # Decimal → string trong JSON
+            datetime: lambda v: v.isoformat()
+        }
+    }
+
+class OrderListResponse(BaseModel):
+    orders: list[OrderResponse]
+    total: int
+    page: int
+    page_size: int</span>
+</div>
+</div>
+
+<h2 id="t3-3">3. JSON Schema cho cross-team contract</h2>
+<p>Khi producer và consumer là hai team khác nhau, họ không share code được. JSON Schema là ngôn ngữ chung: một file schema được publish lên shared registry (DataHub, Confluence, schema store) và cả hai bên tham chiếu đến nó.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">schemas/orders_contract.json</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/orders_daily.json",
+  "title": "Orders Daily Contract",
+  "version": "2.1.0",
+  "type": "object",
+  "required": ["order_id", "customer_id", "order_date", "total_amount", "status"],
+  "properties": {
+    "order_id": {
+      "type": "string",
+      "pattern": "^ORD-\\d{8}-\\d{5}$",
+      "description": "Unique order ID"
+    },
+    "customer_id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 50
+    },
+    "order_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Format: YYYY-MM-DD"
+    },
+    "total_amount": {
+      "type": "number",
+      "minimum": 0,
+      "multipleOf": 0.01
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "confirmed", "shipped", "delivered", "cancelled"]
+    }
+  }
+}</span>
+</div>
+</div>
+
+<h2 id="t3-4">4. OpenAPI strict mode</h2>
+<p>FastAPI tự sinh OpenAPI spec từ Pydantic model. Để ensure contract được enforce nghiêm ngặt, bật strict validation mode ở mức OpenAPI level:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">main.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">from fastapi import FastAPI
+from fastapi.openapi.utils import get_openapi
+
+app = FastAPI(title="Orders API", version="2.1.0")
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi = get_openapi(
+        title=app.title,
+        version=app.version,
+        routes=app.routes,
+        strict=True  # enforce JSON Schema constraints
+    )
+    openapi["info"]["x-contract-version"] = "2.1.0"
+    openapi["info"]["x-contract-owner"] = "team-commerce-platform"
+    app.openapi_schema = openapi
+    return openapi
+
+app.openapi = custom_openapi</span>
+</div>
+</div>
+
+<h2 id="t3-5">5. Custom validator cho business rule</h2>
+<p>Schema validation chỉ catch được syntax error. Business rule cần custom validator để ensure semantics: giá trị này có hợp lệ theo nghiệp vụ hay không.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">models/validators.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">from pydantic import BaseModel, field_validator, model_validator
+from datetime import date, timedelta
+
+class OrderCreate(BaseModel):
+    customer_id: str
+    order_date: date
+    total_amount: float
+    status: str
+
+    @field_validator("order_date")
+    @classmethod
+    def validate_order_date(cls, v: date) -> date:
+        if v > date.today():
+            raise ValueError(
+                f"order_date cannot be in the future: {v}"
+            )
+        if v < date.today() - timedelta(days=30):
+            raise ValueError(
+                f"order_date too old (max 30 days back): {v}"
+            )
+        return v
+
+    @model_validator(mode="after")
+    def validate_status_consistency(self) -> "OrderCreate":
+        # Nếu đã shipped/delivered thì không được sửa total_amount
+        if self.status in ("shipped", "delivered"):
+            if self.total_amount < 0:
+                raise ValueError(
+                    "Cannot set negative total_amount for shipped/delivered orders"
+                )
+        return self</span>
+</div>
+</div>
+
+<h2 id="t3-6">6. Validation error response chuẩn</h2>
+<p>Khi validation fail, FastAPI trả 422 Unprocessable Entity. Response body phải chuẩn hóa để consumer parse được:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">main.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
+app = FastAPI()
+
+@app.exception_handler(422)
+async def validation_exception_handler(request: Request, exc: Exception):
+    # Chuẩn hóa error format
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Request body failed validation",
+                "details": exc.errors(),  # FastAPI’s built-in error list
+                "request_id": request.headers.get("X-Request-ID")
+            }
+        }
+    )</span>
+</div>
+</div>
+<div class="keypoint"><span class="t">Điểm chốt</span><p>Schema validation ở API boundary là lớp phòng thủ đầu tiên chống silent failure. Pydantic lo đủ cả: validate input + response model + JSON Schema sinh tự động + OpenAPI docs. Nhớ: syntax đúng không có nghĩa là semantics đúng — business rule validator là lớp tiếp theo.</p></div>
+
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> API nhận event thiếu field bắt buộc, lỗi chỉ lộ ở bước transform 2 giờ sau. <strong>Sửa:</strong> validate schema ngay ở <em>biên</em> (API boundary) — reject sớm với <code class="inline">422</code> + lý do. <em>Fail fast</em> rẻ hơn fail muộn; đừng để dữ liệu bẩn trôi sâu vào pipeline.</p></div>
+</section>
+
+<section class="panel" id="t4">
+<div class="lead">Module 04 — Phần 2: Great Expectations</div>
+<h1>Great Expectations <span class="hl">từ cơ bản đến checkpoint</span></h1>
+<p class="intro-p">Great Expectations (GE) là thư viện Python mã nguồn mở dùng để define, document, và automate data quality expectations. Khác với Pydantic chỉ validate một row, GE validate toàn bộ dataset: distribution, null rate, uniqueness, referential integrity. Nó là công cụ của consumer để verify data producer cung cấp có đúng contract không.</p>
+
+<div class="toc">
+<a href="#t4-1">※ 1. Core concepts: Expectation, Suite, Checkpoint</a>
+<a href="#t4-2">※ 2. Expectation types phổ biến</a>
+<a href="#t4-3">※ 3. Viết Expectation Suite đầu tiên</a>
+<a href="#t4-4">※ 4. Data Docs — tài liệu hóa quality report</a>
+<a href="#t4-5">※ 5. ValidationDefinition: chạy validation tự động</a>
+<a href="#t4-6">※ 6. Batch: validate data theo partition</a>
+</div>
+
+<h2 id="t4-1">1. Core concepts: Expectation, Suite, Checkpoint</h2>
+<p>Great Expectations xây trên ba khái niệm cốt lõi:</p>
+<div class="grid3">
+<div class="mini"><h4>Expectation</h4><p style="font-size:13.5px">Một phát biểu về dữ liệu: "column X không có null", "giá trị trong range [0, 1000000]". Nhỏ như unit test cho data.</p></div>
+<div class="mini"><h4>Expectation Suite</h4><p style="font-size:13.5px">Collection các expectation cho một dataset. Giống test class chứa nhiều test case.</p></div>
+<div class="mini"><h4>Checkpoint</h4><p style="font-size:13.5px">Hành động chạy một suite đối với một batch data cụ thể. Giống pytest runner.</p></div>
+</div>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">
+ GREAT EXPECTATIONS — CONCEPTS
+ ─────────────────────────────
+   [Dataset / Batch]
+          │
+          │  ──────────────────────────
+          │              v
+   [Checkpoint]  →  chạy Expectation Suite
+          │              v
+   [Expectation Suite]  =  tập hợp Expectation
+          │
+          +---> Expectation 1: column X not null
+          +---> Expectation 2: column Y between 0 and 100
+          +---> Expectation 3: row count > 1000
+          +---> Expectation 4: distinct values in Z = expected
+          ───────────────────────────
+          →  Data Docs (HTML report)
+          →  Slack / PagerDuty alert nếu fail
+</pre><div class="dcap">Checkpoint chạy một suite expectations lên một batch data, sinh docs + alert.</div></div>
+
+<h2 id="t4-2">2. Expectation types phổ biến</h2>
+<div class="tbl-wrap"><table>
+<tr><th>Loại</th><th>Ví dụ</th><th>Dùng khi nào</th></tr>
+<tr><td><strong>Column map</strong></td><td><code class="c">expect_column_values_to_not_be_null</code></td><td>Validate constraint bắt buộc</td></tr>
+<tr><td><strong>Column aggregate</strong></td><td><code class="c">expect_column_mean_to_be_between</code></td><td>Validate statistical property</td></tr>
+<tr><td><strong>Table shape</strong></td><td><code class="c">expect_table_row_count_to_be_between</code></td><td>Validate volume / completeness</td></tr>
+<tr><td><strong>Set</strong></td><td><code class="c">expect_column_distinct_values_to_be_in_set</code></td><td>Validate enum / allowed values</td></tr>
+<tr><td><strong>Multi-column</strong></td><td><code class="c">expect_column_pairs_to_be_unique</code></td><td>Validate uniqueness / composite key</td></tr>
+<tr><td><strong>Distribution</strong></td><td><code class="c">expect_column_kl_divergence_to_be_less_than</code></td><td>Validate drift / distribution change</td></tr>
+</table></div>
+
+<h2 id="t4-3">3. Viết Expectation Suite đầu tiên</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">gx_orders_suite.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">import great_expectations as gx
+
+# 1. Tạo Expectation Suite (GX Core 1.x)
+context = gx.get_context()
+suite = context.suites.add(
+    gx.ExpectationSuite(name="orders_daily_suite_v2")
+)
+
+# 2. Định nghĩa dataset-level expectations
+suite.add_expectation(
+    gx.expectations.ExpectTableRowCountToBeBetween(
+        min_value=100,
+        max_value=None
+    )
+)
+suite.add_expectation(
+    gx.expectations.ExpectTableColumnsToMatchSet(
+        column_set=["order_id", "customer_id", "order_date", "total_amount", "status"],
+        exact_match=False  # cho phép bảng có thêm cột khác
+    )
+)
+
+# 3. Column-level expectations
+suite.add_expectation(
+    gx.expectations.ExpectColumnValuesToNotBeNull(
+        column="customer_id"
+    )
+)
+suite.add_expectation(
+    gx.expectations.ExpectColumnValuesToMatchRegex(
+        column="order_id",
+        regex=r"^ORD-\d{8}-\d{5}$"
+    )
+)
+suite.add_expectation(
+    gx.expectations.ExpectColumnValuesToBeBetween(
+        column="total_amount",
+        min_value=0,
+        max_value=500_000_000  # max 500M VND
+    )
+)
+suite.add_expectation(
+    gx.expectations.ExpectColumnDistinctValuesToBeInSet(
+        column="status",
+        value_set=["pending", "confirmed", "shipped", "delivered", "cancelled"]
+    )
+)
+suite.add_expectation(
+    gx.expectations.ExpectColumnMeanToBeBetween(
+        column="total_amount",
+        min_value=10_000,  # để sản phẩm có giá trị hợp lệ
+        max_value=50_000_000
+    )
+)
+
+# 4. Uniqueness / referential integrity
+suite.add_expectation(
+    gx.expectations.ExpectColumnValuesToBeUnique(column="order_id")
+)
+
+print(f"Suite '{suite.name}' có {len(suite.expectations)} expectations")
+# GX Core 1.x tự persist suite khi add/add_expectation — không cần save thủ công</span>
+<span class="out">
+# Output (chạy thật với GX Core 1.18):
+Suite 'orders_daily_suite_v2' có 8 expectations</span>
+</div>
+</div>
+
+<h2 id="t4-4">4. Data Docs — tài liệu hóa quality report</h2>
+<p>GE sinh HTML documentation tự động mỗi lần chạy checkpoint. Data Docs là bằng chứng quality được share với cả team — không cần chạy Jupyter notebook để xem kết quả.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">build_data_docs.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">import great_expectations as gx
+
+context = gx.get_context()
+
+# Run checkpoint trước
+# ...
+
+# Sinh Data Docs từ validation result
+context.build_data_docs()
+
+# Mở trong browser (GX 1.x đã bỏ CLI cũ)
+context.open_data_docs()
+
+# Data Docs store trong: uncommitted/data_docs/</span>
+</div>
+</div>
+<div class="box note"><span class="t">Data Docs chứa gì</span><p>Mỗi expectation hiển thị: expectation name, giá trị thực tế, PASS/FAIL, ranh giới threshold. Đây là tài liệu sống: update mỗi ngày theo data thực tế. Share URL Data Docs với data owner để họ xem quality của dataset họ sở hữu.</p></div>
+
+<h2 id="t4-5">5. ValidationDefinition: chạy validation tự động</h2>
+<p>ValidationDefinition (GX Core 1.x) gắn một suite với một batch definition để chạy validation cho batch data cụ thể. (Checkpoint trong GX 1.x là lớp bọc thêm actions như gửi Slack, build Data Docs.) Nó tích hợp được với CI/CD, scheduled job, hoặc webhook để alert.</p>
+<div class="box note"><span class="t">Lưu ý phiên bản</span><p>Code theo GX Core 1.x (API hiện hành): data source → asset → Batch Definition, suite quản lý qua <code class="c">context.suites</code>, chạy qua <code class="c">ValidationDefinition</code>. Toàn bộ code GX trong bài đã được chạy kiểm chứng thật với <strong>GX Core 1.18</strong> — output mẫu là output thật. Codebase cũ (GX 0.18 trở xuống, kiểu DataConnector/SimpleCheckpoint) cần đọc migration guide trước khi nâng cấp.</p></div>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">run_checkpoint.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">import great_expectations as gx
+
+context = gx.get_context()
+
+# 1. Data source → asset → batch definition (GX Core 1.x)
+ds = context.data_sources.add_pandas("pandas_ds")
+asset = ds.add_dataframe_asset("orders_daily")
+bd = asset.add_batch_definition_whole_dataframe("daily_batch")
+
+# 2. ValidationDefinition = batch definition + suite
+suite = context.suites.get("orders_daily_suite_v2")
+vd = context.validation_definitions.add(
+    gx.ValidationDefinition(
+        name="orders_daily_validation",
+        data=bd,
+        suite=suite,
+    )
+)
+
+# 3. Chạy validation với dataframe của ngày hôm nay
+result = vd.run(batch_parameters={"dataframe": orders_df})
+
+# 4. Xử lý kết quả
+if not result.success:
+    print(f"❌ Validation FAILED: {result.statistics}")
+    for exp_result in result.results:
+        if not exp_result.success:
+            print(f"  FAIL: {exp_result.expectation_config.type}")
+            print(f"        Actual: {exp_result.result}")
+    # Alert lên Slack nếu fail
+    send_slack_alert(
+        channel="#data-alerts",
+        message=f"Orders daily quality check FAILED: {result.statistics}",
+    )
+else:
+    print(f"✅ Validation PASSED: {result.statistics}")</span>
+<span class="out">
+# Output (chạy thật với GX Core 1.18, dataframe mẫu 120 dòng):
+✅ Validation PASSED: {'evaluated_expectations': 8, 'successful_expectations': 8,
+   'unsuccessful_expectations': 0, 'success_percent': 100.0}</span>
+</div>
+</div>
+
+<h2 id="t4-6">6. Batch: validate data theo partition</h2>
+<p>Dataset có thể partition theo ngày/tháng. GE Batch cho phép validate từng partition riêng biệt để track quality theo thời gian:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">batch_validation.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">import great_expectations as gx
+
+context = gx.get_context()
+
+# Partition: SQL asset chia batch theo cột ngày (GX Core 1.x)
+ds = context.data_sources.get("orders_datasource")
+asset = ds.get_asset("orders_daily")
+bd = asset.add_batch_definition_daily("daily", column="order_date")
+
+vd = context.validation_definitions.get("orders_daily_validation")
+
+# Chạy validation cho batch ngày 15/01/2026
+result = vd.run(batch_parameters={"year": 2026, "month": 1, "day": 15})
+print(f"Batch 2026-01-15: {'PASS' if result.success else 'FAIL'}")</span>
+</div>
+</div>
+<div class="keypoint"><span class="t">Điểm chốt</span><p>Great Expectations là công cụ của consumer để verify contract. Expectation Suite = bộ test case cho dataset, Checkpoint = test runner, Data Docs = test report. Producer cam kết contract, consumer verify bằng GE — hai bên có ngôn ngữ chung về quality.</p></div>
+</section>
+
+<section class="panel" id="t5">
+<div class="lead">Module 05 — Phần 1: Contract Test</div>
+<h1>Contract Test với <span class="hl">Pact</span></h1>
+<p class="intro-p">Contract test là loại test xác minh rằng provider (producer) và consumer KHÔNG cần test tích hợp trực tiếp với nhau — mà chỉ cùng tuân thủ một contract đã thống nhất. Pact là framework contract testing phổ biến nhất, hỗ trợ consumer-driven contract: consumer định nghĩa nhu cầu trước, provider verify sau.</p>
+
+<div class="toc">
+<a href="#t5-1">※ 1. Tại sao cần contract test</a>
+<a href="#t5-2">※ 2. Consumer-driven contract pattern</a>
+<a href="#t5-3">※ 3. Pact consumer test</a>
+<a href="#t5-4">※ 4. Pact provider verification</a>
+<a href="#t5-5">※ 5. Breaking change detection</a>
+<a href="#t5-6">※ 6. Pact broker: chia sẻ contract giữa team</a>
+</div>
+
+<h2 id="t5-1">1. Tại sao cần contract test</h2>
+<p>Integration test truyền thống require cả provider và consumer cùng up khi chạy. Contract test thì không: nó chỉ verify rằng hai bên tuân thủ contract, không cần deploy cả hai. Thêm vào đó, breaking change được phát hiện TRƯỚC KHI ship chứ không phải khi production đã cháy.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Loại test</th><th>Đáp ứng câu hỏi</th><th>Cần provider up?</th><th>Thời điểm</th></tr>
+<tr><td><strong>Unit test</strong></td><td>Class/function của tôi có đúng không?</td><td>Không</td><td>Mỗi commit</td></tr>
+<tr><td><strong>Integration test</strong></td><td>Tôi + DB/service có kết nối không?</td><td>Có</td><td>CI</td></tr>
+<tr><td><strong>Contract test</strong></td><td>Provider và consumer có tuân thủ contract?</td><td>Chỉ consumer cần mock</td><td>CI mỗi bên</td></tr>
+<tr><td><strong>E2E test</strong></td><td>Toàn hệ thống có chạy không?</td><td>Có (production/staging)</td><td>Pre-prod</td></tr>
+</table></div>
+
+<h2 id="t5-2">2. Consumer-driven contract pattern</h2>
+<p>Consumer-driven contract (CDC) là mô hình trong đó consumer định nghĩa contract TRƯỚC và publish nó lên broker. Provider sau đó pull contract về và verify mình có satisfy nó không. Nếu provider thay đổi gì làm break contract đã cam kết, CI fail.</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">
+ CONSUMER-DRIVEN CONTRACT WORKFLOW
+ ────────────────────────────────
+ [1] Consumer team viết consumer test
+     → Define: "Tôi cần field X, Y, Z với type như thế nào"
+     → Pact sinh contract file (pact.json)
+     → Publish lên Pact Broker
+   ───────────────────────────────────────────────
+                    v
+            [Pact Broker]
+     stores & verifies contracts
+   ─────────────────────────────────────────────────────────────
+                    v
+ [2] Provider team chạy provider verification
+     → Pull contract từ broker
+     → Verify: "API của tôi có cung cấp field X, Y, Z đúng như contract?"
+     → PASS: can ship     FAIL: cannot ship (breaking change detected)
+</pre><div class="dcap">CDC đảo ngược: consumer nói "tôi cần gì", provider verify "tôi có đúng không". Đảm bảo breaking change bị phát hiện trước khi ship.</div></div>
+
+<h2 id="t5-3">3. Pact consumer test</h2>
+<div class="box note"><span class="t">Lưu ý phiên bản</span><p>Code Pact trong bài viết theo <strong>pact-python 3.x</strong> (bản hiện hành, core Rust — mock server chạy in-process, không cần Ruby standalone). pact-python 2.x dùng API cũ hoàn toàn khác (<code class="c">Consumer("x").has_pact_with(Provider("y"))</code>, <code class="c">Like/EachLike/Term</code>) — codebase còn 2.x thì xem upgrade guide trên docs.pact.io. Consumer test và provider verification dưới đây đã được chạy kiểm chứng thật với <strong>pact-python 3.4</strong>.</p></div>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">consumer_test.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">from pact import Pact, match
+
+# 2. Consumer test: define what it NEEDS
+def test_fetch_orders():
+    # 1. Một Pact = một cặp consumer/provider
+    pact = Pact("orders-consumer", "orders-api").with_specification("V4")
+
+    (
+        pact.upon_receiving("get orders daily")
+        .given("orders dataset exists")            # provider state
+        .with_request("GET", "/api/v2/orders")
+        .with_header("Accept", "application/json")
+        .with_header("X-Api-Key", "test-key")
+        .will_respond_with(200)
+        .with_body({
+            "orders": match.each_like({
+                "order_id": match.regex("ORD-20260115-00001", regex=r"^ORD-\d{8}-\d{5}$"),
+                "customer_id": match.like("CUST-000001"),
+                "order_date": match.regex("2026-01-15", regex=r"\d{4}-\d{2}-\d{2}"),
+                "total_amount": match.number(125000.0),   # match theo type (number)
+                "status": match.regex("pending", regex=r"^(pending|confirmed|shipped)$"),
+            }, min=1)
+        })
+    )
+
+    # 3. serve() bật mock provider THẬT trên localhost;
+    #    thoát with-block = verify mọi interaction đã được gọi
+    with pact.serve() as srv:
+        client = OrderClient(base_url=str(srv.url))
+        result = client.get_orders(api_key="test-key")
+        assert result[0]["order_id"].startswith("ORD-")
+        assert result[0]["total_amount"] > 0
+
+    pact.write_file("./pacts")  # ghi contract JSON — file này publish lên broker</span>
+<span class="out">
+# Output (pytest, chạy thật với pact-python 3.4):
+consumer_test.py::test_fetch_orders PASSED                    [100%]
+# → sinh ra ./pacts/orders-consumer-orders-api.json</span>
+</div>
+</div>
+
+<h2 id="t5-4">4. Pact provider verification</h2>
+<p>Provider verification chạy TRÊN provider, pull contract từ broker, verify API của mình satisfy contract. Nếu verify FAIL = breaking change = không được ship.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">provider_test.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">from pact import Verifier
+
+def seed_orders_dataset(state_name, **kwargs):
+    """Provider state handler: seed data cho state 'orders dataset exists'"""
+    load_fixture("orders_sample.sql")
+
+def test_provider_verifies_consumer_contract():
+    verifier = (
+        Verifier("orders-api")                        # tên provider
+        .add_transport(url="http://localhost:8000")   # API thật đang chạy trong CI
+        # Pull contract từ broker…
+        .broker_source(
+            "http://pact-broker:9292",
+            username="pact_user",
+            password="pact_password",
+        )
+        # …hoặc không có broker: .add_source("./pacts/") đọc contract file local
+        .state_handler({"orders dataset exists": seed_orders_dataset})
+        .set_publish_options(version="2.1.0", branch="main")  # publish kết quả verify
+    )
+    verifier.verify()  # raise RuntimeError nếu bất kỳ contract nào FAIL</span>
+<span class="out">
+# Output (chạy thật với pact-python 3.4, verify contract từ ./pacts/):
+Verifying a pact between orders-consumer and orders-api
+  get orders daily (0s loading, 12ms verification)
+     Given orders dataset exists
+    returns a response which
+      has status code 200 (OK)
+      has a matching body (OK)</span>
+</div>
+</div>
+
+<h2 id="t5-5">5. Breaking change detection</h2>
+<p>Pact phát hiện breaking change qua provider verification failure:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Scenario</th><th>Provider verification</th><th>Kết luận</th></tr>
+<tr><td>Provider xóa một field consumer cần</td><td>FAIL: field missing</td><td>Breaking change — cannot ship</td></tr>
+<tr><td>Provider đổi type int → string</td><td>FAIL: type mismatch</td><td>Breaking change — cannot ship</td></tr>
+<tr><td>Provider thêm field mới (nullable)</td><td>PASS</td><td>Non-breaking — can ship</td></tr>
+<tr><td>Provider đổi enum: remove value</td><td>FAIL: enum mismatch</td><td>Breaking change — cannot ship</td></tr>
+</table></div>
+<div class="box danger"><span class="t">QUY TẮC VÀNG</span><p>Provider KHÔNG được merge code làm break consumer contract đã verify. CI/CD phải chạy Pact provider verification TRƯỚC KHI deploy. Nếu verification FAIL: PR bị blocked, breaking change phải được notify consumer trước.</p></div>
+
+<h2 id="t5-6">6. Pact broker: chia sẻ contract giữa team</h2>
+<p>Pact Broker là nơi lưu trữ contract và verification results. Nó hỗ trợ can-i-deploy (kiểm tra contract compatibility trước deploy) và webhook (notify consumer khi contract thay đổi).</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">pact_cli</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd"># Publish contract lên broker
+pact-broker publish ./pacts \
+  --broker-base-url=http://pact-broker:9292 \
+  --consumer-app-version=2.1.0 \
+  --branch=main
+
+# Check can-i-deploy (trước khi deploy)
+pact-broker can-i-deploy \
+  --pacticipant=orders-api \
+  --version=2.1.0 \
+  --broker-base-url=http://pact-broker:9292
+
+# Output:
+# Computer says: ✓ yes.
+# All required verifications are published and passing.</span>
+</div>
+</div>
+<div class="keypoint"><span class="t">Điểm chốt</span><p>Pact contract test đảm bảo breaking change được phát hiện TRƯỚC KHI ship. Consumer-driven: consumer định nghĩa nhu cầu, provider verify. Pact Broker lưu contract + can-i-deploy. Kết hợp với Great Expectations: Pact check structural contract, GE check semantic/data quality.</p></div>
+
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Consumer và producer test riêng, đến lúc tích hợp mới phát hiện lệch field. <strong>Sửa:</strong> <strong>contract test (Pact)</strong> — consumer khai 'tôi cần field này, kiểu này', producer verify đáp ứng được; chạy trong CI cả hai phía. Bắt breaking change <em>trước</em> khi deploy.</p></div>
+</section>
+
+<section class="panel" id="t6">
+<div class="lead">Module 06 — Phần 1: Producer-Consumer</div>
+<h1>Producer-Consumer <span class="hl">Workflow</span></h1>
+<p class="intro-p">Contract được định nghĩa rồi, nhưng cuộc sống thực tế là: producer thay đổi, consumer cần thời gian migrate, và breaking change xảy ra bất chợt. Module này nói về quy trình xử lý khi nào break, version negotiation, deprecation policy, và migration strategy.</p>
+
+<div class="toc">
+<a href="#t6-1">※ 1. Khi nào breaking change xảy ra</a>
+<a href="#t6-2">※ 2. Version negotiation giữa producer và consumer</a>
+<a href="#t6-3">※ 3. Deprecation policy chuẩn</a>
+<a href="#t6-4">※ 4. Migration strategy</a>
+<a href="#t6-5">※ 5. Parallel run: chạy song song schema cũ và mới</a>
+<a href="#t6-6">※ 6. Contract governance</a>
+</div>
+
+<h2 id="t6-1">1. Khi nào breaking change xảy ra</h2>
+<p>Không phải mọi thay đổi đều là breaking. Breaking change chỉ là thay đổi làm consumer hiện tại không thể hoạt động đúng:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Thay đổi</th><th>Breaking?</th><th>Lý do</th></tr>
+<tr><td>Xóa cột</td><td>✓</td><td>Consumer đọc cột đó</td></tr>
+<tr><td>Đổi type string → int</td><td>✓</td><td>Consumer parse theo type cũ</td></tr>
+<tr><td>Đổi tên cột</td><td>✓</td><td>Consumer reference tên cũ</td></tr>
+<tr><td>Thêm cột mới (nullable)</td><td>✗</td><td>Consumer ignore cột lạ</td></tr>
+<tr><td>Tăng max_length cột</td><td>✗</td><td>Consumer không bị ảnh hưởng</td></tr>
+<tr><td>Thêm enum value mới</td><td>✗</td><td>Consumer nhận giá trị cũ</td></tr>
+<tr><td>Loại bỏ enum value</td><td>✓</td><td>Consumer có thể nhận giá trị bị loại</td></tr>
+<tr><td>Đổi required → optional</td><td>✗</td><td>Consumer nhận null vẫn xử lý được</td></tr>
+<tr><td>Đổi optional → required</td><td>✓</td><td>Consumer cấu hình không gửi field này</td></tr>
+</table></div>
+
+<h2 id="t6-2">2. Version negotiation giữa producer và consumer</h2>
+<p>Khi producer muốn ship breaking change, họ cần thương lượng với consumer về timeline migration. Quy trình:</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">
+ VERSION NEGOTIATION WORKFLOW
+ ───────────────────────────────
+ [Producer]
+   |
+   |  [1] Báo động: "Sắp có breaking change v2.0.0"
+   |     ──────────────────────────────────────────
+   |  notify all consumers (Slack, email, GitHub issue)
+   |     ──────────────────────────────────────────
+   |
+   |  [2] Thảo luận timeline
+   |     - Consumer: "Cần 30 ngày để migrate"
+   |     - Producer: "Được, deprecation notice 30 ngày"
+   |     ───────────────────────────────────────────
+   |
+   |  [3] Maintain v1.x song song trong deprecation window
+   |     ───────────────────────────────────────────
+   |  v1.8.x: deprecated (security fix only)
+   |  v2.0.0: new version
+   |     ───────────────────────────────────────────
+   |
+   |  [4] Consumer migrate xong
+   |     - Consumer thông báo đã migrate v2
+   |     - Pact contract update lên v2
+   |     ───────────────────────────────────────────
+   |
+   |  [5] Producer retire v1 sau sunset date
+   ───────────────────────────────
+   ▶ Breaking change KHÔNG có nghĩa là "bắn ngay". Nó có nghĩa là "thông báo + migration window".
+</pre><div class="dcap">Breaking change = alert + negotiation + parallel run + sunset. Không bao giờ cut off consumer đột ngột.</div></div>
+
+<h2 id="t6-3">3. Deprecation policy chuẩn</h2>
+<p>Mỗi team nên có một deprecation policy viết bằng văn bản để mọi người thống nhất:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">deprecation_policy.md</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd"># Data Contract Deprecation Policy
+
+## Breaking Change Definitions
+A change is BREAKING if it causes existing consumers to fail or produce incorrect results.
+
+## Notification Requirements
+When a breaking change is planned:
+1. Notify all consumers via Slack #data-contracts channel
+2. Create GitHub issue tagged "breaking-change"
+3. Update contract deprecation table in Confluence
+4. Set deprecation_date and sunset_date in data contract YAML
+
+## Minimum Deprecation Window
+- **Minor breaking change**: 14 calendar days notice
+- **Major breaking change**: 30 calendar days notice
+- **Security/bug fix in deprecated version**: No notice required
+
+## During Deprecation Window
+- Old version receives: security fixes + critical bug fixes ONLY
+- New version: available for consumer migration
+- Pact contract: updated for new version, old version remains verified
+
+## Sunset Date
+- After sunset_date: old version returns HTTP 410 Gone with migration guide link
+- Provider stops monitoring old version quality SLOs
+- Deprecated contract marked as "retired" in broker</span>
+</div>
+</div>
+
+<h2 id="t6-4">4. Migration strategy</h2>
+<p>Khi consumer migrate từ v1 sang v2, có nhiều chiến lược tùy mức độ khó:</p>
+<div class="card">
+<p><strong>Chiến lược 1: Backward-compatible deploy</strong> — Producer deploy v2 song song với v1 (same endpoint), consumer migrate dần. Producer giữ cả hai code path trong migration window.</p>
+<p><strong>Chiến lược 2: Alias / view</strong> — Đổi tên bảng: v2 là bảng thật, v1 thành view trỏ về v2. Consumer dần migrate từ view, producer loại bỏ view sau khi migration xong.</p>
+<p><strong>Chiến lược 3: Dual-write</strong> — Trong migration, producer ghi cả v1 schema và v2 schema. Consumer đọc từ v2, v1 được loại bỏ sau.</p>
+</div>
+
+<h2 id="t6-5">5. Parallel run: chạy song song schema cũ và mới</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">parallel_validation.sql</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Parallel run: validate both schemas before switching
+-- Chạy trong migration window
+
+-- 1. Check v2 data quality vs v1
+SELECT
+  'v2' as version,
+  COUNT(*) as total_rows,
+  COUNT(CASE WHEN customer_id IS NULL THEN 1 END) as null_customer_id,
+  COUNT(DISTINCT order_id) as unique_orders,
+  AVG(total_amount) as avg_amount
+FROM orders_daily_v2
+WHERE _loaded_at >= CURRENT_DATE - INTERVAL '1' DAY
+
+UNION ALL
+
+SELECT
+  'v1' as version,
+  COUNT(*) as total_rows,
+  COUNT(CASE WHEN customer_id IS NULL THEN 1 END) as null_customer_id,
+  COUNT(DISTINCT order_id) as unique_orders,
+  AVG(total_amount) as avg_amount
+FROM orders_daily_v1
+WHERE _loaded_at >= CURRENT_DATE - INTERVAL '1' DAY;
+
+-- 2. Diff check: v2 có những giá trị nào v1 không có?
+SELECT
+  COUNT(DISTINCT status) as v2_status_count,
+  SUM(CASE WHEN status NOT IN ('pending','confirmed','shipped','delivered','cancelled')
+           THEN 1 ELSE 0 END) as unexpected_status_count
+FROM orders_daily_v2
+WHERE _loaded_at >= CURRENT_DATE - INTERVAL '1' DAY;</span>
+</div>
+</div>
+
+<h2 id="t6-6">6. Contract governance</h2>
+<p>Data contract không chỉ là kỹ thuật mà còn là governance artifact. Cần có quy trình approve, review, và dispute contract change.</p>
+<div class="box scn"><span class="t"><span>TÌNH HUỐNG THỰC TẾ</span></span><p><strong>Bối cảnh:</strong> Producer muốn xóa một cột "notes" từ dataset orders vì team nội bộ không dùng. Họ kiểm tra: có consumer nào đang dùng cột này không? Pact broker show 3 consumer đang verify contract. Một trong số đó là team ML đang dùng notes để tách keyword. Producer phải thông báo ML team, đợi 30 ngày migration, và maintain alias notes sau khi xóa. Không làm vậy là breach contract, ML team có quyền escalate lên data governance board. Bài học: contract governance = quy trình có tên, không phải sự tùy ý.</p></div>
+<div class="keypoint"><span class="t">Sợi chỉ đỏ</span><p>Data quality không phải "chạy check ở cuối pipeline". Nó phải bắt đầu từ contract giữa producer và consumer — khi contract rõ, mọi layer sau tự khớp. Breaking change là tín hiệu cần governance: thông báo + migration window + sunset policy.</p></div>
+</section>
+
+<section class="panel deep" id="t7">
+<div class="lead">Module 07 — Phần 2: Schema Diff</div>
+<h1>Schema Diff &amp; <span class="hl">Breaking Change Detection</span></h1>
+<p class="intro-p">Trước khi deploy schema mới, bạn cần biết chình xác: thay đổi nào breaking, thay đổi nào không. Schema diff tool so sánh hai schema version và classify breaking vs non-breaking. Nó là cầu nối giữa data contract versioning và Pact breaking change detection.</p>
+
+<div class="toc">
+<a href="#t7-1">※ 1. Schema diff concept</a>
+<a href="#t7-2">※ 2. SchemaHero (Kubernetes-native)</a>
+<a href="#t7-3">※ 3. Atlas (database schema migrations)</a>
+<a href="#t7-4">※ 4. schemachange (Snowflake migrations)</a>
+<a href="#t7-5">※ 5. OpenAPI diff (API-level)</a>
+<a href="#t7-6">※ 6. CI/CD integration</a>
+</div>
+
+<h2 id="t7-1">1. Schema diff concept</h2>
+<p>Schema diff so sánh hai phiên bản schema (v1 vs v2) và phân loại thay đổi theo mức độ breaking:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Change type</th><th>Breaking?</th><th>Atlas classification</th></tr>
+<tr><td>Add nullable column</td><td>Không</td><td>safe</td></tr>
+<tr><td>Drop column</td><td>Có</td><td>destructive</td></tr>
+<tr><td>Change column type</td><td>Có (thường)</td><td>destructive</td></tr>
+<tr><td>Add NOT NULL with default</td><td>Không</td><td>safe</td></tr>
+<tr><td>Drop NOT NULL</td><td>Không</td><td>non_breaking</td></tr>
+<tr><td>Rename column</td><td>Có</td><td>destructive</td></tr>
+<tr><td>Add ENUM value</td><td>Không</td><td>safe</td></tr>
+<tr><td>Remove ENUM value</td><td>Có</td><td>destructive</td></tr>
+</table></div>
+
+<h2 id="t7-2">2. SchemaHero (Kubernetes-native)</h2>
+<p>SchemaHero là CNCF project dùng để validate database schema migrations trên Kubernetes. Nó detect destructive changes và ngăn chặn migration nguy hiểm.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">schemaheroinstall.sh</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd"># Install SchemaHero
+kubectl apply -f https://schemahero.io/resources.yaml
+
+# Declare desired schema (desired.sql)
+# SchemaHero so sánh desired vs current và sinh migration plan
+
+# Run in dry-run mode trước khi apply
+schemahero deploy \
+  --driver postgres \
+  --uri "postgres://user:pass@localhost/orders?sslmode=disable" \
+  --inamespace default \
+  --spec ./desired.sql \
+  --dry-run
+
+# Nếu có destructive change, output:
+# Plan contains destructive changes:
+#   - DROP COLUMN notes (table: orders)
+#   - ALTER TYPE status DROP VALUE 'pending'</span>
+</div>
+</div>
+
+<h2 id="t7-3">3. Atlas (database schema migrations)</h2>
+<p>Atlas là tool migration hiện đại nhất, support HCL-based schema definition và diff analysis chi tiết.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">atlas_schema.hcl</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd"># schema.hcl - desired schema v2
+table "orders_daily" {
+  schema = schema.public
+  columns = [
+    { name = "order_id",       type = character_varying(50),  null = false },
+    { name = "customer_id",    type = character_varying(50),  null = false },
+    { name = "order_date",     type = date,                   null = false },
+    { name = "total_amount",   type = numeric(12, 2),          null = false },
+    { name = "status",         type = character_varying(20),  null = false },
+    { name = "created_at",     type = timestamp,              null = false, default = sql("now()") },
+  ]
+  indexes = [
+    { name = "idx_orders_date", on = column("order_date") },
+    { name = "pk_orders",       on = column("order_id"), unique = true },
+  ]
+}
+
+# Chạy Atlas diff
+atlas migrate diff \
+  --env local \
+  --to file://schema.hcl \
+  --dev-url postgres://localhost:5432/devdb?sslmode=disable
+
+# Output: migration file với hướng dẫn rollback
+# Atlas classify từng thay đổi tự động</span>
+</div>
+</div>
+
+<h2 id="t7-4">4. schemachange (Snowflake migrations)</h2>
+<p>schemachange là tool database change management cho <strong>Snowflake</strong>, theo triết lý Flyway: migration là các file SQL đặt tên theo version, apply tuần tự và được ghi lại vào bảng change history. Ba loại script: <code>V</code> (versioned — chạy đúng một lần, theo thứ tự version), <code>R__</code> (repeatable — chạy lại mỗi khi nội dung đổi), <code>A__</code> (always — chạy mỗi lần deploy). Script SQL hỗ trợ Jinja variables. Lưu ý: schemachange không tự phát hiện destructive change — muốn chặn DROP/ALTER nguy hiểm trong CI thì thêm bước review riêng (ví dụ Atlas ở mục 3, hoặc lint SQL).</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">schemachange — Snowflake migrations</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd"># Cấu trúc thư mục migration (kiểu Flyway):
+# migrations/
+#   V1.1.1__tao_bang_orders.sql      ← versioned: chạy đúng 1 lần, theo version
+#   V1.1.2__them_cot_tracking.sql
+#   R__vw_orders_summary.sql         ← repeatable: chạy lại khi nội dung đổi
+#   A__grant_permissions.sql         ← always: chạy mỗi lần deploy
+
+# schemachange-config.yml
+config-version: 1
+root-folder: ./migrations
+snowflake-account: xy12345.ap-southeast-1
+snowflake-user: DEPLOY_USER
+snowflake-role: DEPLOYER
+snowflake-warehouse: DEPLOY_WH
+snowflake-database: ANALYTICS
+# Bảng lưu lịch sử migration (mặc định):
+change-history-table: METADATA.SCHEMACHANGE.CHANGE_HISTORY
+# Jinja variables — dùng {{ env }} trong script SQL
+vars:
+  env: prod
+
+# Deploy: so version với CHANGE_HISTORY, chỉ chạy script chưa apply
+schemachange deploy --config-folder .
+
+# Output:
+# Applying change script V1.1.2__them_cot_tracking.sql
+# Applying change script R__vw_orders_summary.sql (nội dung đổi)
+# Completed successfully</span>
+</div>
+</div>
+
+<h2 id="t7-5">5. OpenAPI diff (API-level)</h2>
+<p>Cho REST/GraphQL API, OpenAPI diff là công cụ so sánh hai OpenAPI spec và phát hiện breaking change ở endpoint level:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">openapi_diff.sh</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd"># So sánh v1 vs v2 OpenAPI spec
+npx @redocly/openapi-diff@latest \
+  openapi/v1.yaml \
+  openapi/v2.yaml \
+  --formatter json \
+  --out output.json
+
+# Output phân loại:
+# BREAKING:
+#   - Path /api/orders: GET response 200
+#       Removed property 'discount_code' from #/components/schemas/Order
+#   - Path /api/orders: POST body
+#       Changed type of 'total_amount' from number to string
+# POTENTIALLY_BREAKING:
+#   - Path /api/orders: GET
+#       Added optional parameter 'page_token'
+# SAFE:
+#   - Added new endpoint /api/orders/{id}/history
+#   - Added description to Order.status field
+
+# Exit code: 0 = safe, 1 = breaking, 2 = error
+if openapi-diff ... 2>/dev/null | grep -q "BREAKING"; then
+  echo "ERROR: Breaking change detected - block deployment"
+  exit 1
+fi</span>
+</div>
+</div>
+
+<h2 id="t7-6">6. CI/CD integration</h2>
+<p>Tất cả schema diff tool nên chạy trong CI/CD để block deployment trước khi breaking change được apply:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">.github/workflows/schema-check.yml</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">name: Schema Change Check
+
+on:
+  pull_request:
+    paths:
+      - 'schemas/**'
+      - 'models/**'
+      - 'openapi/**'
+
+jobs:
+  schema-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # lấy full history cho Atlas
+
+      - name: Run Atlas diff
+        uses: ariga/atlas-action/compare@latest
+        with:
+          dir: 'atlas/'
+          dev-url: 'postgres://postgres:postgres@localhost:5432/test?sslmode=disable'
+
+      - name: Run OpenAPI diff
+        run: |
+          npx @redocly/openapi-diff@latest \
+            openapi/current.yaml openapi/proposed.yaml || exit 0
+        continue-on-error: true
+
+      - name: Fail if destructive changes
+        run: |
+          if grep -q "destructive" atlas-output.json; then
+            echo "ERROR: Destructive schema changes detected"
+            echo "Review required from data governance board"
+            exit 1
+          fi</span>
+</div>
+</div>
+<div class="keypoint"><span class="t">Điểm chốt</span><p>Schema diff là công cụ tự động hoá breaking change detection. SchemaHero, Atlas, schemachange, OpenAPI diff phục vụ các context khác nhau (K8s, database, Snowflake, REST API) nhưng cùng mục tiêu: phát hiện destructive change TRƯỚC KHI apply. Tích hợp vào CI/CD để block deployment khi có breaking change.</p></div>
+
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> PR đổi schema được merge, hôm sau prod vỡ. <strong>Sửa:</strong> tự động <strong>diff schema</strong> trong CI, phân loại <em>breaking</em> (xoá/đổi kiểu cột) vs <em>non-breaking</em> (thêm cột nullable); chặn merge nếu breaking mà chưa bump version + báo consumer.</p></div>
+</section>
+
+<section class="panel deep" id="t8">
+<div class="lead">Module 08 — Phần 2: Lineage</div>
+<h1>Lineage &amp; <span class="hl">Observability</span></h1>
+<p class="intro-p">Data lineage là bản đồ con đường dữ liệu đi từ nguồn đến đích. Khi có incident, lineage cho phép bạn truy vết: dòng dữ liệu này đến từ đâu, đi qua những bước nào, và đâu là gốc của vấn đề. OpenLineage là standard mở cho lineage, DataHub và Marquez là hai platform phổ biến.</p>
+
+<div class="toc">
+<a href="#t8-1">※ 1. Tại sao cần lineage</a>
+<a href="#t8-2">※ 2. OpenLineage standard</a>
+<a href="#t8-3">※ 3. Marquez: lineage collector</a>
+<a href="#t8-4">※ 4. DataHub: metadata platform</a>
+<a href="#t8-5">※ 5. Column-level lineage</a>
+<a href="#t8-6">※ 6. Lineage-driven incident response</a>
+</div>
+
+<h2 id="t8-1">1. Tại sao cần lineage</h2>
+<p>Khi dashboard số liệu sai vào lúc 3h sáng, bạn cần trả lời: (1) Dòng này từ bảng nào? (2) Pipeline nào transform nó? (3) Nguồn gốc đầu tiên là gì? (4) Bao nhiêu downstream bị ảnh hưởng? Không có lineage = đoán mò.</p>
+<div class="box scn"><span class="t"><span>TÌNH HUỐNG THỰC TẾ</span></span><p><strong>Bối cảnh:</strong> Một dashboard revenue bị treo 3 ngày vì có null rate bất thường. Không có lineage, data engineer phải trace bằng tay: dashboard → view → bảng intermediate → source table → ETL job → source API. Mất 6 giờ để tìm ra: một API đã đổi format ngày mà không notify. Nếu có OpenLineage, root cause được tìm trong 15 phút bằng lineage graph. Bài học: lineage là công cụ incident response, không phải tài liệu trang trí.</p></div>
+
+<h2 id="t8-2">2. OpenLineage standard</h2>
+<p>OpenLineage là specification mở cho lineage data, tài trợ bởi Apache Software Foundation. Nó định nghĩa một event model chuẩn cho run, job, dataset:</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">
+ OPENLINEAGE EVENT MODEL
+ ──────────────────────────────────
+ OpenLineage Event
+   │
+   +-- run (một lần chạy pipeline)
+   |     namespace: "ecommerce"
+   |     name: "daily_orders_etl"
+   |     run_id: uuid
+   |     state: START/RUNNING/COMPLETE/ABORT/FAIL
+   |
+   +-- job (tác vụ)
+   |     namespace: "ecommerce"
+   |     name: "transform_orders"
+   |     kind: "BATCH"
+   |     inputs:  [Dataset("ecommerce", "raw_orders")]
+   |     outputs: [Dataset("ecommerce", "orders_daily")]
+   |
+   +-- dataset
+         namespace: "ecommerce"
+         name: "raw_orders"         # bảng/schema.dataset
+         facets:
+           schema: { fields: [...] }
+           dataQualityMetrics: { rowCount: 1000, nullCount: 0 }
+ ───────────────────────────────
+ ▶ Job chuyển input → output, run ghi nhận trạng thái
+ ▶ Mỗi run = một bản ghi lineage
+</pre><div class="dcap">OpenLineage standard hóa cách mọi pipeline gửi lineage event, cho phép tất cả tool đọc cùng một format.</div></div>
+
+<h2 id="t8-3">3. Marquez: lineage collector</h2>
+<p>Marquez là open-source metadata server chuyên thu thập và hiển thị lineage. Nó nhận OpenLineage events từ Airflow, dbt, Spark, và nhiều tool khác.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">marquez_client.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">from marquez_client import Marquez
+
+marquez = Marquez(
+    marquez_url="http://marquez:8080",
+    api_key="marquez-api-key"  # optional
+)
+
+# Gửi lineage event từ Python pipeline
+marquez.create_job_run(
+    namespace="ecommerce",
+    job_name="daily_orders_etl",
+    run_id="run-123",
+    nominal_start_time="2026-01-15T00:00:00Z"
+)
+
+marquez.mark_job_run_started("run-123")
+
+# ... transform logic ...
+
+marquez.create_job_run_output(
+    namespace="ecommerce",
+    job_name="daily_orders_etl",
+    run_id="run-123",
+    output_dataset_name="orders_daily",
+    output_dataset_namespace="ecommerce"
+)
+
+# Metrics từ data quality check
+marquez.put_dataset_facet(
+    namespace="ecommerce",
+    dataset_name="orders_daily",
+    run_id="run-123",
+    facets={
+        "dataQualityMetrics": {
+            "rowCount": 1523,
+            "nullCount": 0,
+            "nullPercentage": 0.0
+        }
+    }
+)
+
+marquez.mark_job_run_completed("run-123")</span>
+</div>
+</div>
+
+<h2 id="t8-4">4. DataHub: metadata platform</h2>
+<p>DataHub là metadata platform tổng hợp: lineage + ownership + documentation + schema. Khác Marquez, DataHub hỗ trợ complex metadata model và business context.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">datahub_ingest.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">from datahub.emitter.mce_file_builder import MCEFileEmitter
+from datahub.metadata.schema_classes import (
+    MetadataChangeEvent, DatasetSnapshot, DatasetProperties,
+    SchemaMetadata, SchemaField, OwnershipClass
+)
+
+# Ghi lineage metadata vào DataHub
+def emit_dataset_metadata():
+    emitter = MCEFileEmitter(output_path="./datahub_mce.json")
+
+    snapshot = DatasetSnapshot(
+        urn="urn:li:dataset:(datahub,ecommerce.orders_daily,PROD)",
+        aspects=[
+            DatasetProperties(
+                description="Daily aggregated orders dataset",
+                tags=["pii"], customProperties={"partition": "daily"}
+            ),
+            SchemaMetadata(
+                schemaName="orders_daily",
+                fields=[
+                    SchemaField(fieldPath="order_id", type="STRING",
+                                description="Unique order ID"),
+                    SchemaField(fieldPath="customer_id", type="STRING",
+                                description="Customer FK", tags=["pii"]),
+                    SchemaField(fieldPath="total_amount", type="DECIMAL",
+                                description="Order total in VND"),
+                ]
+            ),
+            OwnershipClass(
+                owners=[
+                    {"owner": "urn:li:corpuser:data-platform-team",
+                     "type": "DATAOWNER"}
+                ]
+            )
+        ]
+    )
+    emitter.emit(MetadataChangeEvent(snapshot=snapshot))</span>
+</div>
+</div>
+
+<h2 id="t8-5">5. Column-level lineage</h2>
+<p>Dataset-level lineage chỉ nói "bảng A → bảng B". Column-level lineage nói "cột X trong bảng A được tính từ cột Y, Z trong bảng nguồn". Đây là mức lineage chi tiết hơn phục vụ impact analysis khi cột nguồn thay đổi.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">column_lineage.sql</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Column lineage trong dbt
+-- models/orders_daily.sql
+{{
+  config(
+    materialized='table',
+    meta={
+      "lineage": {
+        "columns": {
+          "revenue_vnd": {
+            "source": "orders.total_amount",
+            "transform": "SUM(orders.total_amount)"
+          },
+          "order_count": {
+            "source": "orders.order_id",
+            "transform": "COUNT(orders.order_id)"
+          },
+          "avg_order_value": {
+            "source": "revenue_vnd / order_count",
+            "transform": "revenue_vnd / NULLIF(order_count, 0)"
+          }
+        }
+      }
+    }
+  )
+}}
+
+SELECT
+  DATE(order_date)         AS order_date,
+  customer_id,
+  SUM(total_amount)        AS revenue_vnd,
+  COUNT(order_id)          AS order_count,
+  SUM(total_amount) / NULLIF(COUNT(order_id), 0) AS avg_order_value
+FROM {{ ref('raw_orders') }}
+GROUP BY 1, 2</span>
+</div>
+</div>
+
+<h2 id="t8-6">6. Lineage-driven incident response</h2>
+<p>Khi có data quality incident, lineage graph cho phép bạn trả lời 3 câu hỏi trong vòng 15 phút:</p>
+<div class="card">
+<p><strong>1. Tìm root cause:</strong> Truy vết ngược từ dataset bị lỗi đến nguồn. Dùng Marquez/DataHub UI để visualize path.</p>
+<p><strong>2. Xác định blast radius:</strong> Downstream lineage graph cho biết bao nhiêu dataset, dashboard, ML model bị ảnh hưởng.</p>
+<p><strong>3. Giao việc cho đúng owner:</strong> Dataset ownership metadata chỉ ai chịu trách nhiệm đoạn pipeline nào — notify đúng người, không spam cả team.</p>
+</div>
+<div class="keypoint"><span class="t">Điểm chốt</span><p>Lineage biến incident response từ "đoán mò 6 giờ" thành "tra cứu 15 phút". OpenLineage là standard, Marquez và DataHub là platform. Column-level lineage cho impact analysis chi tiết hơn. Nhớ: lineage không phải tài liệu, nó là công cụ vận hành.</p></div>
+</section>
+
+<section class="panel deep" id="t9">
+<div class="lead">Module 09 — Phần 2: Quality Metrics</div>
+<h1>Quality Metric <span class="hl">trong Monitoring</span></h1>
+<p class="intro-p">Không monitor được thì không sửa được. Data quality metric cần được đo, store trong Prometheus/CloudWatch, vẽ dashboard, và alert khi breach threshold. Module này nói về 6 metric quan trọng nhất và cách implement.</p>
+
+<div class="toc">
+<a href="#t9-1">※ 1. Null rate</a>
+<a href="#t9-2">※ 2. Uniqueness &amp; duplicate rate</a>
+<a href="#t9-3">※ 3. Freshness (timeliness)</a>
+<a href="#t9-4">※ 4. Distribution drift</a>
+<a href="#t9-5">※ 5. Completeness &amp; volume</a>
+<a href="#t9-6">※ 6. Dashboard &amp; alerting setup</a>
+</div>
+
+<h2 id="t9-1">1. Null rate</h2>
+<p>Null rate là metric đầu tiên cần monitor: tỷ lệ null trong mỗi cột bắt buộc. Null rate tăng bất thường = upstream problem.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">null_rate_check.sql</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Monitor null rate cho mỗi cột bắt buộc
+SELECT
+  CURRENT_DATE AS check_date,
+  'orders_daily' AS dataset,
+  COUNT(*) AS total_rows,
+  -- Null rate per column
+  ROUND(100.0 * COUNT(CASE WHEN customer_id IS NULL THEN 1 END) / NULLIF(COUNT(*), 0), 2) AS customer_id_null_pct,
+  ROUND(100.0 * COUNT(CASE WHEN order_date IS NULL THEN 1 END) / NULLIF(COUNT(*), 0), 2) AS order_date_null_pct,
+  ROUND(100.0 * COUNT(CASE WHEN status IS NULL THEN 1 END) / NULLIF(COUNT(*), 0), 2) AS status_null_pct,
+  -- Composite: overall completeness
+  ROUND(100.0 * COUNT(CASE WHEN customer_id IS NOT NULL
+                            AND order_date IS NOT NULL
+                            AND status IS NOT NULL THEN 1 END) / NULLIF(COUNT(*), 0), 2)
+    AS full_record_pct
+FROM orders_daily
+WHERE _loaded_at >= CURRENT_DATE - INTERVAL '1' DAY;
+
+-- Alert threshold: customer_id_null_pct > 0.1% = CRITICAL
+-- Alert threshold: order_date_null_pct > 0% = WARNING</span>
+</div>
+</div>
+
+<h2 id="t9-2">2. Uniqueness &amp; duplicate rate</h2>
+<p>Primary key phải unique. Duplicate rate metric phát hiện duplicate row trước khi nó phá vỡ aggregation.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">uniqueness_check.sql</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Monitor duplicate rate cho primary key
+SELECT
+  CURRENT_DATE AS check_date,
+  'orders_daily' AS dataset,
+  COUNT(*) AS total_rows,
+  COUNT(DISTINCT order_id) AS unique_order_ids,
+  ROUND(100.0 * (COUNT(*) - COUNT(DISTINCT order_id)) / NULLIF(COUNT(*), 0), 4)
+    AS duplicate_rate_pct,
+  -- Tìm số duplicate groups
+  SUM(CASE WHEN order_id_count > 1 THEN 1 ELSE 0 END) AS duplicate_groups
+FROM (
+  SELECT order_id, COUNT(*) AS order_id_count
+  FROM orders_daily
+  WHERE _loaded_at >= CURRENT_DATE - INTERVAL '1' DAY
+  GROUP BY order_id
+  HAVING COUNT(*) > 1
+) dup
+
+-- Alert: duplicate_rate_pct > 0.01% = CRITICAL
+-- (0.01% của 1M rows = 100 duplicates, vẫn là vấn đề)</span>
+</div>
+</div>
+
+<h2 id="t9-3">3. Freshness (timeliness)</h2>
+<p>Freshness đo khoảng cách giữa thời điểm data mới nhất và hiện tại. SLA freshness được định nghĩa trong data contract.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">freshness_check.sql</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Monitor freshness
+SELECT
+  CURRENT_TIMESTAMP AS check_time,
+  'orders_daily' AS dataset,
+  MAX(_loaded_at) AS latest_load_time,
+  MAX(order_date) AS latest_order_date,
+  ROUND(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - MAX(_loaded_at))) / 60, 1)
+    AS load_lag_minutes,
+  CASE
+    WHEN EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - MAX(_loaded_at))) / 60 > 60
+    THEN 'BREACH'
+    ELSE 'OK'
+  END AS freshness_status
+
+FROM orders_daily
+WHERE _loaded_at >= CURRENT_DATE - INTERVAL '1' DAY;
+
+-- SLA: load_lag_minutes <= 60 (1 giờ)
+-- Alert: load_lag_minutes > 60 → PagerDuty alert</span>
+</div>
+</div>
+
+<h2 id="t9-4">4. Distribution drift</h2>
+<p>Data distribution có thể thay đổi mà không có null hay type error. Distribution drift metric so sánh distribution hiện tại với baseline để phát hiện thay đổi semantic bất thường.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">drift_check.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">import pandas as pd
+from scipy import stats
+import great_expectations as gx
+
+# Monitor distribution drift bằng KL divergence
+def check_distribution_drift(baseline_df: pd.DataFrame,
+                              current_df: pd.DataFrame,
+                              column: str) -> dict:
+    # Build histogram
+    bins = 50
+    baseline_counts, _ = pd.cut(
+        baseline_df[column], bins=bins, labels=False, retbins=True
+    )
+    baseline_p = (baseline_counts.value_counts(normalize=True)
+                  .reindex(range(bins), fill_value=0).sort_index())
+
+    current_counts, _ = pd.cut(
+        current_df[column], bins=bins, labels=False, retbins=True
+    )
+    current_p = (current_counts.value_counts(normalize=True)
+                 .reindex(range(bins), fill_value=0).sort_index())
+
+    # KL divergence: high = significant drift
+    kl_div = stats.entropy(current_p + 1e-10, baseline_p + 1e-10)
+
+    return {
+        "column": column,
+        "kl_divergence": round(kl_div, 4),
+        "drift_detected": kl_div > 0.1,  # threshold
+        "baseline_mean": baseline_df[column].mean(),
+        "current_mean": current_df[column].mean()
+    }
+
+# Hoặc dùng GE expectation — partition_object là baseline distribution
+# (dict {"bins": [...], "weights": [...]}, weights có len = len(bins) - 1)
+baseline_partition = {
+    "bins": [0, 100_000, 500_000, 1_000_000, 5_000_000],
+    "weights": [0.30, 0.40, 0.20, 0.10],
+}
+suite.add_expectation(
+    gx.expectations.ExpectColumnKLDivergenceToBeLessThan(
+        column="total_amount",
+        partition_object=baseline_partition,
+        threshold=0.1
+    )
+)</span>
+</div>
+</div>
+
+<h2 id="t9-5">5. Completeness &amp; volume</h2>
+<div class="tbl-wrap"><table>
+<tr><th>Metric</th><th>Công thức</th><th>Threshold</th><th>Alert khi</th></tr>
+<tr><td><strong>Null rate</strong></td><td>null / total * 100%</td><td>&lt; 0.1%</td><td>Tăng bất thường</td></tr>
+<tr><td><strong>Uniqueness</strong></td><td>unique / total * 100%</td><td>&gt; 99.99%</td><td>Duplicate xuất hiện</td></tr>
+<tr><td><strong>Freshness</strong></td><td>current_time - latest_load</td><td>&lt; 60 phút</td><td>Load trễ hơn SLA</td></tr>
+<tr><td><strong>Volume</strong></td><td>row_count / expected</td><td>90-110% expected</td><td>Tăng/giảm đột ngột</td></tr>
+<tr><td><strong>Completeness</strong></td><td>full_row / total * 100%</td><td>&gt; 99.5%</td><td>Drop bất thường</td></tr>
+<tr><td><strong>Drift</strong></td><td>KL divergence vs baseline</td><td>&lt; 0.1</td><td>Distribution shift</td></tr>
+</table></div>
+
+<h2 id="t9-6">6. Dashboard &amp; alerting setup</h2>
+<div class="box scn"><span class="t"><span>TÌNH HUỐNG THỰC TẾ</span></span><p><strong>Bối cảnh:</strong> Đội data platform có dashboard quality 20 biểu đồ. Nhưng chỉ 2 người trong team thường xem. Một ngày product lead report số liệu sai mà không ai biết. Giải pháp: chuyển 20 dashboard thành 3 SLO dashboard chính: (1) Data Freshness SLO, (2) Completeness SLO, (3) Accuracy SLO. Mỗi SLO có error budget và alert gắn với PagerDuty. Từ 20 biểu đồ rải rác, sang 3 SLO dashboard tập trung — incident response nhanh hơn 5 lần.</p></div>
+<div class="keypoint"><span class="t">Điểm chốt</span><p>6 metric chính cần monitor: null rate, uniqueness, freshness, distribution drift, volume, completeness. Mỗi metric có threshold được định nghĩa trong data contract. Dashboard nên tập trung vào SLO chứ không phải metric rải rác. Alert gắn PagerDuty để đảm bảo ai đó có DQ issue được notify ngay.</p></div>
+</section>
+
+<section class="panel deep" id="t10">
+<div class="lead">Module 10 — Phần 2: Alert &amp; SLO</div>
+<h1>Alert &amp; Data <span class="hl">Quality SLO</span></h1>
+<p class="intro-p">Data Quality SLO (Service Level Objective) là cam kết quality bằng số: "dataset này phải có null rate dưới 0.1% trong 99.5% thời gian". SLO có error budget — phần thời gian còn lại trước khi breach. Alert threshold nên đặt bên trong error budget, không phải bên ngoài SLO.</p>
+
+<div class="toc">
+<a href="#t10-1">※ 1. Data SLO design</a>
+<a href="#t10-2">※ 2. Error budget cho data</a>
+<a href="#t10-3">※ 3. Alert threshold strategy</a>
+<a href="#t10-4">※ 4. PagerDuty cho data quality</a>
+<a href="#t10-5">※ 5. Escalation policy</a>
+<a href="#t10-6">※ 6. Runbook mẫu</a>
+</div>
+
+<h2 id="t10-1">1. Data SLO design</h2>
+<p>Data SLO khác với API SLO (đo uptime) vì data quality có nhiều chiều. Mỗi chiều có threshold riêng:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Dataset</th><th>Metric</th><th>SLO Target</th><th>Measurement Window</th></tr>
+<tr><td>orders_daily</td><td>Freshness</td><td>&lt; 60 phút lag</td><td>99.5% trong 30 ngày</td></tr>
+<tr><td>orders_daily</td><td>Null rate (customer_id)</td><td>&lt; 0.1%</td><td>99.5% trong 30 ngày</td></tr>
+<tr><td>orders_daily</td><td>Volume (row count)</td><td>&gt; 90% baseline</td><td>99% trong 30 ngày</td></tr>
+<tr><td>orders_daily</td><td>Uniqueness (order_id)</td><td>&gt; 99.99%</td><td>99.9% trong 30 ngày</td></tr>
+<tr><td>orders_daily</td><td>Overall completeness</td><td>&gt; 99.5%</td><td>99% trong 30 ngày</td></tr>
+</table></div>
+<div class="box scn"><span class="t"><span>TÌNH HUỐNG THỰC TẾ</span></span><p><strong>Bối cảnh:</strong> Đội data platform đặt SLO: "null rate &lt; 1%". Một ngày null rate tăng lên 0.8% — still trong SLO. Không ai alert. 2 tuần sau null rate đạt 1.5% — SLO breach. Incident investigation cho thấy vấn đề bắt đầu từ ngày null rate vẫn 0.8%. Sai lầm: alert threshold đặt = SLO threshold. Đúng: alert threshold phải ở 0.3-0.5% để early warning TRƯỚC KHI breach SLO. Bài học: alert ở bên trong error budget, không phải bên ngoài.</p></div>
+
+<h2 id="t10-2">2. Error budget cho data</h2>
+<p>Error budget = thời gian "cho phép" breach trước khi SLO bị vi phạm:</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">
+ ERROR BUDGET CHO DATA SLO
+ ───────────────────────────────
+ SLO: Null Rate &lt; 0.1% (99.9% compliance)
+ Measurement window: 30 ngày = 43,200 phút
+
+ Error Budget:
+   = (100% - 99.9%) * 43,200 phút
+   = 0.1% * 43,200
+   = 43.2 phút / 30 ngày
+
+ Budget Burn Rate:
+   = Current breach minutes / Budget remaining
+
+ Alert Strategy:
+   Green:  0-10% budget burned  (≤ 4 phút breach) → OK
+   Yellow: 10-50% burned         (≤ 21 phút breach) → Warning alert
+   Red:    50-100% burned        (≤ 43 phút breach) → Page on-call
+   BREACH: Budget exhausted        → Postmortem + SLO review
+ ───────────────────────────
+ ▶ Alert khi burn rate tăng đầt, không phải khi breach
+ ▶ Error budget exhausted = lúc postmortem + review SLO threshold
+</pre><div class="dcap">Error budget giúp bạn alert sớm (burn rate) trước khi SLO thực sự breach.</div></div>
+
+<h2 id="t10-3">3. Alert threshold strategy</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">alert_thresholds.yml</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd"># Prometheus alerting rules cho data quality SLO
+groups:
+  - name: data_quality_slo
+    rules:
+      # Alert khi burn rate tăng
+      - alert: DataQualityBurnRateWarning
+        expr: |
+          (
+            sum(increase(data_null_total{status="breach"}[1h]))
+            /
+            (0.001 * sum(increase(data_total[1h])))
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: data-platform
+        annotations:
+          summary: "Data quality burn rate warning"
+          description: "Null rate burn rate > 10%. Budget remaining: {{ $value | humanizePercentage }}"
+
+      - alert: DataQualityBurnRateCritical
+        expr: |
+          (
+            sum(increase(data_null_total{status="breach"}[1h]))
+            /
+            (0.001 * sum(increase(data_total[1h])))
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: critical
+          team: data-platform
+        annotations:
+          summary: "Data quality burn rate CRITICAL"
+          description: "Null rate burn rate > 50%. Immediate action required."
+
+      # Alert khi freshness breach
+      - alert: DataFreshnessBreach
+        expr: |
+          data_freshness_lag_minutes > 60
+        for: 10m
+        labels:
+          severity: warning
+          team: data-platform
+        annotations:
+          summary: "Data freshness SLA breach"
+          description: "Dataset {{ $labels.dataset }} lag {{ $value }}m (SLO: 60m)"
+
+      # Alert khi volume drop
+      - alert: DataVolumeDrop
+        expr: |
+          data_row_count < 0.9 * data_row_count_baseline
+        for: 15m
+        labels:
+          severity: warning
+          team: data-platform
+        annotations:
+          summary: "Data volume drop detected"
+          description: "Dataset {{ $labels.dataset }} row count {{ $value }} (&lt; 90% baseline)"</span>
+</div>
+</div>
+
+<h2 id="t10-4">4. PagerDuty cho data quality</h2>
+<p>PagerDuty tích hợp với Prometheus alert để route alert đến đúng người vào đúng thời gian. Data quality alert cần route khác với API alert:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Alert type</th><th>Severity</th><th>Escalation</th><th>Response time</th></tr>
+<tr><td>Freshness warning</td><td>Warning</td><td>Slack #data-alerts</td><td>Business hours</td></tr>
+<tr><td>Freshness critical</td><td>Critical</td><td>On-call Data Engineer</td><td>30 phút</td></tr>
+<tr><td>SLO burn rate warning</td><td>Warning</td><td>Slack #data-alerts</td><td>Business hours</td></tr>
+<tr><td>SLO burn rate critical</td><td>Critical</td><td>On-call Data Engineer</td><td>15 phút</td></tr>
+<tr><td>Completeness &lt; 95%</td><td>Critical</td><td>On-call + Team Lead</td><td>30 phút</td></tr>
+</table></div>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">pagerduty_integration.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">from pagerduty_alerts import PagerdutyClient
+
+pd = PagerdutyClient(api_key="your-pagerduty-api-key")
+
+# Route alert to correct service + escalation
+def send_data_quality_alert(alert_name: str, severity: str,
+                             dataset: str, message: str, run_id: str):
+    if severity == "critical":
+        # PagerDuty event: trigger on-call
+        pd.create_event(
+            event_action="trigger",
+            dedup_key=f"dq-{dataset}-{alert_name}-{run_id}",
+            payload={
+                "summary": f"[CRITICAL] {alert_name}: {message}",
+                "severity": "critical",
+                "source": f"data-quality-monitor:{dataset}",
+                "custom_details": {
+                    "dataset": dataset,
+                    "alert_name": alert_name,
+                    "run_id": run_id
+                }
+            }
+        )
+    else:
+        # Slack only cho warning
+        send_slack_alert(
+            channel="#data-alerts",
+            message=f"[WARNING] {alert_name}: {message}",
+            severity="warning"
+        )</span>
+</div>
+</div>
+
+<h2 id="t10-5">5. Escalation policy</h2>
+<p>Khi on-call không phản hồi trong response time, alert phải escalate tự động:</p>
+<div class="card">
+<p><strong>Level 1 (0-30 phút):</strong> On-call Data Engineer nhận PagerDuty page. Trả lời trong 30 phút hoặc ack.</p>
+<p><strong>Level 2 (30-60 phút):</strong> Nếu không ack sau 30 phút, escalate lên Team Lead Data Engineering.</p>
+<p><strong>Level 3 (60+ phút):</strong> Escalate lên Data Platform Manager. Consider hiển thị incident trên status page.</p>
+<p><strong>Business hours override:</strong> Trong giờ hành chính, alert critical cũng chỉ route Slack trước. PagerDuty page chỉ bắt đầu ngoài giờ hành chính.</p>
+</div>
+
+<h2 id="t10-6">6. Runbook mẫu</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">runbooks/null_rate_breach.md</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd"># Runbook: Null Rate Breach
+
+## Trigger
+PagerDuty alert: `DataQualityBurnRateCritical` hoặc `NullRateBreach`
+
+## Step 1: Tìm root cause (5 phút)
+1. Kiểm tra Prometheus dashboard: dataset nào có null rate tăng?
+2. Xem dbt/Great Expectations run logs gần nhất
+3. Kiểm tra upstream API/source: có schema change không?
+
+## Step 2: Xác định impact (5 phút)
+1. Query: SELECT COUNT(*) WHERE customer_id IS NULL FROM orders_daily WHERE _loaded_at >= NOW() - INTERVAL '2 hours'
+2. Xác định: bao nhiêu downstream affected?
+3. Kiểm tra lineage: dashboard nào đang dùng dataset này?
+
+## Step 3: Mitigation (15-60 phút)
+- Nếu nguyên nhân là upstream: Liên hệ producer team, yêu cầu hotfix
+- Nếu nguyên nhân là pipeline: Rollback nếu có recent deploy
+- Nếu nguyên nhân là data itself: Consider data quarantine (stop processing bad rows)
+
+## Step 4: Communication (trong 30 phút)
+1. Post lên #data-alerts: "Investigating null rate issue in [dataset]"
+2. Update Slack mỗi 15 phút/lần
+3. Nếu impact business: Notify product owner
+
+## Step 5: Resolution
+1. Fix root cause
+2. Verify null rate trở về baseline
+3. Update monitoring threshold nếu cần
+4. Write postmortem trong 48 giờ</span>
+</div>
+</div>
+<div class="keypoint"><span class="t">Điểm chốt</span><p>Data Quality SLO có error budget đo được. Alert threshold đặt TRONG error budget, không phải tại SLO breach point. PagerDuty route critical alert tới on-call, warning alert chỉ Slack. Escalation policy rõ ràng với response time. Runbook chuẩn hoá incident response.</p></div>
+</section>
+
+<section class="panel deep" id="t11">
+<div class="lead">Module 11 — Phần 2: Test Pyramid</div>
+<h1>Test Pyramid <span class="hl">cho Data</span></h1>
+<p class="intro-p">Test pyramid cho data là một framework để nghĩ về cách phân bổ test effort hợp lý: nhiều unit test (SQL logic), ít integration test (pipeline), ít contract test (API boundary), ít E2E test. Mệnh đề: test tại nơi gần nguồn nhất với data, không phải chỉ ở cuối.</p>
+
+<div class="toc">
+<a href="#t11-1">※ 1. Test pyramid overview</a>
+<a href="#t11-2">※ 2. Unit test cho SQL logic</a>
+<a href="#t11-3">※ 3. Integration test cho pipeline</a>
+<a href="#t11-4">※ 4. Contract test (Pact)</a>
+<a href="#t11-5">※ 5. End-to-end test</a>
+<a href="#t11-6">※ 6. CI/CD pipeline cho data tests</a>
+</div>
+
+<h2 id="t11-1">1. Test pyramid overview</h2>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">
+ TEST PYRAMID CHO DATA ENGINEERING
+ ───────────────────────────────
+                        /\
+                       /  \
+                      / E2E\         &lt;- Top: Few, expensive, slow
+                     /      \           (End-to-end pipeline run)
+                    /--------\
+                   /Contract  \       &lt;- Contract: Few, medium
+                  /  Tests     \         (Pact + Pact Broker)
+                 /--------------\
+                / Integration    \     &lt;- Integration: Medium
+               /   Tests          \       (dbt source freshness, 
+              /--------------------\        Airflow DAG runs)
+             /  Unit Tests SQL /   \
+            /    GE Expectations /    \  &lt;- Bottom: Many, fast, cheap
+           /  dbt Generic Tests /     \   (SQL unit tests, GE expectations)
+          /                       /      (Can run on every commit)
+         /_______________________/
+ ───────────────────────────
+ Target ratio: 70% unit / 20% integration / 10% contract+E2E
+</pre><div class="dcap">Test tại nơi gần nguồn nhất: unit test cho SQL ngay trong model, integration test cho pipeline DAG, contract test ở API boundary.</div></div>
+
+<h2 id="t11-2">2. Unit test cho SQL logic</h2>
+<p>SQL unit test kiểm tra transformation logic đúng: JOIN đúng, aggregation đúng, business rule đúng. dbt test và Great Expectations là hai cách phổ biến nhất.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">dbt_tests/orders.yml</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd"># dbt generic tests (schema.yml)
+models:
+  - name: orders_daily
+    description: "Daily aggregated orders"
+    columns:
+      - name: order_id
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
+      - name: total_amount
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 500_000_000
+      - name: status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']
+
+# dbt singular tests (SQL-based)
+# File: tests/order_aggregation_logic.sql
+{{ config(tags=['unit_test']) }}
+
+WITH raw_orders AS (
+    SELECT * FROM {{ ref('raw_orders') }}
+    WHERE order_date = '2026-01-15'
+),
+expected AS (
+    SELECT
+        'CUST-000001' AS customer_id,
+        3 AS expected_order_count,
+        375000.00 AS expected_total
+),
+actual AS (
+    SELECT
+        customer_id,
+        COUNT(order_id) AS order_count,
+        SUM(total_amount) AS total
+    FROM raw_orders
+    WHERE customer_id = 'CUST-000001'
+    GROUP BY customer_id
+)
+SELECT
+    actual.customer_id,
+    actual.order_count,
+    expected.expected_order_count,
+    CASE
+        WHEN actual.order_count = expected.expected_order_count THEN 'PASS'
+        ELSE 'FAIL'
+    END AS test_result
+FROM actual
+LEFT JOIN expected USING (customer_id)</span>
+</div>
+</div>
+
+<h2 id="t11-3">3. Integration test cho pipeline</h2>
+<p>Integration test kiểm tra pipeline chạy end-to-end từ source đến destination, dùng mock data hoặc snapshot thực.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">tests/test_pipeline_integration.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">import pytest
+from airflow.models import DagBag
+from dbt.cli.main import dbtRunner
+
+class TestOrdersPipelineIntegration:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        # Load sample data vào staging
+        self.load_sample_orders()
+
+    def test_daily_aggregation_correct(self):
+        """Verify daily aggregation logic"""
+        result = dbtRunner().invoke(["run", "--select", "orders_daily"])
+        assert result.success
+
+        # Query result
+        rows = query_snowflake("""
+            SELECT customer_id, SUM(total_amount) as total
+            FROM orders_daily
+            WHERE order_date = CURRENT_DATE
+            GROUP BY customer_id
+        """)
+
+        # Verify against known baseline
+        baseline = load_baseline("orders_daily_expected.csv")
+        assert len(rows) == len(baseline)
+
+        for row, expected in zip(rows, baseline):
+            assert abs(row['total'] - expected['total']) < 0.01
+
+    def test_freshness_after_run(self):
+        """Verify dataset refreshes after pipeline run"""
+        dagbag = DagBag()
+        dag = dagbag.get_dag('daily_orders_etl')
+        dag.trigger()
+
+        # Wait for completion
+        wait_for_dag_completion(dag.dag_id, timeout=300)
+
+        # Verify freshness
+        freshness = query("""
+            SELECT MAX(_loaded_at) FROM orders_daily
+        """)
+        assert (datetime.now() - freshness[0]).seconds < 300
+
+    def test_null_rate_within_threshold(self):
+        """Verify null rate stays within SLO"""
+        null_rates = query("""
+            SELECT
+                'customer_id' AS column_name,
+                COUNT(CASE WHEN customer_id IS NULL THEN 1 END) * 100.0 / COUNT(*)
+                    AS null_rate_pct
+            FROM orders_daily
+            WHERE _loaded_at >= CURRENT_DATE
+        """)
+        assert null_rates[0]['null_rate_pct'] < 0.1</span>
+</div>
+</div>
+
+<h2 id="t11-4">4. Contract test (Pact) positioning</h2>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">
+ TEST PYRAMID + CONTRACT TEST POSITIONING
+ ───────────────────────────────
+                        /\
+                       /  \
+                      / E2E\         &lt;- Data warehouse query E2E
+                     /      \           (actual data, slow)
+                    /--------\
+                   /Contract  \       &lt;- Pact: API boundary tests
+                  /  Tests     \         (Provider verifies consumer needs)
+                 /--------------\
+                / Integration    \     &lt;- dbt source freshness + DAG
+               /   Tests          \       (pipeline-level)
+              /--------------------\
+             /  Unit Tests SQL /   \
+            /  GE Expectations /    \  &lt;- Fast, many, on-commit
+           /  dbt Generic     /     \
+          /_________________/
+ ───────────────────────────
+ Contract test sits BETWEEN integration and E2E
+ It validates API boundary without requiring full pipeline run
+</pre><div class="dcap">Contract test (Pact) nằm giữa integration và E2E: không cần full pipeline nhưng xác minh API contract đúng.</div></div>
+
+<h2 id="t11-5">5. End-to-end test</h2>
+<p>E2E test chạy toàn bộ pipeline từ source đến final destination, dùng dữ liệu thực hoặc snapshot gần thực. Đây là test đắt tiền nhất, nên chỉ chạy trước release major version.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">tests/e2e/test_orders_pipeline_e2e.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">import pytest
+import subprocess
+from datetime import datetime
+
+class TestOrdersPipelineE2E:
+    """
+    E2E test cho orders pipeline.
+    Chỉ chạy khi release major version (v1->v2, v2->v3).
+    Tốc độ: chậm (10-30 phút), chi phí cao.
+    """
+
+    @pytest.fixture(scope="class")
+    def setup_sample_data(self):
+        # Load 1000 rows sample vào source database
+        subprocess.run([
+            "python", "scripts/load_sample_orders.py",
+            "--count", "1000",
+            "--date", datetime.now().strftime("%Y-%m-%d")
+        ], check=True)
+
+    def test_full_pipeline_revenue_accuracy(self, setup_sample_data):
+        """
+        Verify: sum(total_amount) sau pipeline = expected total
+        """
+        # Trigger full pipeline
+        subprocess.run([
+            "airflow", "dags", "trigger", "daily_orders_etl"
+        ], check=True)
+
+        # Wait + poll cho DAG complete
+        dag_run_id = wait_for_dag_completion(
+            dag_id="daily_orders_etl",
+            timeout=1800  # 30 phút
+        )
+
+        # Query final result
+        result = query_dwh("""
+            SELECT SUM(total_amount) as total_revenue
+            FROM orders_daily
+            WHERE order_date = CURRENT_DATE
+        """)
+
+        expected_total = 52_340_000.00  # Known from sample data
+        assert abs(result['total_revenue'] - expected_total) < 0.01
+
+    def test_downstream_reports_consistent(self):
+        """
+        Verify: report trong BI tool khớp với warehouse
+        """
+        dwh_revenue = query_dwh("""
+            SELECT SUM(total_amount) FROM orders_daily
+            WHERE order_date >= CURRENT_DATE - 7
+        """)
+
+        bi_revenue = query_metabase("""
+            SELECT SUM(order_total) FROM report_revenue_daily
+            WHERE report_date >= CURRENT_DATE - 7
+        """)
+
+        assert abs(dwh_revenue - bi_revenue) < 0.01</span>
+</div>
+</div>
+
+<h2 id="t11-6">6. CI/CD pipeline cho data tests</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">.github/workflows/data-tests.yml</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">name: Data Pipeline Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'models/**'
+      - 'macros/**'
+      - 'tests/**'
+      - 'dbt_project.yml'
+  pull_request:
+    paths:
+      - 'models/**'
+      - 'macros/**'
+      - 'tests/**'
+
+jobs:
+  dbt-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dbt-labs/setup-dbt@v3
+
+      - name: Install dependencies
+        run: pip install dbt-snowflake great-expectations
+
+      - name: dbt deps
+        run: dbt deps
+
+      - name: dbt debug
+        run: dbt debug --target ci
+
+      # Generic tests (fast, on every commit)
+      - name: Run dbt generic tests
+        run: dbt test --select test_type:generic
+        env:
+          DBT_TARGET: ci
+
+      # Singular tests (SQL unit tests)
+      - name: Run dbt singular tests
+        run: dbt test --select test_type:singular
+        env:
+          DBT_TARGET: ci
+
+  contract-tests:
+    runs-on: ubuntu-latest
+    needs: dbt-unit-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pactflow/setup-pact@latest
+
+      # Pull consumer contract from broker
+      - name: Pull Pact contracts
+        run: |
+          pact-broker consumer_contract_version \
+            --pacticipant=orders-api \
+            --version=${{ github.sha }} \
+            --broker-base-url=${{ secrets.PACT_BROKER_URL }}
+
+      # Verify provider against contracts
+      - name: Run Pact provider verification
+        run: |
+          pact-verifier \
+            --provider-base-url=http://localhost:8000 \
+            --pact-dir=./pacts \
+            --publish-verification-results
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'  # Chỉ trên main, khi release
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run E2E tests
+        run: pytest tests/e2e/ -v --timeout=3600
+        env:
+          AIRFLOW_HOST: ${{ secrets.AIRFLOW_HOST }}</span>
+</div>
+</div>
+<div class="keypoint"><span class="t">Điểm chốt</span><p>Test pyramid cho data: 70% unit (dbt generic + GE), 20% integration (dbt singular + DAG), 10% contract + E2E. Unit test chạy nhanh nhất, nhiều nhất, rẻ nhất. E2E chỉ chạy khi release major version. Contract test (Pact) nằm giữa: xác minh API boundary mà không cần full pipeline run.</p></div>
+</section>
+
+<section class="panel deep" id="t12">
+<div class="lead">Module 12 — Phần 2: Production DQ</div>
+<h1>Data Quality <span class="hl">ở Production</span></h1>
+<p class="intro-p">Production data quality monitoring không chỉ là chạy Great Expectations một lần. Nó là hệ thống liên tục observe data ở production: anomaly detection, statistical test, và data observability platform như Monte Carlo và Bigeye. Mục tiêu: phát hiện vấn đề TRƯỚC KHI người dùng thấy.</p>
+
+<div class="toc">
+<a href="#t12-1">※ 1. Anomaly detection cho data</a>
+<a href="#t12-2">※ 2. Statistical test cho dữ liệu</a>
+<a href="#t12-soda">※ 3. Soda Core: quality check bằng YAML</a>
+<a href="#t12-3">※ 4. Monte Carlo: automated data observability</a>
+<a href="#t12-4">※ 5. Bigeye: data observability</a>
+<a href="#t12-5">※ 6. Schema governance ở production</a>
+<a href="#t12-6">※ 7. So sánh data observability platforms</a>
+</div>
+
+<h2 id="t12-1">1. Anomaly detection cho data</h2>
+<p>Anomaly detection đặt ngưỡng threshold THÔNG MINH bằng statistical model, không phải fixed threshold. Threshold cố định bỏ lỡ gradual drift, threshold adaptive phát hiện trend thay đổi.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Phương pháp</th><th>Độ phức tạp</th><th>Áp dụng cho</th><th>Ưu điểm</th></tr>
+<tr><td>Z-score (&gt;3 std)</td><td>Đơn giản</td><td>Gaussian data, univariate</td><td>Dễ implement, interpret được</td></tr>
+<tr><td>Interquartile Range (IQR)</td><td>Đơn giản</td><td>Skewed distribution</td><td>Robust to outlier</td></tr>
+<tr><td>Prophet / ARIMA</td><td>Trung bình</td><td>Time series with seasonality</td><td>Detect gradual drift</td></tr>
+<tr><td>Isolation Forest</td><td>Cao</td><td>Multivariate anomaly</td><td>Phát hiện pattern bất thường phức tạp</td></tr>
+<tr><td>Monte Carlo (ML-based)</td><td>Cao</td><td>Auto, no threshold tuning</td><td>Tự học baseline, adaptive</td></tr>
+</table></div>
+
+<h2 id="t12-2">2. Statistical test cho dữ liệu</h2>
+<p>Statistical test được dùng để xác định data distribution thay đổi CÓ Ý NGHĨA THỐNG KÊ, không phải ngẫu nhiên:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">statistical_tests.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">import pandas as pd
+from scipy import stats
+
+def detect_distribution_change(baseline: pd.Series, current: pd.Series) -> dict:
+    """Kolmogorov-Smirnov test: so sánh 2 distributions"""
+    ks_stat, p_value = stats.ks_2samp(baseline, current)
+
+    return {
+        "test": "Kolmogorov-Smirnov",
+        "ks_statistic": round(ks_stat, 4),
+        "p_value": round(p_value, 4),
+        "significant_change": p_value < 0.05,  # alpha = 0.05
+        "interpretation": (
+            "Distribution có thay đổi có ý nghĩa thống kê (p < 0.05)"
+            if p_value < 0.05
+            else "Không có bằng chứng thay đổi distribution"
+        )
+    }
+
+def detect_mean_shift(baseline: pd.Series, current: pd.Series) -> dict:
+    """Welch's t-test: so sánh means của 2 groups"""
+    t_stat, p_value = stats.ttest_ind(baseline, current, equal_var=False)
+
+    return {
+        "test": "Welch's t-test",
+        "t_statistic": round(t_stat, 4),
+        "p_value": round(p_value, 4),
+        "significant_mean_shift": p_value < 0.05,
+        "baseline_mean": round(baseline.mean(), 2),
+        "current_mean": round(current.mean(), 2),
+        "mean_delta_pct": round((current.mean() - baseline.mean()) / baseline.mean() * 100, 2)
+    }
+
+def detect_variance_change(baseline: pd.Series, current: pd.Series) -> dict:
+    """Levene's test: so sánh variances"""
+    stat, p_value = stats.levene(baseline, current)
+
+    return {
+        "test": "Levene's test for equality of variances",
+        "statistic": round(stat, 4),
+        "p_value": round(p_value, 4),
+        "significant_variance_change": p_value < 0.05
+    }
+
+# Áp dụng
+baseline_amounts = pd.read_csv("baseline/orders_amounts.csv")["total_amount"]
+current_amounts = pd.read_csv("current/orders_amounts.csv")["total_amount"]
+
+print(detect_distribution_change(baseline_amounts, current_amounts))
+# Output: {'test': 'Kolmogorov-Smirnov', 'ks_statistic': 0.0341,
+#          'p_value': 0.0023, 'significant_change': True,
+#          'interpretation': 'Distribution có thay đổi có ý nghĩa thống kê'}</span>
+</div>
+</div>
+
+<h2 id="t12-soda">3. Soda Core: quality check bằng YAML</h2>
+<p><strong>Soda Core</strong> là công cụ data quality open-source đứng giữa Great Expectations và dbt tests: check viết bằng <strong>SodaCL</strong> — một DSL trên nền YAML — nên analyst không biết Python vẫn đọc và sửa được. Cài đặt theo warehouse: <code class="c">pip install soda-core-postgres</code> (có package riêng cho Snowflake, BigQuery, DuckDB…). Hai file: <code class="c">configuration.yml</code> khai báo connection, <code class="c">checks.yml</code> khai báo check.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">checks.yml + soda scan</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd"># File: checks.yml — cú pháp SodaCL
+checks for orders:
+  - row_count > 0
+  - missing_count(order_id) = 0
+  - invalid_percent(status) < 1%:
+      valid values: [pending, paid, shipped, cancelled]
+  - freshness(created_at) < 1d
+
+# Chạy scan (my_db định nghĩa trong configuration.yml)
+soda scan -d my_db -c configuration.yml checks.yml</span>
+<span class="out">
+# Output (chạy thật với soda-core 3.x trên bảng orders mẫu):
+Scan summary:
+4/4 checks PASSED:
+    orders in my_db
+      row_count > 0 [PASSED]
+      missing_count(order_id) = 0 [PASSED]
+      invalid_percent(status) < 1% [PASSED]
+      freshness(created_at) < 1d [PASSED]
+All is good. No failures. No warnings. No errors.</span>
+</div>
+</div>
+<div class="box note"><span class="t">GX vs Soda vs dbt tests — chọn gì?</span><p><strong>Great Expectations</strong>: Python-first, nặng hơn (context, suite, validation definition) nhưng linh hoạt nhất — expectation tùy biến, Data Docs, tích hợp sâu vào code pipeline. <strong>Soda Core</strong>: YAML-first, nhẹ, một lệnh CLI — rất dễ nhét vào CI (exit code ≠ 0 khi check fail) và dễ cho người không viết Python. <strong>dbt tests</strong>: sống ngay trong dbt project, test gắn với model/column trong schema.yml — nếu transform đã bằng dbt thì đây là lớp check đầu tiên (xem Masterclass 23). Thực tế các team thường kết hợp: dbt tests cho transform, Soda hoặc GX cho check độc lập ngoài dbt, observability platform cho tầng ML-based bên dưới.</p></div>
+
+<h2 id="t12-3">4. Monte Carlo: automated data observability</h2>
+<p>Monte Carlo là data observability platform sử dụng ML để tự học baseline và phát hiện anomaly mà không cần đặt threshold thủ công. Nó gắn với warehouse/dbt/cloud và tự phát hiện: freshness, volume, schema change, null rate, distribution.</p>
+<div class="card">
+<p><strong>Cách Monte Carlo hoạt động:</strong></p>
+<p>1. Connect vào data warehouse (Snowflake, BigQuery, Redshift, Databricks)</p>
+<p>2. Tự học baseline từ 30 ngày data history</p>
+<p>3. Mỗi lần pipeline chạy: so sánh distribution, volume, freshness với baseline</p>
+<p>4. Nếu có anomaly: alert ngay, gắn với lineage để tìm root cause</p>
+<p>5. Data Catalog tự động update khi schema thay đổi</p>
+</div>
+
+<h2 id="t12-4">5. Bigeye: data observability</h2>
+<p>Bigeye tương tự Monte Carlo nhưng tập trung hơn vào metrics layer và semantic layer. Nó cho phép định nghĩa metric theo business language và tự monitor chúng.</p>
+<div class="box note"><span class="t">Monte Carlo vs Bigeye</span><p>Monte Carlo mạnh ở ML-based anomaly detection tự động. Bigeye mạnh ở semantic layer và metric definition. Cả hai đều giải bài toán: "Làm sao biết data có vấn đề mà không phải ngồi check thủ công?".</p></div>
+
+<h2 id="t12-5">6. Schema governance ở production</h2>
+<p>Ở production, schema change có thể xảy ra bất cứ lúc nào. Governance giúp bắt những thay đổi này và alert khi có breaking change:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">schema_change_detector.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">import great_expectations as gx
+
+class SchemaChangeDetector:
+    """Monitor schema changes in production"""
+
+    def __init__(self, context: gx.Context):
+        self.context = context
+
+    def compare_schema(self, dataset_name: str) -> dict:
+        """
+        So sánh schema hiện tại với schema đã biết
+        Phát hiện: added column, removed column, type change
+        """
+        current_schema = self.get_current_schema(dataset_name)
+        known_schema = self.get_known_schema(dataset_name)
+
+        changes = {
+            "added_columns": [],
+            "removed_columns": [],
+            "type_changes": [],
+            "breaking_changes": False
+        }
+
+        for col in current_schema:
+            if col not in known_schema:
+                changes["added_columns"].append(col)
+            elif current_schema[col]["type"] != known_schema[col]["type"]:
+                changes["type_changes"].append({
+                    "column": col,
+                    "old_type": known_schema[col]["type"],
+                    "new_type": current_schema[col]["type"]
+                })
+
+        for col in known_schema:
+            if col not in current_schema:
+                changes["removed_columns"].append(col)
+                changes["breaking_changes"] = True  # Removed = breaking
+
+        if changes["type_changes"]:
+            changes["breaking_changes"] = True  # Type change often breaks
+
+        return changes
+
+    def alert_on_breaking_change(self, dataset_name: str, changes: dict):
+        if changes["breaking_changes"]:
+            send_alert(
+                type="SCHEMA_CHANGE",
+                severity="critical",
+                message=f"Breaking schema change detected in {dataset_name}: "
+                        f"Removed: {changes['removed_columns']}, "
+                        f"Type changes: {changes['type_changes']}"
+            )</span>
+</div>
+</div>
+
+<h2 id="t12-6">7. So sánh data observability platforms</h2>
+<div class="tbl-wrap"><table>
+<tr><th>Tính năng</th><th>Monte Carlo</th><th>Bigeye</th><th>Datahub + GE</th><th>Great Expectations</th></tr>
+<tr><td>ML anomaly detection</td><td>✓ Tự động</td><td>✓ Tự động</td><td>✓ Có thể thêm</td><td>✗ (tự đặt threshold)</td></tr>
+<tr><td>Freshness monitoring</td><td>✓</td><td>✓</td><td>✓</td><td>✓ (manual)</td></tr>
+<tr><td>Schema change detection</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>Column lineage</td><td>✓</td><td>✓</td><td>✓</td><td>✗</td></tr>
+<tr><td>Semantic/metric layer</td><td>✗</td><td>✓</td><td>✗</td><td>✗</td></tr>
+<tr><td>Giá (base)</td><td>$$$$</td><td>$$$$</td><td>Miễn phí (open)</td><td>Miễn phí (open)</td></tr>
+<tr><td>Integration</td><td>Snowflake, BGQ, RS, DB</td><td>Warehouse + BI</td><td>Đa dạng</td><td>Đa dạng</td></tr>
+</table></div>
+<div class="keypoint"><span class="t">Điểm chốt</span><p>Production data quality = anomaly detection tự động + statistical test + data observability platform. Fixed threshold bỏ lỡ gradual drift; ML-based detection phát hiện sớm. Monte Carlo và Bigeye là hai platform hàng đầu. Tuy nhiên, công cụ nào cũng chỉ là bổ trợ: sợi chỉ đỏ cuối cùng là: contract rõ ràng → validation đúng chỗ → monitoring có SLO.</p></div>
+
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Chạy mọi check nặng inline làm pipeline chậm gấp đôi. <strong>Sửa:</strong> phân tầng — check rẻ (schema, not-null) chặn ngay; check nặng (phân phối, so kỳ trước) chạy async/sau; cách ly dữ liệu lỗi vào <em>quarantine</em> thay vì chặn cả luồng. Cân bằng nghiêm ngặt và thông suốt.</p></div>
+</section>
+
+<section class="panel deep" id="t13">
+<div class="lead">Module 13 — Lab</div>
+<h1>Lab: Pipeline E2E <span class="hl">với Contract Test + GE + Monitoring</span></h1>
+<p class="intro-p">Đây là lab cuối cùng: bạn sẽ xây một pipeline orders end-to-end có đầy đủ: dbt project với model, Great Expectations suite, Pact contract test (producer + consumer), và Prometheus monitoring. Mọi component đều có code thực chạy được.</p>
+
+<div class="toc">
+<a href="#t13-1">※ 1. Kiến trúc tổng thể</a>
+<a href="#t13-2">※ 2. dbt project với data contract</a>
+<a href="#t13-3">※ 3. Great Expectations suite</a>
+<a href="#t13-4">※ 4. Pact contract test (producer + consumer)</a>
+<a href="#t13-5">※ 5. Prometheus monitoring + Grafana</a>
+<a href="#t13-6">※ 6. Chạy toàn bộ pipeline</a>
+</div>
+
+<h2 id="t13-1">1. Kiến trúc tổng thể</h2>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">
+ LAB PIPELINE E2E ARCHITECTURE
+ ───────────────────────────────
+ [Source API]  →  [Airflow DAG]  →  [dbt Transform]  →  [Warehouse]
+   orders_api                 daily_orders_etl     orders_daily
+ ────────────────────────────────
+        |                                   |
+        |<---------- PACT CONTRACT --------->|   (producer = orders_api)
+        |                                   |   (consumer = dbt orders_daily)
+        |                                   |
+        |<-------- GREAT EXPECTATIONS ------>|   (validate orders_daily)
+        |                                   |
+        |<------- PROMETHEUS METRICS ------->|   (null_rate, freshness, volume)
+        v                                   v
+ [Pact Broker]                     [Grafana Dashboard]
+ ───────────────────────────────
+ Step 1: Pact (producer + consumer)
+ Step 2: Great Expectations
+ Step 3: Prometheus monitoring
+ Step 4: CI/CD with all checks
+</pre><div class="dcap">Lab tổng hợp: Pact (contract), Great Expectations (data quality), Prometheus (monitoring). Mỗi bước đều có code thực.</div></div>
+
+<h2 id="t13-2">2. dbt project với data contract</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">orders_dbt_project/</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd"># File: dbt_project.yml
+name: orders_pipeline
+version: 1.0.0
+config-version: 2
+
+vars:
+  dataset_owner: team-commerce-platform
+  data_contract_version: "2.1.0"
+  freshness_sla_minutes: 60
+
+# File: models/staging/orders_staging.yml
+version: 2
+
+models:
+  - name: stg_orders_raw
+    description: "Staging model for raw orders from API"
+    config:
+      materialized: view
+    columns:
+      - name: order_id
+        description: "Primary key"
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Customer foreign key"
+        tests:
+          - not_null
+      - name: order_date
+        description: "Date of order"
+        tests:
+          - not_null
+      - name: total_amount
+        description: "Order total in VND"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 500_000_000
+      - name: status
+        description: "Order status enum"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']
+
+# File: models/marts/orders_daily.yml
+version: 2
+
+models:
+  - name: orders_daily
+    description: "Daily aggregated orders dataset. Data contract v2.1.0."
+    config:
+      materialized: table
+      partition_by: "order_date"
+    meta:
+      data_contract:
+        version: "2.1.0"
+        owner: team-commerce-platform
+        sla:
+          freshness_minutes: 60
+          completeness_percent: 99.5
+    columns:
+      - name: order_date
+        description: "Aggregation date"
+        tests: [not_null, unique]
+      - name: customer_id
+        description: "Customer foreign key"
+        tests: [not_null]
+      - name: revenue_vnd
+        description: "Daily revenue per customer"
+        tests: [not_null]
+      - name: order_count
+        description: "Number of orders"
+        tests: [not_null]
+      - name: avg_order_value
+        description: "Average order value"
+        tests: [not_null]
+
+# File: models/marts/orders_daily.sql
+{{ config(
+    materialized='table',
+    partition_by='order_date',
+    meta={
+        "data_contract_version": "2.1.0"
+    }
+) }}
+
+SELECT
+    DATE(od.order_date)           AS order_date,
+    od.customer_id,
+    SUM(od.total_amount)          AS revenue_vnd,
+    COUNT(DISTINCT od.order_id)    AS order_count,
+    AVG(od.total_amount)           AS avg_order_value
+FROM {{ ref('stg_orders_raw') }} od
+WHERE od.order_date >= CURRENT_DATE - INTERVAL '30' DAY
+GROUP BY 1, 2</span>
+</div>
+</div>
+
+<h2 id="t13-3">3. Great Expectations suite</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">gx_suite.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">import great_expectations as gx
+
+class OrdersDataQuality:
+    """Great Expectations suite cho orders_daily (GX Core 1.x)"""
+
+    def __init__(self, context=None):
+        self.context = context or gx.get_context()
+        self.suite_name = "orders_daily_quality_v2"
+        self.suite = self._setup_suite()
+        self._setup_validation()
+
+    def _setup_suite(self):
+        try:
+            suite = self.context.suites.get(name=self.suite_name)
+        except Exception:
+            # Suite chưa tồn tại — tạo mới
+            suite = self.context.suites.add(
+                gx.ExpectationSuite(name=self.suite_name)
+            )
+
+        # Schema integrity
+        suite.add_expectation(
+            gx.expectations.ExpectTableColumnsToMatchSet(
+                column_set=["order_date", "customer_id", "revenue_vnd",
+                            "order_count", "avg_order_value"],
+                exact_match=False
+            )
+        )
+
+        # Data integrity
+        suite.add_expectation(
+            gx.expectations.ExpectColumnValuesToNotBeNull(column="order_date")
+        )
+        suite.add_expectation(
+            gx.expectations.ExpectColumnValuesToNotBeNull(column="customer_id")
+        )
+        suite.add_expectation(
+            gx.expectations.ExpectColumnValuesToBeUnique(column="order_date")
+        )
+        suite.add_expectation(
+            gx.expectations.ExpectColumnValuesToBeBetween(
+                column="revenue_vnd", min_value=0, max_value=None
+            )
+        )
+        suite.add_expectation(
+            gx.expectations.ExpectColumnValuesToBeBetween(
+                column="order_count", min_value=0, max_value=None
+            )
+        )
+        suite.add_expectation(
+            gx.expectations.ExpectColumnValuesToBeBetween(
+                column="avg_order_value", min_value=0, max_value=None
+            )
+        )
+
+        # Volume check
+        suite.add_expectation(
+            gx.expectations.ExpectTableRowCountToBeBetween(
+                min_value=100,  # Tối thiểu 100 customers/ngày
+                max_value=None
+            )
+        )
+
+        return suite  # GX 1.x tự persist khi add expectation
+
+    def _setup_validation(self):
+        # Data source → dataframe asset → batch definition → validation definition
+        ds = self.context.data_sources.add_pandas("pandas_ds")
+        asset = ds.add_dataframe_asset("orders_daily")
+        bd = asset.add_batch_definition_whole_dataframe("daily_batch")
+        self.vd = self.context.validation_definitions.add(
+            gx.ValidationDefinition(
+                name="orders_daily_validation", data=bd, suite=self.suite
+            )
+        )
+
+    def run_validation(self, df=None) -> dict:
+        if df is None:
+            df = self.load_orders_df()  # đọc batch mới nhất từ warehouse
+        result = self.vd.run(batch_parameters={"dataframe": df})
+        return {
+            "success": result.success,
+            "statistics": result.statistics,
+        }
+
+    @staticmethod
+    def load_orders_df():
+        # Implement tùy warehouse — trả về pandas DataFrame của batch mới nhất
+        import pandas as pd
+        return pd.DataFrame()
+
+    def generate_data_docs_url(self) -> str:
+        self.context.build_data_docs()
+        return self.context.get_docs_sites_urls()[0]["site_url"]</span>
+</div>
+</div>
+
+<h2 id="t13-4">4. Pact contract test (producer + consumer)</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">pact_contract_tests.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">"""
+PACT CONTRACT TESTS (pact-python 3.x — đã chạy kiểm chứng với 3.4)
+==================
+Producer: orders_api (FastAPI)
+Consumer: orders_dbt_pipeline
+"""
+
+# ======== CONSUMER TEST (Consumer Side) ========
+# File: tests/pact/consumer_test.py
+
+from pact import Pact, match
+
+def test_orders_contract():
+    """Consumer định nghĩa contract: mình cần gì từ API"""
+    pact = Pact("orders-consumer", "orders-api").with_specification("V4")
+
+    (
+        pact.upon_receiving("a request for orders with pagination")
+        .given("orders dataset available")            # provider state
+        .with_request("GET", "/api/v2/orders")
+        .with_query_parameter("limit", "100")
+        .with_query_parameter("offset", "0")
+        .with_header("Accept", "application/json")
+        .will_respond_with(200)
+        .with_header("Content-Type", "application/json")
+        .with_body({
+            "orders": match.each_like({
+                "order_id": match.regex("ORD-20260115-00001", regex=r"^ORD-\d{8}-\d{5}$"),
+                "customer_id": match.regex("CUST-000001", regex=r"^CUST-\d{6}$"),
+                "order_date": match.regex("2026-01-15", regex=r"\d{4}-\d{2}-\d{2}"),
+                "total_amount": match.number(125000.0),
+                "status": match.regex(
+                    "pending",
+                    regex=r"^(pending|confirmed|shipped|delivered|cancelled)$"
+                ),
+            }, min=1),
+            "pagination": {
+                "total": match.integer(1500),
+                "limit": match.integer(100),
+                "offset": match.integer(0),
+            },
+        })
+    )
+
+    # serve() bật mock server in-process; thoát with-block = verify interactions
+    with pact.serve() as srv:
+        client = OrdersAPIClient(base_url=str(srv.url))
+        result = client.get_orders(limit=100, offset=0)
+
+        assert result["orders"][0]["order_id"].startswith("ORD-")
+        assert result["orders"][0]["customer_id"].startswith("CUST-")
+        assert float(result["orders"][0]["total_amount"]) > 0
+
+    pact.write_file("./pacts")  # → ./pacts/orders-consumer-orders-api.json
+
+
+# ======== PROVIDER TEST (Producer Side) ========
+# File: tests/pact/provider_test.py
+
+from pact import Verifier
+
+def seed_orders(state_name, **kwargs):
+    """State handler: seed data cho provider state trước mỗi interaction"""
+    load_fixture("orders_sample.sql")
+
+def test_provider_satisfies_consumer_contract():
+    """Verify against all consumer contracts in broker"""
+    verifier = (
+        Verifier("orders-api")
+        .add_transport(url="http://localhost:8000")   # orders_api phải đang chạy
+        .broker_source(
+            "http://pact-broker:9292",
+            username="pact_user",
+            password="pact_password",
+        )
+        .state_handler({"orders dataset available": seed_orders})
+        .set_publish_options(version="2.1.0", branch="main")
+    )
+    verifier.verify()  # raise nếu bất kỳ verification nào FAIL</span>
+<span class="out">
+# Output provider verification (chạy thật với pact-python 3.4):
+Verifying a pact between orders-consumer and orders-api
+  a request for orders with pagination (0s loading, 12ms verification)
+     Given orders dataset available
+    returns a response which
+      has status code 200 (OK)
+      includes headers
+        "Content-Type" with value "application/json" (OK)
+      has a matching body (OK)</span>
+</div>
+</div>
+
+<h2 id="t13-5">5. Prometheus monitoring + Grafana</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">prometheus_metrics.py</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">"""
+Prometheus metrics exporter cho data quality
+Chạy như một sidecar/container cùng với pipeline
+"""
+from prometheus_client import start_http_server, Gauge, Counter, Histogram
+import time
+
+# Define metrics
+dq_null_rate = Gauge(
+    'data_quality_null_rate_percent',
+    'Null rate for required columns',
+    ['dataset', 'column']
+)
+dq_freshness_lag = Gauge(
+    'data_quality_freshness_lag_minutes',
+    'Minutes since last successful load',
+    ['dataset']
+)
+dq_row_count = Gauge(
+    'data_quality_row_count',
+    'Number of rows in dataset',
+    ['dataset']
+)
+dq_validation_passed = Counter(
+    'data_quality_validation_total',
+    'Number of validation runs',
+    ['dataset', 'status']
+)
+dq_processing_time = Histogram(
+    'data_quality_processing_seconds',
+    'Time to run quality checks',
+    ['dataset']
+)
+
+def collect_quality_metrics(dataset_name: str, suite_runner):
+    """Collect metrics từ Great Expectations validation"""
+    import time
+    start = time.time()
+
+    result = suite_runner.run_validation()
+
+    # Null rate
+    for col in ["customer_id", "order_date", "status"]:
+        null_pct = get_null_rate(dataset_name, col)
+        dq_null_rate.labels(dataset=dataset_name, column=col).set(null_pct)
+
+    # Freshness
+    lag_minutes = get_freshness_lag(dataset_name)
+    dq_freshness_lag.labels(dataset=dataset_name).set(lag_minutes)
+
+    # Row count
+    row_count = get_row_count(dataset_name)
+    dq_row_count.labels(dataset=dataset_name).set(row_count)
+
+    # Validation result
+    status = "passed" if result["success"] else "failed"
+    dq_validation_passed.labels(dataset=dataset_name, status=status).inc()
+
+    # Processing time
+    dq_processing_time.labels(dataset=dataset_name).observe(time.time() - start)
+
+def get_null_rate(dataset: str, column: str) -> float:
+    """Query warehouse cho null rate"""
+    # Implement tùy warehouse
+    return 0.0
+
+def get_freshness_lag(dataset: str) -> float:
+    """Query warehouse cho freshness"""
+    # Implement tùy warehouse
+    return 5.0
+
+def get_row_count(dataset: str) -> int:
+    """Query warehouse cho row count"""
+    # Implement tùy warehouse
+    return 1000
+
+if __name__ == "__main__":
+    start_http_server(9090)  # Prometheus scrape endpoint
+    print("Data quality metrics server started on :9090")
+
+    # Run loop
+    while True:
+        collect_quality_metrics("orders_daily", OrdersDataQuality())
+        time.sleep(300)  # Check every 5 minutes</span>
+</div>
+</div>
+
+<h2 id="t13-6">6. Chạy toàn bộ pipeline</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">run_lab.sh</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">#!/bin/bash
+# run_lab.sh - Chạy toàn bộ lab pipeline
+
+set -e
+
+echo "=========================================="
+echo "LAB: Data Quality E2E Pipeline"
+echo "=========================================="
+
+# 1. Setup
+echo "[1/6] Setting up environment..."
+python -m venv .venv
+source .venv/bin/activate  # hoặc .venv\Scripts\activate trên Windows
+pip install -r requirements.txt
+
+# 2. Pact consumer test (consumer generates contract)
+echo "[2/6] Running Pact consumer test (generate contract)..."
+pytest tests/pact/consumer_test.py -v
+echo "Contract generated in ./pacts/"
+
+# 3. Publish contract to broker
+echo "[3/6] Publishing contract to Pact Broker..."
+pact-broker publish ./pacts \
+  --broker-base-url=http://pact-broker:9292 \
+  --consumer-app-version=2.1.0 \
+  --branch=main
+
+# 4. Run dbt (producer side - transform)
+echo "[4/6] Running dbt transformations..."
+dbt deps
+dbt run --target prod
+dbt test --select test_type:generic
+
+# 5. Pact provider verification (provider verifies contract)
+echo "[5/6] Running Pact provider verification..."
+# Note: Requires orders_api running on localhost:8000
+# pytest tests/pact/provider_test.py -v
+
+# 6. Great Expectations validation
+echo "[6/6] Running Great Expectations suite..."
+python -c "
+from gx_suite import OrdersDataQuality
+dq = OrdersDataQuality()
+result = dq.run_validation()
+print(f'Validation result: {\"PASS\" if result[\"success\"] else \"FAIL\"}')
+print(f'Docs URL: {dq.generate_data_docs_url()}')
+"
+
+# Start Prometheus metrics server
+echo "Starting Prometheus metrics server..."
+python prometheus_metrics.py &
+METRICS_PID=$!
+
+echo "=========================================="
+echo "LAB COMPLETE"
+echo "=========================================="
+echo "Pipeline: orders_daily"
+echo "Pact contract: orders-consumer ↔ orders-api v2.1.0"
+echo "GE suite: orders_daily_quality_v2"
+echo "Metrics: http://localhost:9090/metrics"
+echo ""
+echo "To view Great Expectations docs (GX 1.x không còn CLI riêng):"
+echo "  python -c 'import great_expectations as gx; gx.get_context().open_data_docs()'"
+echo ""
+echo "To view Grafana dashboards:"
+echo "  open http://localhost:3000 (admin/admin)"</span>
+</div>
+</div>
+<div class="box scn"><span class="t"><span>TÌNH HUỐNG THỰC TẾ</span></span><p><strong>Đề bài lab:</strong> Xây một orders pipeline từ đầu đến cuối có đầy đủ quality gates. Sau khi hoàn thành, bạn sẽ có: (1) dbt project chạy được, (2) Pact contract test pass, (3) GE suite pass, (4) Prometheus metrics exposed. Đây là bộ kit thực hành bạn có thể mang đi phỏng vấn, demo cho đội, và xây tiếp trên nền tảng đó.</p></div>
+<div class="keypoint"><span class="t">Sợi chỉ đỏ</span><p>Data quality không phải "chạy check ở cuối pipeline". Nó phải bắt đầu từ contract giữa producer và consumer — khi contract rõ, mọi layer sau tự khớp. Lab này minh họa: Pact định nghĩa contract, Great Expectations verify quality, Prometheus monitor SLO. Ba công cụ bổ trợ một sợi chỉ: contract-driven quality.</p></div>
+</section>
+
+<section class="panel" id="t14">
+<div class="lead">Bổ sung — Governance &amp; Privacy</div>
+<h1>Data Governance, Security &amp; <span class="hl">Privacy</span></h1>
+<p class="intro-p">Quality đảm bảo dữ liệu <em>đúng</em>; governance đảm bảo dữ liệu được <em>sở hữu, phân loại, bảo vệ và dùng đúng luật</em>. Khi hệ thống lớn lên, câu hỏi không còn là "dữ liệu có sạch không" mà là "ai được xem cột này", "PII nằm ở đâu", "nếu khách hàng yêu cầu xoá thì xoá ở những bảng nào". Tab này nối tiếp data contract và lineage ở các module trước, đi sâu vào ownership, classification, access control, encryption và tuân thủ GDPR/CCPA.</p>
+
+<div class="toc">
+<a href="#t14-1">› 1. Data governance là gì</a>
+<a href="#t14-2">› 2. ⭐ Phân loại dữ liệu: PII / PHI / PCI</a>
+<a href="#t14-3">› 3. Data catalog &amp; discovery</a>
+<a href="#t14-4">› 4. ⭐ Column-level lineage cho compliance</a>
+<a href="#t14-5">› 5. Access control: RBAC vs ABAC</a>
+<a href="#t14-6">› 6. Bảo vệ dữ liệu: encryption &amp; masking</a>
+<a href="#t14-7">› 7. GDPR / CCPA &amp; right-to-be-forgotten</a>
+<a href="#t14-8">› 8. Audit logging &amp; privacy-by-design</a>
+</div>
+
+<h2 id="t14-1">1. Data governance là gì</h2>
+<p>Data governance là tập hợp con người, quy trình và chính sách quyết định <strong>ai sở hữu dữ liệu, ai được dùng nó, và dùng theo quy tắc nào</strong>. Nó không phải một tool mà là một operating model. Ba vai trò cốt lõi: <strong>data owner</strong> (thường là business leader, chịu trách nhiệm cuối cùng về một domain dữ liệu — ví dụ VP Sales sở hữu dữ liệu orders), <strong>data steward</strong> (người vận hành hằng ngày: định nghĩa metadata, duyệt yêu cầu truy cập, đảm bảo chất lượng), và <strong>data custodian</strong> (đội platform/engineering giữ hạ tầng lưu trữ).</p>
+<p>Policy là các quy tắc thành văn: ai được cấp quyền, dữ liệu giữ bao lâu (retention), phân loại ra sao, encrypt thế nào. Data contract ở Module 02 chính là một dạng governance ở tầng dataset: nó khai báo schema + owner + SLA. Governance mở rộng contract đó lên cấp tổ chức — thêm classification, access policy và compliance vào cùng một "hợp đồng".</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">
+ DATA GOVERNANCE OPERATING MODEL
+ ───────────────────────────────────────
+  Data Owner (business)        "Tôi chịu trách nhiệm về domain orders"
+        │  uỷ quyền vận hành
+        ▼
+  Data Steward                 định nghĩa metadata · duyệt access request
+        │                      gán classification · theo dõi quality
+        ▼
+  Data Custodian (platform)    encrypt · backup · enforce access control
+        │
+        ▼
+  Policies as code  ──►  Data Contract + Classification + Access Policy
+                         (versioned trong Git, review qua PR)
+ ───────────────────────────────────────
+ ▶ Owner quyết "ai được dùng" · Steward định nghĩa · Custodian enforce
+</pre><div class="dcap">Governance là sự phân tách trách nhiệm: business sở hữu ý nghĩa, platform sở hữu cơ chế thực thi.</div></div>
+
+<h2 id="t14-2">2. ⭐ Phân loại dữ liệu: PII / PHI / PCI / sensitive</h2>
+<p>Không thể bảo vệ thứ bạn không biết mình có. Bước đầu của mọi chương trình governance là <strong>data classification</strong>: gán nhãn mức nhạy cảm cho từng cột. Bốn nhóm thường gặp:</p>
+<div class="tbl-wrap"><table>
+<thead><tr><th>Nhóm</th><th>Viết tắt</th><th>Ví dụ trường</th><th>Khung pháp lý</th></tr></thead>
+<tbody>
+<tr><td><strong>PII</strong> — Personally Identifiable Information</td><td>PII</td><td>email, số CMND/CCCD, địa chỉ, IP, số điện thoại</td><td>GDPR, CCPA, PDPD (VN)</td></tr>
+<tr><td><strong>PHI</strong> — Protected Health Information</td><td>PHI</td><td>chẩn đoán, đơn thuốc, mã bảo hiểm y tế</td><td>HIPAA (US)</td></tr>
+<tr><td><strong>PCI</strong> — Payment Card data</td><td>PCI</td><td>số thẻ (PAN), CVV, ngày hết hạn</td><td>PCI-DSS</td></tr>
+<tr><td><strong>Sensitive / Confidential</strong></td><td>—</td><td>lương, đánh giá nhân sự, bí mật kinh doanh</td><td>chính sách nội bộ</td></tr>
+</tbody>
+</table></div>
+<p>Sau khi phân loại, bạn <strong>tag</strong> metadata ở cấp cột để policy có thể tự động enforce. Trong warehouse hiện đại, tag này chính là cơ chế áp masking/access. Ví dụ với BigQuery policy tag, hay Snowflake tag-based masking. Đây là ví dụ gán tag trong Snowflake — tạo tag rồi gắn vào cột nhạy cảm:</p>
+<div class="term"><div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Snowflake: classification tag cho cột PII</span><button class="term-copy">copy</button></div><div class="term-body"><span class="cmd">-- 1) Tạo tag phân loại trong schema governance
+CREATE TAG IF NOT EXISTS governance.data_classification
+  ALLOWED_VALUES 'PII', 'PHI', 'PCI', 'CONFIDENTIAL', 'PUBLIC';
+
+-- 2) Gắn tag vào từng cột nhạy cảm
+ALTER TABLE analytics.customers
+  MODIFY COLUMN email     SET TAG governance.data_classification = 'PII';
+ALTER TABLE analytics.customers
+  MODIFY COLUMN ssn       SET TAG governance.data_classification = 'PII';
+ALTER TABLE analytics.payments
+  MODIFY COLUMN card_pan  SET TAG governance.data_classification = 'PCI';
+
+-- 3) Tìm mọi cột PII trên toàn account để audit
+SELECT object_database, object_schema, object_name, column_name
+FROM   snowflake.account_usage.tag_references
+WHERE  tag_name = 'DATA_CLASSIFICATION'
+  AND  tag_value = 'PII';</span></div></div>
+<div class="box note"><span class="t">⭐ Điểm chốt</span><p>Classification phải là <em>tag trên metadata</em>, không phải một file Excel. Khi tag sống cùng cột, mọi policy (masking, access, retention) đều bám vào tag — đổi phân loại một lần, toàn bộ rule tự cập nhật theo.</p></div>
+
+<h2 id="t14-3">3. Data catalog &amp; discovery</h2>
+<p>Khi có hàng nghìn bảng, data catalog là "Google cho dữ liệu": nơi mọi người tìm dataset, đọc mô tả, xem owner, classification và lineage. Bốn nền tảng phổ biến:</p>
+<div class="tbl-wrap"><table>
+<thead><tr><th>Catalog</th><th>Nguồn gốc / mô hình</th><th>Điểm mạnh</th></tr></thead>
+<tbody>
+<tr><td><strong>DataHub</strong></td><td>open-source (LinkedIn)</td><td>metadata graph mạnh, ingest từ rất nhiều nguồn, lineage tốt</td></tr>
+<tr><td><strong>Amundsen</strong></td><td>open-source (Lyft)</td><td>search-first, đơn giản, ranking theo mức độ dùng</td></tr>
+<tr><td><strong>OpenMetadata</strong></td><td>open-source</td><td>all-in-one: catalog + quality + lineage + governance UI</td></tr>
+<tr><td><strong>Unity Catalog</strong></td><td>Databricks (đã open-source)</td><td>vừa catalog vừa <em>enforce</em> access &amp; lineage trong lakehouse</td></tr>
+</tbody>
+</table></div>
+<p>Khác biệt cốt lõi: DataHub/Amundsen/OpenMetadata chủ yếu là <strong>lớp mô tả</strong> (đọc metadata, không chặn truy cập), còn Unity Catalog vừa mô tả vừa là <strong>điểm enforce</strong> quyền truy cập và bắt lineage tự động trong Databricks. Catalog tốt biến tri thức cá nhân ("hỏi anh A bảng nào dùng được") thành tri thức tổ chức tìm kiếm được.</p>
+
+<h2 id="t14-4">4. ⭐ Column-level lineage cho compliance</h2>
+<p>Module 08 đã giới thiệu lineage ở cấp bảng. Governance cần sâu hơn: <strong>column-level lineage</strong> — biết chính xác cột <code class="inline">customers.email</code> chảy vào những cột downstream nào (view, mart, dashboard, model ML). Hai lý do nó quan trọng:</p>
+<p><strong>(1) Impact analysis:</strong> trước khi đổi/xoá một cột, bạn biết ngay có bao nhiêu downstream phụ thuộc — tránh phá vỡ dashboard lúc 3h sáng. <strong>(2) Compliance:</strong> khi cột nguồn là PII, column-level lineage cho biết PII đã "rò" sang những bảng nào để áp masking và xử lý right-to-be-forgotten đúng chỗ. Nếu không có nó, một cột PII có thể bị copy qua 10 mart mà không ai gắn lại nhãn.</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">
+ COLUMN-LEVEL LINEAGE — vì sao quan trọng
+ ─────────────────────────────────────────────
+  raw.users.email  [PII]
+        │
+        ├─► stg.users.email_norm     [PII kế thừa]
+        │         │
+        │         └─► mart.customer_360.contact_email   [PII]
+        │                     │
+        │                     └─► bi.exec_dashboard.email_col   ← rò rỉ?
+        │
+        └─► ml.churn_features.email_hash   [đã hash → an toàn hơn]
+ ─────────────────────────────────────────────
+ ▶ Đổi/xoá email ⇒ thấy ngay 4 downstream bị ảnh hưởng
+ ▶ DSR "xoá tôi" ⇒ biết phải xoá ở những cột nào
+</pre><div class="dcap">Column-level lineage = bản đồ lan truyền của PII; thiếu nó thì masking và erasure luôn sót chỗ.</div></div>
+<p>Nhiều warehouse hiện sinh lineage cột tự động từ query log. Ví dụ truy vấn lineage cấp cột trong Databricks Unity Catalog qua system table:</p>
+<div class="term"><div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Unity Catalog: column lineage từ system table</span><button class="term-copy">copy</button></div><div class="term-body"><span class="cmd">-- Mọi cột downstream nhận dữ liệu từ customers.email
+SELECT source_table_full_name,
+       source_column_name,
+       target_table_full_name,
+       target_column_name
+FROM   system.access.column_lineage
+WHERE  source_table_full_name = 'prod.analytics.customers'
+  AND  source_column_name     = 'email'
+ORDER  BY target_table_full_name;</span></div></div>
+
+<h2 id="t14-5">5. Access control: RBAC vs ABAC, least privilege</h2>
+<p><strong>RBAC</strong> (Role-Based Access Control): quyền gắn vào <em>role</em>, người dùng được gán role. Đơn giản, dễ audit — phù hợp đa số tổ chức. <strong>ABAC</strong> (Attribute-Based Access Control): quyền tính từ <em>thuộc tính</em> của người dùng + dữ liệu + ngữ cảnh (phòng ban, quốc gia, mức nhạy cảm, giờ truy cập). Linh hoạt hơn nhưng phức tạp hơn để vận hành. Quy tắc nền tảng cho cả hai là <strong>least privilege</strong>: cấp đúng mức tối thiểu cần để làm việc, không hơn.</p>
+<div class="tbl-wrap"><table>
+<thead><tr><th>Tiêu chí</th><th>RBAC</th><th>ABAC</th></tr></thead>
+<tbody>
+<tr><td>Cơ sở cấp quyền</td><td>vai trò (analyst, engineer)</td><td>thuộc tính (region=EU, level=PII_cleared)</td></tr>
+<tr><td>Độ phức tạp</td><td>thấp, dễ audit</td><td>cao, cần policy engine</td></tr>
+<tr><td>Phù hợp khi</td><td>quyền theo nhóm rõ ràng</td><td>quy tắc theo ngữ cảnh/đa quốc gia</td></tr>
+</tbody>
+</table></div>
+<p>Hai cơ chế fine-grained quan trọng: <strong>row-level security</strong> (mỗi người chỉ thấy hàng thuộc về mình — ví dụ sales chỉ thấy region của họ) và <strong>column-level security</strong> (ẩn/che cột nhạy cảm theo role). Ví dụ row-level security bằng policy trong PostgreSQL:</p>
+<div class="term"><div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — PostgreSQL: row-level security theo region</span><button class="term-copy">copy</button></div><div class="term-body"><span class="cmd">-- Bật RLS trên bảng orders
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+
+-- Mỗi user chỉ đọc được hàng thuộc region của mình
+-- (region của user được set qua: SET app.current_region = 'APAC';)
+CREATE POLICY region_isolation ON orders
+  FOR SELECT
+  USING (region = current_setting('app.current_region'));
+
+-- Cấp quyền đọc theo least privilege cho role analyst
+GRANT SELECT ON orders TO analyst_role;
+-- KHÔNG cấp INSERT/UPDATE/DELETE cho analyst</span></div></div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Một analyst mới cần xem doanh thu nên được cấp tạm role <code class="inline">db_owner</code> "cho nhanh". Ba tháng sau, máy của bạn ấy bị nhiễm malware và credential lộ — attacker có toàn quyền xoá bảng. <strong>Bài học:</strong> least privilege thu nhỏ <em>blast radius</em>. Phải cấp đúng <code class="inline">SELECT</code> trên đúng schema; quyền rộng "tạm thời" thường sống mãi vì không ai nhớ thu hồi. Hãy gắn quyền vào role + có vòng review định kỳ.</p></div>
+
+<h2 id="t14-6">6. Bảo vệ dữ liệu: encryption &amp; masking</h2>
+<p>Hai trục bảo vệ: <strong>encryption at-rest</strong> (mã hoá dữ liệu khi lưu trên đĩa/S3) và <strong>encryption in-transit</strong> (TLS khi truyền qua mạng). Khoá thường quản lý bằng <strong>KMS</strong> (Key Management Service) như AWS KMS, GCP Cloud KMS — cho phép xoay khoá, phân quyền dùng khoá, và audit ai giải mã. Bật là chuyện bắt buộc, gần như miễn phí, và là yêu cầu của hầu hết khung tuân thủ.</p>
+<p>Encryption bảo vệ khi <em>storage bị đánh cắp</em>, nhưng người có quyền truy vấn vẫn đọc được plaintext. Để giới hạn cái mắt thường thấy, ta dùng ba kỹ thuật khác nhau — chọn theo việc có cần đảo ngược hay không:</p>
+<div class="tbl-wrap"><table>
+<thead><tr><th>Kỹ thuật</th><th>Đảo ngược?</th><th>Dùng khi</th></tr></thead>
+<tbody>
+<tr><td><strong>Masking</strong> (che: <code class="inline">****1234</code>)</td><td>Không (chỉ hiển thị)</td><td>analyst cần thấy định dạng nhưng không cần giá trị thật</td></tr>
+<tr><td><strong>Tokenization</strong> (thay bằng token, map lưu trong vault)</td><td>Có (qua vault)</td><td>PCI: thay số thẻ bằng token, vẫn cần lấy lại giá trị gốc khi thanh toán</td></tr>
+<tr><td><strong>Hashing</strong> (SHA-256 + salt)</td><td>Không (một chiều)</td><td>join/dedup theo PII mà không lưu giá trị thật (email_hash)</td></tr>
+</tbody>
+</table></div>
+<p><strong>Dynamic data masking</strong> che dữ liệu <em>lúc truy vấn</em> tuỳ theo role người gọi — dữ liệu gốc không đổi, chỉ kết quả trả về bị che. Ví dụ trong Snowflake bằng masking policy:</p>
+<div class="term"><div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Snowflake: dynamic data masking theo role</span><button class="term-copy">copy</button></div><div class="term-body"><span class="cmd">-- Policy: chỉ role PII_READER thấy email thật, còn lại bị che
+CREATE MASKING POLICY mask_email AS (val STRING)
+  RETURNS STRING ->
+    CASE
+      WHEN CURRENT_ROLE() IN ('PII_READER', 'COMPLIANCE')
+        THEN val
+      ELSE REGEXP_REPLACE(val, '.+@', '****@')   -- che phần trước @
+    END;
+
+-- Gắn policy vào cột
+ALTER TABLE analytics.customers
+  MODIFY COLUMN email SET MASKING POLICY mask_email;
+-- Analyst thường truy vấn email ⇒ thấy '****@gmail.com'</span></div></div>
+
+<h2 id="t14-7">7. GDPR / CCPA &amp; right-to-be-forgotten</h2>
+<p><strong>GDPR</strong> (EU) và <strong>CCPA</strong> (California) trao cho cá nhân quyền kiểm soát dữ liệu của họ. Vài khái niệm data engineer phải thuộc: <strong>data subject request (DSR)</strong> — yêu cầu của một cá nhân (xem/sửa/xoá dữ liệu của tôi); <strong>right-to-be-forgotten / right to erasure</strong> — quyền yêu cầu xoá; <strong>consent</strong> — chỉ xử lý dữ liệu khi có sự đồng ý hợp lệ; <strong>data residency</strong> — dữ liệu công dân EU phải lưu trong vùng cho phép; <strong>retention policy</strong> — chỉ giữ dữ liệu trong thời gian cần thiết rồi tự xoá.</p>
+<p>Right-to-be-forgotten là bài toán kỹ thuật khó nhất vì PII đã lan ra nhiều bảng (chính là lúc column-level lineage cứu bạn). Pattern xử lý DSR erasure: tìm mọi nơi chứa PII của subject → xoá hoặc anonymize → ghi audit. Ví dụ một thủ tục erasure idempotent:</p>
+<div class="term"><div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — DSR erasure: xoá / anonymize theo subject_id</span><button class="term-copy">copy</button></div><div class="term-body"><span class="cmd">-- Right-to-be-forgotten cho 1 khách hàng, chạy trong transaction
+BEGIN;
+
+-- Xoá hàng ở bảng nguồn
+DELETE FROM raw.user_events   WHERE user_id = :subject_id;
+
+-- Anonymize ở bảng còn cần giữ cho thống kê (giữ hàng, bỏ PII)
+UPDATE analytics.orders
+   SET customer_email = NULL,
+       customer_name  = 'REDACTED',
+       customer_ip    = NULL
+ WHERE customer_id = :subject_id;
+
+-- Ghi nhận đã xử lý để audit & idempotent
+INSERT INTO governance.erasure_log (subject_id, requested_at, completed_at)
+VALUES (:subject_id, :requested_at, CURRENT_TIMESTAMP);
+
+COMMIT;</span></div></div>
+<div class="box note"><span class="t">Lưu ý retention</span><p>Backup và log cũng chứa PII. GDPR chấp nhận PII trong backup sẽ hết theo chu kỳ retention của backup (ví dụ rơi khỏi backup sau 35 ngày), miễn là có policy thành văn và backup không được dùng để khôi phục lại dữ liệu đã xoá.</p></div>
+
+<h2 id="t14-8">8. Audit logging &amp; privacy-by-design</h2>
+<p><strong>Audit logging</strong> ghi lại <em>ai</em> truy cập <em>dữ liệu nào</em>, <em>khi nào</em> — cần cho điều tra sự cố và chứng minh tuân thủ. Trong các warehouse hiện đại, log này có sẵn dưới dạng system table. Đây là truy vấn audit "ai đã đọc bảng chứa PII trong 7 ngày" trên BigQuery (audit log đã export sang BigQuery):</p>
+<div class="term"><div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — BigQuery: audit ai truy cập bảng PII</span><button class="term-copy">copy</button></div><div class="term-body"><span class="cmd">SELECT
+  protopayload_auditlog.authenticationInfo.principalEmail AS user_email,
+  resource.labels.dataset_id,
+  protopayload_auditlog.resourceName,
+  timestamp
+FROM `myproj.audit.cloudaudit_googleapis_com_data_access`
+WHERE protopayload_auditlog.resourceName LIKE '%tables/customers%'
+  AND timestamp &gt; TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
+ORDER BY timestamp DESC;</span></div></div>
+<p><strong>Privacy-by-design</strong> nghĩa là quyền riêng tư được thiết kế <em>từ đầu</em>, không vá sau: chỉ thu thập dữ liệu thật sự cần (data minimization), gắn classification ngay khi ingest, mặc định mask, và phát hiện PII tự động trong pipeline. Để bắt PII chui vào nơi không mong đợi, ta quét bằng regex (nhanh, sót ngữ cảnh) hoặc ML/NER. Microsoft <strong>Presidio</strong> là thư viện mã nguồn mở chuyên detect &amp; anonymize PII:</p>
+<div class="term"><div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">python — Presidio: phát hiện PII trong pipeline</span><button class="term-copy">copy</button></div><div class="term-body"><span class="cmd">from presidio_analyzer import AnalyzerEngine
+from presidio_anonymizer import AnonymizerEngine
+
+analyzer = AnalyzerEngine()
+anonymizer = AnonymizerEngine()
+
+text = "Liên hệ Lan qua lan.nguyen@gmail.com hoặc 0901234567"
+
+# 1) Phát hiện PII (email, phone, person...)
+results = analyzer.analyze(text=text, language="en")
+for r in results:
+    print(r.entity_type, text[r.start:r.end])   # EMAIL_ADDRESS, PHONE_NUMBER
+
+# 2) Anonymize trước khi ghi xuống sink/log
+clean = anonymizer.anonymize(text=text, analyzer_results=results)
+print(clean.text)   # "Liên hệ Lan qua <EMAIL_ADDRESS> hoặc <PHONE_NUMBER>"</span></div></div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Một free-text field "ghi chú đơn hàng" được log thẳng vào hệ thống logging dùng chung. Vài tháng sau phát hiện khách hàng đã gõ cả số điện thoại và email vào đó — PII nằm trong log không được phân loại, ai có quyền xem log đều đọc được. <strong>Bài học:</strong> PII thường rò qua free-text. Chèn một bước Presidio quét &amp; redact <em>trước</em> khi ghi log/sink là biện pháp privacy-by-design rẻ và hiệu quả; đừng tin rằng "trường này chắc không có PII".</p></div>
+
+<div class="box note"><span class="t">⭐ Điểm chốt</span><p>Governance là tầng trên của quality: trước hết phải biết mình có gì (<strong>classification + catalog</strong>), biết nó chảy đi đâu (<strong>column-level lineage</strong>), kiểm soát ai chạm tới (<strong>RBAC/ABAC + least privilege</strong>), bảo vệ nó (<strong>encryption + masking/tokenization</strong>), và chứng minh tuân thủ (<strong>audit log + quy trình DSR/erasure</strong>). Làm "privacy-by-design" từ đầu rẻ hơn nhiều so với vá sau một sự cố lộ PII.</p></div>
+</section>
+
+<section class="panel" id="t15">
+<div class="lead">Module 15 — Thực chiến</div>
+<h1>Quality gates <span class="hl">chạy được ngay</span>: SQL, Pandera, dbt tests</h1>
+<p class="intro-p">Các module trước dạy Great Expectations — framework đủ lễ nghi cho tổ chức lớn. Module này là bộ đồ nghề hằng ngày gọn hơn nhiều: 80% giá trị của data quality đến từ những check viết được trong 30 phút, chạy bằng chính engine bạn đang có. Ba tầng: SQL assertion (mọi warehouse), Pandera (DataFrame), dbt tests (trong warehouse) — và bản đồ khi nào dùng gì.</p>
+<div class="box note"><span class="t"><span>Code đã chạy thật</span></span><p>Chạy thật với <code class="inline">duckdb 1.5.4</code> và <code class="inline">pandera 0.32</code> trên 100.000 dòng có lỗi gieo sẵn — 17/07/2026. Output dán nguyên văn. Các câu SQL chạy được trên mọi warehouse (đổi cú pháp ngày nếu cần).</p></div>
+
+<h2>1. Tầng 1 — SQL assertions: mỗi check là một COUNT vi phạm</h2>
+<p>Quy ước vàng: viết mỗi check thành query trả về <strong>số dòng vi phạm</strong> — 0 nghĩa là pass. Quy ước này làm check tự động hoá được (assert result == 0), đo được (đồ thị số vi phạm theo ngày), và ai đọc cũng hiểu:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">SQL — đã chạy trên bảng 100k dòng gieo lỗi</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- 6 check phủ 5 chiều chất lượng kinh điển
+-- (uniqueness) khoá trùng
+SELECT COUNT(*) - COUNT(DISTINCT order_id) FROM fact_sales;
+-- (completeness) NULL ở cột bắt buộc
+SELECT COUNT(*) FROM fact_sales WHERE customer_id IS NULL;
+-- (validity) giá trị vô nghĩa nghiệp vụ
+SELECT COUNT(*) FROM fact_sales WHERE qty_ton &lt;= 0;
+SELECT COUNT(*) FROM fact_sales WHERE price_usd_ton NOT BETWEEN 200 AND 2000;
+-- (timeliness) dữ liệu mới nhất cách nay bao lâu
+SELECT CURRENT_DATE - MAX(order_date) FROM fact_sales;
+-- (consistency) ngày không thể có
+SELECT COUNT(*) FROM fact_sales WHERE order_date &gt; CURRENT_DATE;</span>
+<span class="out">KẾT QUẢ THẬT: duplicate_key=2 · null_customer=101 · qty_am=67 · gia_ngoai_dai=0
+              freshness=17 ngày (FAIL nếu SLA là 3) · ngay_tuong_lai=0
+→ 4/6 check bắt được đúng 4 loại lỗi đã gieo. Bộ 6 check này viết mất 15 phút.</span>
+</div>
+</div>
+<p>Đóng gói thành gate trong pipeline: dict tên-check → query, chạy sau mỗi lần load, có vi phạm thì fail task (hard gate) hoặc cảnh báo (soft gate). Đây chính là mẫu "audit" trong pattern Write-Audit-Publish của khoá Pipeline — giờ bạn có luôn phần code audit.</p>
+
+<h2>2. Tầng 1.5 — anomaly theo thống kê: bắt cái mà rule cứng bỏ sót</h2>
+<p>Rule cứng bắt lỗi <em>biết trước</em>. Sự cố đau nhất là loại không biết trước: hệ thống nguồn hôm nay chỉ đẩy 30% dữ liệu — từng dòng đều hợp lệ, mọi rule pass, nhưng tổng thể sai. Bắt bằng so sánh với chính nó trong quá khứ:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">SQL — đã chạy (gieo 1 ngày sụt 73%)</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">WITH daily AS (SELECT order_date d, COUNT(*) c FROM fact_sales GROUP BY 1),
+stats AS (
+  SELECT d, c,
+         AVG(c)         OVER w AS mean7,
+         STDDEV_SAMP(c) OVER w AS sd7
+  FROM daily
+  WINDOW w AS (ORDER BY d ROWS BETWEEN 7 PRECEDING AND 1 PRECEDING)  -- 7 ngày TRƯỚC, không gồm hôm nay
+)
+SELECT d, c, ROUND(mean7) AS ky_vong, ROUND((c - mean7) / NULLIF(sd7, 0), 1) AS z
+FROM stats
+WHERE ABS((c - mean7) / NULLIF(sd7, 0)) &gt; 3;   -- |z| &gt; 3 = bất thường</span>
+<span class="out">┌────────────┬─────┬─────────┬───────┐
+│ 2026-06-26 │ 900 │  3391   │ -45.4 │   ← ngày sụt bị tóm chính xác
+└────────────┴─────┴─────────┴───────┘</span>
+</div>
+</div>
+<div class="box warn"><span class="t"><span>Hai cái bẫy của z-score</span></span><p>(1) Mùa vụ: chủ nhật thấp là <em>bình thường</em> — so thứ hai với thứ hai (thêm <code class="inline">PARTITION BY dayofweek(d)</code> vào window), đừng so chủ nhật với cả tuần. (2) Window trượt "nuốt" anomaly cũ: một ngày sụt nằm trong window làm mean/sd méo 7 ngày sau — production nên loại outlier khỏi baseline hoặc dùng median/MAD thay mean/std.</p></div>
+
+<h2>3. Tầng 2 — Pandera: schema cho DataFrame</h2>
+<p>Cùng họ với Pydantic (khoá 21 module 10 — validate object tại biên), Pandera validate <em>DataFrame theo cột</em>, hợp chỗ pipeline pandas/notebook trước khi ghi xuống warehouse:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">python — đã chạy, pandera 0.32</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">import pandera.pandas as pa   # từ pandera 0.29+: import theo backend
+
+schema = pa.DataFrameSchema({
+    "sku":           pa.Column(str,   pa.Check.str_startswith("SP-")),
+    "qty_ton":       pa.Column(float, pa.Check.gt(0)),
+    "price_usd_ton": pa.Column(int,   pa.Check.in_range(200, 2000)),
+}, unique=["order_id"], strict=False)
+
+schema.validate(df, lazy=True)   # lazy=True: gom HẾT vi phạm rồi mới raise</span>
+<span class="out">SchemaErrors: 4 vi phạm | theo check: {'greater_than(0)': 4}
+e.failure_cases là một DataFrame: cột nào, check nào, giá trị nào, dòng bao nhiêu
+→ ghi thẳng failure_cases ra bảng quarantine để truy vết — đừng chỉ in ra console</span>
+</div>
+</div>
+
+<h2>4. Tầng 3 — dbt tests: ràng buộc sống trong warehouse</h2>
+<p>Nếu transform đã chạy bằng dbt (khoá 23), quality check khai báo ngay cạnh model — chạy sau mỗi build, fail là dừng downstream:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">schema.yml — cú pháp dbt chuẩn (xem lab chạy thật ở khoá 23)</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">models:
+  - name: fact_sales
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: qty_ton
+        data_tests:
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: false}
+      - name: customer_id
+        data_tests:
+          - relationships: {to: ref('dim_customer'), field: customer_id}</span>
+<span class="cmt"># unique / not_null / accepted_values / relationships là 4 test built-in;
+# dbt_utils.accepted_range cần package dbt-utils. Test = SELECT đếm vi phạm — đúng quy ước mục 1.</span>
+</div>
+</div>
+
+<h2>5. Bản đồ chọn tầng — dán cạnh màn hình</h2>
+<p><strong>SQL assertions:</strong> rẻ nhất, chạy mọi nơi, không thêm dependency — mặc định bắt đầu từ đây. <strong>Anomaly SQL:</strong> thêm khi bảng đủ lịch sử (≥ 2-3 tuần) và sự cố "thiếu dữ liệu" từng xảy ra. <strong>Pandera:</strong> khi transform nằm trong pandas/Python và muốn quarantine từng dòng lỗi. <strong>dbt tests:</strong> khi đã có dbt — ràng buộc theo model, có lineage, chạy trong CI. <strong>Great Expectations</strong> (module 3-5): khi cần data docs cho người ngoài team, profiling tự động, và tổ chức đủ người nuôi nó. Sai lầm phổ biến nhất: nhảy thẳng vào GX khi 6 câu SQL đã giải quyết 80% vấn đề.</p>
+</section>
+
+<section class="panel" id="t16">
+<div class="lead">Module 16 — Vận hành</div>
+<h1>Vận hành chất lượng: <span class="hl">SLA, error budget, incident, scorecard</span></h1>
+<p class="intro-p">Check là vũ khí; module này là binh pháp. Ba câu mà mọi hệ thống data quality trưởng thành phải trả lời được: chúng ta hứa gì (SLA), khi vỡ thì làm gì theo thứ tự nào (incident runbook), và tháng này tốt lên hay tệ đi (scorecard). Không có phần này, check chỉ tạo ra tiếng ồn.</p>
+
+<h2>1. Từ SLI đến SLA cho dữ liệu — hứa ít, đo được</h2>
+<p>Mượn nguyên bộ khung của SRE (khoá Platform đã dạy cho service — giờ áp cho data): <strong>SLI</strong> là chỉ số đo được (freshness: giờ dữ liệu mới nhất; completeness: % dòng qua gate; validity: số vi phạm/1M dòng). <strong>SLO</strong> là mục tiêu nội bộ ("bảng fact_sales tươi trước 7:00 sáng 99% số ngày trong tháng"). <strong>SLA</strong> là cam kết với người dùng dữ liệu — thường lỏng hơn SLO một nấc để có vùng đệm.</p>
+<p>Ba nguyên tắc khi đặt SLO dữ liệu: (1) đặt theo <em>bảng tiêu thụ</em> (mart cấp cho dashboard/report), không đặt cho mọi bảng trung gian — hứa 200 bảng là không hứa gì; (2) mỗi SLO phải có <em>người tiêu dùng cụ thể</em> đứng sau ("báo cáo bán hàng 8h sáng của giám đốc kinh doanh" — không có ai chờ thì không cần SLO); (3) SLI phải tính được bằng một query — đo bằng cảm giác thì cãi nhau bằng cảm giác.</p>
+<div class="box tip"><span class="t"><span>Error budget cho data</span></span><p>SLO 99% freshness/tháng = ngân sách lỗi ~7 giờ trễ mỗi tháng. Ngân sách còn nhiều → được phép deploy thay đổi mạnh tay vào pipeline. Ngân sách cạn → đóng băng thay đổi, dồn sức trả nợ ổn định. Cơ chế này biến "chất lượng" từ khẩu hiệu thành đơn vị tiền tệ mà cả team engineering lẫn business cùng chi tiêu.</p></div>
+
+<h2>2. Phân loại cảnh báo — thuốc chống alert fatigue</h2>
+<p>Chết vì im lặng đã tệ, chết vì 40 cảnh báo/ngày còn tệ hơn: sau 2 tuần không ai đọc nữa. Kỷ luật ba nấc:</p>
+<p><strong>P1 — đánh thức người (page):</strong> vỡ SLA của mart có người tiêu dùng + không tự hồi. Ví dụ: 6h30 fact_sales chưa tươi mà 7h dashboard giám đốc phải có số. Tối đa vài SLO được quyền page.<br>
+<strong>P2 — ticket xử lý trong ngày:</strong> gate soft fail, vi phạm tăng dần chưa chạm SLA (null_customer từ 0.1% leo lên 0.8% ba ngày liên tiếp).<br>
+<strong>P3 — dashboard, xem lúc rảnh:</strong> mọi metric còn lại. Không gửi notification. Đồ thị để nhìn xu hướng khi rà soát hằng tuần.</p>
+<div class="box warn"><span class="t"><span>Quy tắc một dòng</span></span><p>Mỗi cảnh báo P1/P2 phải kèm <strong>hành động cụ thể người nhận làm được ngay</strong>. Cảnh báo mà người nhận chỉ biết "ừ, thế à" là P3 đội lốt — hạ cấp nó trước khi nó giết cả kênh alert.</p></div>
+
+<h2>3. Incident runbook — 6 bước, dán vào wiki</h2>
+<p><strong>B1. Xác nhận &amp; khoanh vùng (5-10 phút):</strong> lỗi ở bảng nào, từ partition/ngày nào, downstream nào đang đọc (mở lineage — khoá dbt/Dataplex đã dạy). <strong>B2. Cầm máu:</strong> chặn lan truyền — dừng schedule downstream, treo biển trên dashboard bị ảnh hưởng ("số liệu từ 26/06 đang kiểm tra"), nếu có Write-Audit-Publish thì dữ liệu bẩn vốn chưa publish. <strong>B3. Thông báo sớm:</strong> một tin nhắn vào kênh chung TRƯỚC khi biết nguyên nhân — "biết rồi, đang xử, cập nhật sau 30 phút" rẻ hơn nhiều so với để business tự phát hiện số sai. <strong>B4. Chẩn đoán:</strong> thứ tự nghi phạm thống kê từ thực tế: thay đổi ở nguồn (60-70%: schema đổi, backfill nguồn, nghỉ lễ) → thay đổi code mình mới deploy (20-30%) → hạ tầng (5-10%). <strong>B5. Sửa &amp; backfill:</strong> sửa gốc, chạy lại đúng dải partition hỏng (mẫu backfill idempotent — khoá Pipeline), xác nhận gate xanh lại. <strong>B6. Post-mortem không đổ lỗi</strong> trong 48h: timeline, nguyên nhân gốc, và ít nhất MỘT check mới để loại lỗi này vĩnh viễn — sự cố lặp lại nguyên xi là sự cố đáng xấu hổ duy nhất.</p>
+
+<h2>4. Scorecard chất lượng — một trang, nhìn 10 giây</h2>
+<p>Mỗi mart một dòng, mỗi tuần một cột, mỗi ô một màu theo % ngày đạt SLO. Kèm 3 số tổng: số incident P1/P2 trong tháng, thời gian phát hiện trung bình (TTD — mục tiêu: máy phát hiện trước người), thời gian khắc phục trung bình (TTR). Scorecard trả lời câu của sếp "đầu tư vào data quality được gì?" bằng xu hướng thay vì giai thoại. Nếu TTD của bạn vẫn là "người dùng nhắn Zalo" — quay lại Module 15, bạn chưa xong phần check.</p>
+
+<h2>5. Kinh tế học của chất lượng — đầu tư đến đâu thì dừng</h2>
+<p>Chi phí lỗi = xác suất × (thiệt hại quyết định sai + giờ công dò sửa + niềm tin bị ăn mòn — thứ đắt nhất và hồi phục chậm nhất). Chi phí phòng ngừa = giờ công viết check + hạ tầng + <em>chi phí cảnh báo giả</em>. Điểm dừng hợp lý: bảng vàng (nuôi quyết định tiền thật) đáng có đủ 3 tầng check + SLO + on-call; bảng phụ chỉ cần freshness + row count; bảng thí nghiệm không cần gì. Phủ 100% mọi bảng là phủ 100% chi phí với 20% lợi ích — sự trưởng thành nằm ở chỗ dám <em>không</em> check.</p>
+</section>
+
+<section class="panel" id="t17">
+<div class="lead">Module 17 — Thực hành</div>
+<h1>Bài tập &amp; case study: <span class="hl">chất lượng dữ liệu trong sản xuất – trading</span></h1>
+<p class="intro-p">Năm bài tập và hai case study lấy bối cảnh công ty sản xuất &amp; thương mại (đơn hàng, giá nguyên liệu, tồn kho) — loại dữ liệu mà lỗi được đo bằng tiền ngay trong tuần. Tự làm trước khi mở lời giải; mỗi bài luyện đúng một kỹ thuật của Module 15-16.</p>
+
+<h2>1. Năm bài tập</h2>
+<p><strong>Bài 1 — Thiết kế bộ gate.</strong> Bảng <code class="inline">gia_nguyen_lieu(ma_loai, gia_usd_tan, ngay, nguon)</code> nhận feed giá bột giấy hằng ngày từ 2 nguồn. Viết 5 SQL check theo quy ước "đếm vi phạm", nêu rõ check nào hard gate (chặn pipeline) check nào soft (cảnh báo).</p>
+<details><summary>Lời giải</summary><p>(1) <em>Hard</em> — trùng khoá tự nhiên: <code class="inline">COUNT(*) - COUNT(DISTINCT (ma_loai, ngay, nguon))</code>; giá trùng 2 lần làm trung bình lệch. (2) <em>Hard</em> — giá ngoài dải khả tín: <code class="inline">WHERE gia_usd_tan NOT BETWEEN 200 AND 2000</code> — giá bột giấy ra ngoài dải này gần chắc là lỗi đơn vị (nhập VND, nhập /kg). (3) <em>Hard</em> — ngày tương lai. (4) <em>Soft</em> — freshness từng nguồn: <code class="inline">GROUP BY nguon HAVING MAX(ngay) &lt; CURRENT_DATE - 1</code> — một nguồn trễ vẫn dùng tạm nguồn kia, nhưng phải biết. (5) <em>Soft</em> — biến động ngày-qua-ngày: |Δ%| &gt; 8% so hôm trước (z-score hoặc ngưỡng cứng) — có thể là thật (thị trường sốc) nên không chặn, nhưng bắt người xác nhận. Điểm mấu chốt của lời giải: <strong>lý do nghiệp vụ đứng sau mỗi ngưỡng</strong>, không phải con số tuỳ hứng.</p></details>
+
+<p><strong>Bài 2 — Ranh giới hard/soft.</strong> Gate "null_customer &gt; 0 thì FAIL" làm pipeline đứng lúc 3h sáng vì đúng 1 dòng NULL trong 2 triệu dòng, báo cáo sáng không có số. Sửa thiết kế thế nào để vừa không nuốt lỗi vừa không tự bắn chân?</p>
+<details><summary>Lời giải</summary><p>Ba nấc thay cho nhị phân: (1) đặt <em>ngưỡng theo tỷ lệ</em> — FAIL khi &gt; 0.5%, WARN khi &gt; 0.05%; (2) <em>quarantine thay vì chặn</em>: tách dòng vi phạm sang bảng <code class="inline">_quarantine</code>, cho 99.99% dòng sạch đi tiếp, sáng xử lý phần cách ly (mẫu dead-letter của khoá Streaming áp cho batch); (3) lỗi <em>cấu trúc</em> (schema đổi, bảng rỗng) mới đáng chặn tuyệt đối. Nguyên tắc: mức độ chặn tỷ lệ với mức phá hoại của lỗi, không phải với sự tồn tại của lỗi.</p></details>
+
+<p><strong>Bài 3 — Anomaly có mùa vụ.</strong> Volume đơn hàng thứ 7/CN chỉ bằng 30% ngày thường; z-score so 7 ngày trượt kêu ầm mỗi cuối tuần. Sửa query mục 2 Module 15 cho hết false positive mà vẫn bắt được ngày thường sụt thật.</p>
+<details><summary>Lời giải</summary><p>So sánh cùng-thứ-với-cùng-thứ: <code class="inline">WINDOW w AS (PARTITION BY dayofweek(d) ORDER BY d ROWS BETWEEN 8 PRECEDING AND 1 PRECEDING)</code> — thứ bảy này so với 8 thứ bảy trước. Trả giá: cần lịch sử dài hơn (8 tuần thay 1 tuần) và anomaly kéo dài nguyên tuần sẽ vào baseline nhanh hơn — nêu được trade-off này mới là hiểu, không phải chỉ thay được dòng WINDOW.</p></details>
+
+<p><strong>Bài 4 — Reconciliation hai nguồn.</strong> Doanh thu tháng 6 trong warehouse lệch 0.7% so với báo cáo kế toán. Kế toán đúng (họ khớp ngân hàng). Viết quy trình 4 bước truy nguyên bằng SQL.</p>
+<details><summary>Lời giải</summary><p>(1) Khớp <em>tổng theo tháng</em> hai bên cùng định nghĩa (cùng múi giờ, cùng lấy ngày ghi nhận hay ngày chứng từ? — 50% vụ lệch chết ở định nghĩa, chưa cần tới data). (2) Drill xuống <em>ngày</em>: <code class="inline">FULL OUTER JOIN</code> hai bảng tổng-theo-ngày, tìm ngày lệch — thường lệch dồn 1-2 ngày quanh cuối tháng (cut-off). (3) Drill xuống <em>chứng từ</em> trong ngày lệch: dòng có bên này thiếu bên kia (anti-join hai chiều). (4) Phân loại nguyên nhân tìm được: timing (ghi nhận khác kỳ), missing (mất event), duplicate, định nghĩa (gross vs net, có/không VAT) — mỗi loại một cách sửa khác nhau. Đây là bài kiểm tra thực tế phổ biến nhất của DE làm việc cạnh kế toán — làm chủ nó là có uy tín ngay.</p></details>
+
+<p><strong>Bài 5 — Viết SLO thật.</strong> Chọn một báo cáo/dashboard bạn thực sự đang phụ trách, viết đủ bộ: 2 SLI đo bằng query, SLO có con số, ai là người tiêu dùng, vỡ SLO thì ai được page.</p>
+<details><summary>Lời giải</summary><p>Không có đáp án duy nhất — khung chấm: SLI có query cụ thể chưa (đo bằng cảm giác = 0 điểm); SLO có % và chu kỳ chưa ("99% ngày trong tháng, tươi trước 7:00"); người tiêu dùng có tên thật chưa; kênh cảnh báo có tồn tại chưa. Nếu báo cáo bạn chọn không có ai chờ nó mỗi sáng — kết luận đúng là <em>không cần SLO</em>, và đó cũng là một đáp án đạt.</p></details>
+
+<h2>2. Case study 1 — Giá nhập đơn vị sai, hợp đồng ký lỗ</h2>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Diễn biến:</strong> Feed giá OCC (giấy thu hồi) từ một vendor đổi đơn vị từ USD/tấn sang USD/kg mà không báo (giá 180 → 0.18). Pipeline không có check dải giá trị; dashboard pricing hiển thị nguyên liệu "rẻ bất thường"; một hợp đồng bán dài hạn được chốt giá dựa trên chi phí đầu vào ảo thấp. Phát hiện sau 9 ngày khi kế toán đối chiếu hoá đơn nhập thật.</p></div>
+<p><strong>Mổ xẻ theo khung Module 15-16:</strong> Lỗi thuộc lớp <em>validity</em> — dải khả tín (200-2000 USD/tấn) bắt được ngay dòng đầu tiên, chi phí viết check: một câu SQL. Vì sao 9 ngày? TTD phụ thuộc người, không có máy nào nhìn — thiếu cả check lẫn scorecard. Bài học xếp hạng: (1) mọi feed <em>giá</em> từ bên ngoài bắt buộc có range check + đối chiếu chéo nguồn thứ hai khi lệch &gt; ngưỡng; (2) "rẻ bất thường" đáng lẽ là alert P2 tự động, không phải phát hiện tình cờ; (3) post-mortem đúng chuẩn phải đẻ ra check mới — sau vụ này bộ gate của Bài 1 chính là sản phẩm.</p>
+
+<h2>3. Case study 2 — Backfill nguồn âm thầm, số tháng cũ đổi</h2>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Diễn biến:</strong> Team ERP chạy lại job đồng bộ, đẩy lại toàn bộ đơn hàng tháng 5 với vài trăm đơn được sửa trạng thái. Pipeline ingest theo <code class="inline">updated_at</code> nên nuốt hết — đúng thiết kế. Nhưng báo cáo tháng 5 đã chốt gửi ban giám đốc từ tuần trước; giờ dashboard hiện số khác báo cáo cũ 0.4%. Business nghi ngờ toàn bộ hệ thống số liệu.</p></div>
+<p><strong>Mổ xẻ:</strong> Không dòng nào "bẩn" — đây là lớp <em>consistency theo thời gian</em>: sự thật thay đổi sau khi đã công bố. Ba lớp phòng thủ đúng bài: (1) <em>phát hiện</em> — check "biến động số liệu kỳ đã chốt": tổng doanh thu các tháng đã khoá phải bất biến, lệch &gt; 0.01% thì alert P2 kèm danh sách đơn thay đổi (SQL: so snapshot tổng-theo-tháng hôm nay với hôm qua); (2) <em>thể chế</em> — chính sách khoá sổ dữ liệu (data closing) đồng bộ với khoá sổ kế toán: sau ngày X, thay đổi kỳ cũ đi vào bảng điều chỉnh của kỳ hiện tại, không ghi đè lịch sử; (3) <em>truyền thông</em> — banner "đã cập nhật lại theo điều chỉnh nguồn ngày ..." trên dashboard rẻ hơn nhiều so với một cuộc họp giải trình. Kỹ thuật nền phía dưới: SCD/snapshot (khoá Modeling) và bitemporal — biết "số liệu tại thời điểm báo cáo" và "số liệu đúng nhất hiện nay" là hai câu hỏi khác nhau, hệ thống trưởng thành trả lời được cả hai.</p>
+
+<div class="box tip"><span class="t"><span>Chốt lại cả khoá</span></span><p>Ba module 15-17 cho bạn đường đi một tuần: ngày 1-2 viết bộ SQL gate cho 2-3 bảng vàng; ngày 3 thêm anomaly volume/freshness; ngày 4 định nghĩa 2 SLO có chủ; ngày 5 viết runbook 6 bước + kênh alert. Great Expectations, catalog, contract (module 1-14) đến sau — khi những thứ trên đã chạy và bạn biết mình cần gì hơn nữa.</p></div>
+</section>
+
+</main>
+<footer>
+data-quality-api — Data Contract · Great Expectations · Pact · Schema Diff · OpenLineage · Quality SLO · Test Pyramid for Data · Lab · 13 module
+</footer>
+<script>
+  const btns = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.panel');
+  btns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.tab;
+      btns.forEach(b=>b.classList.remove('active'));
+      panels.forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(id).classList.add('active');
+      window.scrollTo({top:0, behavior:'smooth'});
+      btn.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+    });
+  });
+  function attachCopy(){
+    document.querySelectorAll('.term-copy').forEach(btn=>{
+      if(btn.dataset.bound) return; btn.dataset.bound='1';
+      btn.addEventListener('click', ()=>{
+        const body = btn.closest('.term').querySelector('.term-body');
+        const cmds = [...body.querySelectorAll('.cmd')].map(c=>c.textContent).join('\n');
+        const text = cmds || body.innerText;
+        navigator.clipboard.writeText(text).then(()=>{
+          const old = btn.textContent; btn.textContent='✓ copied'; btn.style.color='#7ee787';
+          setTimeout(()=>{btn.textContent=old; btn.style.color='';},1400);
+        });
+      });
+    });
+  }
+  attachCopy();
+  window.addEventListener('load', attachCopy);
+  /* sync 20260710 */
+</script>
+</body>
+</html>

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Engineering Masterclass — Trung tâm học tập</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Mono:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f7f9; --bg-2:#eceef3; --bg-3:#e3e6ec; --bg-4:#d8dce5;
+    --border:#b0b8c840; --border-solid:#cdd3dd;
+    --text:#1e2536; --dim:#566173; --faint:#8c96a8;
+    --orange:#d55a1b; --orange-dim:#b04510;
+    --cyan:#0d8f7d; --cyan-dim:#0a7a69;
+    --green:#18873a; --red:#dc3545; --yellow:#b06d00; --purple:#6d3bc4; --blue:#2563eb;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --display:'Space Mono',monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+    --sidebar-w:300px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:var(--sans); color:var(--text); background:var(--bg);
+    display:flex; height:100vh; overflow:hidden; font-size:14px;
+  }
+
+  /* ---------- SIDEBAR ---------- */
+  #sidebar{
+    width:var(--sidebar-w); flex:0 0 var(--sidebar-w);
+    background:var(--bg-2); border-right:1px solid var(--border-solid);
+    display:flex; flex-direction:column; height:100%;
+    transition:margin-left .22s ease;
+  }
+  body.collapsed #sidebar{ margin-left:calc(-1 * var(--sidebar-w)); }
+
+  .sb-head{ padding:16px 16px 12px; border-bottom:1px solid var(--border-solid); }
+  .sb-head .brand{ font-family:var(--display); font-weight:700; font-size:15px; letter-spacing:-.3px; }
+  .sb-head .brand .dot{ color:var(--orange); }
+  .sb-head .sub{ font-family:var(--mono); font-size:11px; color:var(--faint); margin-top:3px; }
+
+  .search-wrap{ padding:10px 12px; border-bottom:1px solid var(--border-solid); }
+  #search{
+    width:100%; padding:8px 10px; border:1px solid var(--border-solid); border-radius:7px;
+    background:var(--bg); color:var(--text); font-family:var(--mono); font-size:12.5px; outline:none;
+  }
+  #search:focus{ border-color:var(--cyan); }
+
+  .nav{ flex:1; overflow-y:auto; padding:8px 8px 14px; }
+  .group-label{
+    font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.8px;
+    color:var(--faint); padding:12px 10px 5px; font-weight:700;
+  }
+  .item{
+    display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:8px;
+    cursor:pointer; user-select:none; border:1px solid transparent; margin:1px 0;
+  }
+  .item:hover{ background:var(--bg-3); }
+  .item.active{ background:var(--bg); border-color:var(--cyan); box-shadow:0 1px 0 var(--border-solid); }
+  .item.active .it-label{ color:var(--cyan-dim); font-weight:600; }
+  .chk{
+    flex:0 0 18px; width:18px; height:18px; border-radius:50%; border:1.5px solid var(--border-solid);
+    background:var(--bg); display:grid; place-items:center; font-size:11px; color:#fff; transition:.12s;
+  }
+  .chk:hover{ border-color:var(--green); }
+  .item.done .chk{ background:var(--green); border-color:var(--green); }
+  .item.done .chk::after{ content:"✓"; }
+  .item.done .it-label{ color:var(--faint); text-decoration:line-through; text-decoration-color:var(--border-solid); }
+  .it-num{ font-family:var(--mono); font-size:11px; color:var(--faint); flex:0 0 auto; width:20px; }
+  .it-body{ min-width:0; flex:1; }
+  .it-label{ font-size:13px; font-weight:500; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .it-full{ font-family:var(--mono); font-size:10.5px; color:var(--faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+
+  .sb-foot{ border-top:1px solid var(--border-solid); padding:11px 14px; }
+  .prog-row{ display:flex; justify-content:space-between; align-items:baseline; font-family:var(--mono); font-size:11px; color:var(--dim); }
+  .prog-row .reset{ color:var(--faint); cursor:pointer; text-decoration:underline; }
+  .prog-row .reset:hover{ color:var(--red); }
+  .bar{ height:6px; border-radius:5px; background:var(--bg-4); margin-top:7px; overflow:hidden; }
+  .bar > i{ display:block; height:100%; width:0; background:linear-gradient(90deg,var(--cyan),var(--green)); transition:width .3s ease; }
+
+  /* ---------- MAIN ---------- */
+  #main{ flex:1; display:flex; flex-direction:column; height:100%; min-width:0; }
+  .toolbar{
+    display:flex; align-items:center; gap:10px; padding:9px 14px;
+    background:var(--bg-2); border-bottom:1px solid var(--border-solid); flex:0 0 auto;
+  }
+  .tb-btn{
+    display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border-radius:7px;
+    border:1px solid var(--border-solid); background:var(--bg); color:var(--text);
+    font-family:var(--mono); font-size:12px; cursor:pointer; white-space:nowrap;
+  }
+  .tb-btn:hover{ border-color:var(--cyan); color:var(--cyan-dim); }
+  .tb-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .tb-title{ flex:1; min-width:0; }
+  .tb-title .t1{ font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tb-title .t2{ font-family:var(--mono); font-size:11px; color:var(--faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .spacer{ flex:1; }
+
+  .stage{ flex:1; position:relative; min-height:0; background:var(--bg); }
+  iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; background:#fff; }
+
+  /* ---------- HOME ---------- */
+  #home{ position:absolute; inset:0; overflow-y:auto; padding:30px 34px 50px; background:var(--bg); }
+  .home-hero{ max-width:900px; margin:0 auto 6px; }
+  .home-hero h1{ font-family:var(--display); font-size:26px; margin:0 0 6px; letter-spacing:-.5px; }
+  .home-hero h1 .dot{ color:var(--orange); }
+  .home-hero p{ color:var(--dim); margin:0 0 4px; line-height:1.6; max-width:680px; }
+  .home-hero .meta{ font-family:var(--mono); font-size:12px; color:var(--faint); margin-top:8px; }
+  .home-groups{ max-width:900px; margin:22px auto 0; }
+  .hg{ margin-bottom:26px; }
+  .hg-title{ font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--orange-dim); font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+  .hg-title::after{ content:""; flex:1; height:1px; background:var(--border-solid); }
+  .cards{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:11px; }
+  .card{
+    background:var(--bg-2); border:1px solid var(--border-solid); border-radius:11px; padding:14px;
+    cursor:pointer; transition:.14s; position:relative; overflow:hidden;
+  }
+  .card:hover{ border-color:var(--cyan); transform:translateY(-2px); box-shadow:0 6px 18px #1e25360f; }
+  .card .c-num{ font-family:var(--display); font-size:13px; color:var(--orange); font-weight:700; }
+  .card.done .c-num::after{ content:" ✓"; color:var(--green); }
+  .card .c-label{ font-size:14.5px; font-weight:600; margin:5px 0 4px; }
+  .card .c-full{ font-family:var(--mono); font-size:11px; color:var(--dim); line-height:1.5; }
+  .card.done{ opacity:.72; }
+
+  .nofile{ position:absolute; inset:0; display:none; place-items:center; text-align:center; padding:30px; }
+  .nofile .box{ max-width:440px; font-family:var(--mono); font-size:13px; color:var(--dim); line-height:1.7; }
+  .nofile code{ background:var(--bg-3); padding:2px 6px; border-radius:5px; color:var(--orange-dim); }
+
+  ::-webkit-scrollbar{ width:11px; height:11px; }
+  ::-webkit-scrollbar-thumb{ background:var(--bg-4); border-radius:6px; border:3px solid var(--bg-2); }
+  ::-webkit-scrollbar-thumb:hover{ background:#c2c8d2; }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div class="sb-head">
+      <div class="brand">data_engineering<span class="dot">.</span>hub</div>
+      <div class="sub">27 masterclass · học theo lộ trình</div>
+    </div>
+    <div class="search-wrap">
+      <input id="search" type="text" placeholder="Tìm module… (vd: spark, api, aws)" autocomplete="off">
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sb-foot">
+      <div class="prog-row">
+        <span>Tiến độ: <b id="prog-text">0 / 22</b></span>
+        <span class="reset" id="reset-prog">đặt lại</span>
+      </div>
+      <div class="bar"><i id="prog-bar"></i></div>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div class="toolbar">
+      <button class="tb-btn" id="toggle-sb" title="Ẩn/hiện thanh bên (phím \\)">☰</button>
+      <button class="tb-btn" id="btn-home" title="Trang chủ / Lộ trình">⌂ Trang chủ</button>
+      <div class="tb-title" id="tb-title">
+        <div class="t1">Data Engineering Masterclass</div>
+        <div class="t2">Chọn một module để bắt đầu</div>
+      </div>
+      <button class="tb-btn" id="btn-prev" title="Module trước (Alt + ←)">←</button>
+      <button class="tb-btn" id="btn-next" title="Module sau (Alt + →)">→</button>
+      <button class="tb-btn" id="btn-done2" title="Đánh dấu hoàn thành module hiện tại">✓ Xong</button>
+      <button class="tb-btn" id="btn-open" title="Mở module trong tab trình duyệt mới">↗ Tab mới</button>
+    </div>
+    <div class="stage">
+      <div id="home"></div>
+      <iframe id="viewer" title="Nội dung module" style="display:none"></iframe>
+      <div class="nofile" id="nofile">
+        <div class="box">
+          Không nạp được module trong khung xem.<br><br>
+          Hãy đảm bảo file <code>00-index.html</code> này nằm <b>cùng thư mục</b> với các file masterclass,
+          rồi bấm <b>↗ Tab mới</b> để mở trực tiếp.
+        </div>
+      </div>
+    </div>
+  </main>
+
+<script>
+const MODULES = [
+  {n:'01', file:'01-linux-masterclass.html',                 label:'Linux',                full:'Linux cho Data Engineer & MLOps',                          group:'Nền tảng hệ thống'},
+  {n:'02', file:'02-postgresql-masterclass.html',            label:'PostgreSQL',           full:'PostgreSQL cho Data Engineer & MLOps',                     group:'Nền tảng hệ thống'},
+  {n:'03', file:'03-business-domain-masterclass.html',       label:'Business Domain',      full:'Hiểu doanh nghiệp, mô hình hoá nghiệp vụ, chiến lược & Lab SQL',     group:'Nghiệp vụ'},
+  {n:'04', file:'04-data-pipeline-masterclass.html',         label:'Data Pipeline',        full:'Data Pipeline cho Data Engineer & MLOps',                  group:'Xử lý & Pipeline'},
+  {n:'05', file:'05-spark-distributed-masterclass.html',     label:'Apache Spark',         full:'Apache Spark & xử lý phân tán',                            group:'Xử lý & Pipeline'},
+  {n:'06', file:'06-data-modeling-masterclass.html',         label:'Data Modeling',        full:'Data Modeling cho Data Engineer & MLOps',                  group:'Data Modeling'},
+  {n:'07', file:'07-data-modeling-serving-masterclass.html', label:'Modeling for Serving', full:'Query Patterns cho BI, dbt, Semantic Layer, Cube.dev, MetricFlow',    group:'Data Modeling'},
+  {n:'08', file:'08-webapi-fundamentals-masterclass.html',   label:'WebAPI Fundamentals',  full:'Kiến trúc, Auth, FastAPI, Validation, Healthcheck, Performance', group:'API & Tích hợp'},
+  {n:'09', file:'09-data-api-patterns-masterclass.html',     label:'Data API Patterns',    full:'Read Replica, Cursor Pagination, GraphQL for BI, Async Export', group:'API & Tích hợp'},
+  {n:'10', file:'10-data-quality-api-masterclass.html',      label:'Data Quality API',     full:'Data Contract, Great Expectations, Lineage, Quality SLO',  group:'API & Tích hợp'},
+  {n:'11', file:'11-streaming-data-api-masterclass.html',    label:'Streaming Data API',   full:'Kafka, CDC, WebSocket, Server-Sent Events, Event-Driven',  group:'API & Tích hợp'},
+  {n:'12', file:'12-airflow-orchestration-masterclass.html', label:'Apache Airflow',       full:'DAG, Scheduler, Operators, Sensors, Production Patterns',   group:'Orchestration & Hạ tầng'},
+  {n:'13', file:'13-docker-kubernetes-masterclass.html',     label:'Docker & Kubernetes',  full:'Container, Image, Pod, Deployment, Service, Production',    group:'Orchestration & Hạ tầng'},
+  {n:'14', file:'14-aws-cloud-data-engineering-masterclass.html', label:'AWS Cloud',        full:'S3, Glue, Redshift, EMR, Kinesis, Lambda, Lake Formation', group:'Cloud'},
+  {n:'15', file:'15-gcp-cloud-data-engineering-masterclass.html', label:'GCP Cloud',        full:'GCS, BigQuery, Dataflow, Pub/Sub, Dataproc, Composer, Vertex AI', group:'Cloud'},
+  {n:'16', file:'16-lakehouse-table-format-masterclass.html',     label:'Lakehouse & Table Format', full:'Parquet, Apache Iceberg, Delta Lake, Hudi, ACID, time travel, compaction', group:'Lakehouse'},
+  {n:'17', file:'17-platform-engineering-masterclass.html',       label:'Platform Engineering',     full:'IaC, Terraform, CI/CD, GitHub Actions, GitOps, Observability, SLO, Secrets', group:'Platform & Reliability'},
+  {n:'18', file:'18-system-design-data-architecture-masterclass.html', label:'System Design & Architecture', full:'System Design, Trade-offs, Lambda/Kappa, Data Mesh, Reliability, Distributed Systems, Capstone', group:'Kiến trúc & Thiết kế'},
+  {n:'19', file:'19-duckdb-embedded-analytics-masterclass.html', label:'DuckDB & Embedded Analytics', full:'DuckDB in-process, Parquet/Arrow, vectorized execution, optimizer, MotherDuck, lakehouse, dbt, capstone end-to-end', group:'Embedded & Modern Analytics'},
+  {n:'20', file:'20-snowflake-databricks-masterclass.html', label:'Snowflake & Databricks', full:'Snowflake Data Warehouse, Databricks Lakehouse, Delta, Unity Catalog, Dynamic Tables, Liquid Clustering, Vector Search, chi phí & tối ưu, migration patterns, cheatsheet', group:'Warehouse & Lakehouse'},
+  {n:'21', file:'21-python-software-engineering-masterclass.html', label:'Python & Software Engineering', full:'Python hiện đại, Async & Concurrency, Testing, Packaging, Design Patterns, Logging & Observability, Performance, DSA cho DE, Capstone', group:'Lập trình & Kỹ thuật'},
+  {n:'22', file:'22-genai-llm-data-engineering-masterclass.html', label:'GenAI & LLM cho DE', full:'LLM nền tảng, Embeddings & Vector DB, RAG, Pipeline cho AI, LLM-in-SQL, Text-to-SQL & GenBI, MCP & Agents, Eval/RAGAS, Bảo mật & Governance, Chi phí & Observability, Capstone E2E', group:'GenAI & AI Engineering'},
+  {n:'23', file:'23-dbt-analytics-engineering-masterclass.html', label:'dbt & Analytics Engineering', full:'dbt Core/Fusion, models & ref, incremental & microbatch, tests & unit tests, snapshots SCD2, contracts, slim CI, semantic layer, lab end-to-end với DuckDB', group:'Data Modeling'},
+  {n:'24', file:'24-mlops-platform-masterclass.html', label:'MLOps & ML Platform (phụ lục)', full:'Hidden technical debt, feature store, training pipeline, serving, monitoring & drift, LLMOps — phụ lục chuyên sâu sau lộ trình chính', group:'GenAI & AI Engineering'},
+  {n:'25', file:'25-data-mining-masterclass.html', label:'Data Mining', full:'KDD & CRISP-DM, luật kết hợp Apriori/FP-Growth, mẫu tuần tự, phân cụm, phân lớp, gradient boosting, đánh giá & hiệu chuẩn, phát hiện bất thường, rò rỉ dữ liệu, SHAP, khai phá văn bản, cạm bẫy phương pháp luận, lab & capstone', group:'Phân tích & Khai phá dữ liệu'},
+  {n:'26', file:'26-advanced-analytics-masterclass.html', label:'Phân tích dữ liệu nâng cao', full:'Suy diễn thống kê & bootstrap, kiểm định & power, A/B testing (SRM, CUPED, peeking), DAG & nhân quả, DiD/PSM/RDD/IV, uplift modeling, hồi quy & GLM, mô hình phân cấp, phân tích sống sót, chuỗi thời gian, Bayes, MMM, truyền đạt kết quả, lab & capstone', group:'Phân tích & Khai phá dữ liệu'},
+  {n:'27', file:'27-nosql-distributed-storage-masterclass.html', label:'NoSQL & Distributed Storage', full:'CAP/PACELC & mô hình nhất quán, nhân bản & quorum, consistent hashing, LSM-tree vs B-tree, Redis, MongoDB, Cassandra, DynamoDB single-table design, graph & search, NewSQL, giao dịch phân tán, vận hành & chi phí, lab với Docker', group:'Nền tảng hệ thống'},
+  {n:'28', file:'28-onprem-vs-cloud-de-career-masterclass.html', label:'On-premise vs Cloud & nghề DE', full:'Giải phẫu luồng on-premise log device → ELK → Kafka → S3/Iceberg → ClickHouse, medallion silver/gold, Databricks &amp; ý nghĩa của việc xây data platform, kinh tế học CapEx vs OpEx và build-vs-buy, hai kiểu công việc DE dưới góc nhìn nghề nghiệp, khung quyết định &amp; quiz tình huống', group:'Kiến trúc & Thiết kế'},
+];
+
+const STORE_KEY = 'de_hub_v1';
+let store = { done:{}, last:null };
+try { const s = JSON.parse(localStorage.getItem(STORE_KEY)); if(s) store = Object.assign(store, s); } catch(e){}
+function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch(e){} }
+
+let current = -1; // index in MODULES, -1 = home
+
+const $  = s => document.querySelector(s);
+const nav = $('#nav'), home = $('#home'), viewer = $('#viewer'), nofile = $('#nofile');
+
+/* ---------- BUILD SIDEBAR ---------- */
+function buildSidebar(){
+  nav.innerHTML = '';
+  let lastGroup = null;
+  MODULES.forEach((m, i) => {
+    if(m.group !== lastGroup){
+      const g = document.createElement('div');
+      g.className = 'group-label'; g.textContent = m.group;
+      nav.appendChild(g); lastGroup = m.group;
+    }
+    const it = document.createElement('div');
+    it.className = 'item' + (store.done[m.file] ? ' done' : '');
+    it.dataset.idx = i;
+    it.dataset.search = (m.n+' '+m.label+' '+m.full).toLowerCase();
+    it.innerHTML =
+      '<div class="chk" title="Đánh dấu hoàn thành"></div>' +
+      '<div class="it-num">'+m.n+'</div>' +
+      '<div class="it-body"><div class="it-label">'+m.label+'</div>' +
+      '<div class="it-full">'+m.full+'</div></div>';
+    it.querySelector('.chk').addEventListener('click', e => { e.stopPropagation(); toggleDone(i); });
+    it.addEventListener('click', () => openModule(i));
+    nav.appendChild(it);
+  });
+}
+
+/* ---------- BUILD HOME ---------- */
+function buildHome(){
+  let html = '<div class="home-hero">' +
+    '<h1>Data Engineering Masterclass<span class="dot">.</span></h1>' +
+    '<p>22 module học chuyên sâu, sắp xếp theo lộ trình từ nền tảng hệ thống → xử lý dữ liệu → modeling → API → hạ tầng → cloud → GenAI/LLM. Mỗi module mở trong một tab riêng, giữ nguyên định dạng gốc.</p>' +
+    '<div class="meta">Mẹo: dùng <b>Alt + ←/→</b> để chuyển module · phím <b>\\</b> để ẩn/hiện thanh bên · tích vào vòng tròn để đánh dấu đã học.</div>' +
+    '</div><div class="home-groups">';
+  let lastGroup = null;
+  MODULES.forEach((m, i) => {
+    if(m.group !== lastGroup){
+      if(lastGroup !== null) html += '</div></div>';
+      html += '<div class="hg"><div class="hg-title">'+m.group+'</div><div class="cards">';
+      lastGroup = m.group;
+    }
+    html += '<div class="card'+(store.done[m.file]?' done':'')+'" data-idx="'+i+'">' +
+      '<div class="c-num">'+m.n+'</div>' +
+      '<div class="c-label">'+m.label+'</div>' +
+      '<div class="c-full">'+m.full+'</div></div>';
+  });
+  html += '</div></div></div>';
+  home.innerHTML = html;
+  home.querySelectorAll('.card').forEach(c =>
+    c.addEventListener('click', () => openModule(+c.dataset.idx)));
+}
+
+/* ---------- ACTIONS ---------- */
+function setActive(i){
+  nav.querySelectorAll('.item').forEach(el =>
+    el.classList.toggle('active', +el.dataset.idx === i));
+}
+
+function openModule(i){
+  const m = MODULES[i]; if(!m) return;
+  current = i;
+  viewer.style.display = 'block';
+  home.style.display = 'none';
+  nofile.style.display = 'none';
+  viewer.src = m.file;
+  setActive(i);
+  $('#tb-title').innerHTML =
+    '<div class="t1">'+m.n+' · '+m.label+'</div><div class="t2">'+m.full+'</div>';
+  store.last = m.file; save();
+  $('#btn-prev').disabled = (i === 0);
+  $('#btn-next').disabled = (i === MODULES.length - 1);
+  syncDoneBtn();
+}
+
+function showHome(){
+  current = -1;
+  home.style.display = 'block';
+  viewer.style.display = 'none';
+  nofile.style.display = 'none';
+  setActive(-1);
+  $('#tb-title').innerHTML =
+    '<div class="t1">Data Engineering Masterclass</div><div class="t2">Chọn một module để bắt đầu</div>';
+  $('#btn-prev').disabled = true;
+  $('#btn-next').disabled = true;
+  syncDoneBtn();
+}
+
+function toggleDone(i){
+  const f = MODULES[i].file;
+  store.done[f] = !store.done[f];
+  if(!store.done[f]) delete store.done[f];
+  save();
+  buildSidebar(); buildHome();
+  if(current >= 0) setActive(current);
+  updateProgress(); syncDoneBtn();
+}
+
+function syncDoneBtn(){
+  const b = $('#btn-done2');
+  if(current < 0){ b.disabled = true; b.textContent = '✓ Xong'; return; }
+  b.disabled = false;
+  b.textContent = store.done[MODULES[current].file] ? '✓ Đã học' : '✓ Đánh dấu xong';
+}
+
+function updateProgress(){
+  const total = MODULES.length;
+  const done = MODULES.filter(m => store.done[m.file]).length;
+  $('#prog-text').textContent = done + ' / ' + total;
+  $('#prog-bar').style.width = (done/total*100) + '%';
+}
+
+function doFilter(q){
+  q = q.trim().toLowerCase();
+  let visGroup = {};
+  nav.querySelectorAll('.item').forEach(el => {
+    const hit = !q || el.dataset.search.includes(q);
+    el.style.display = hit ? '' : 'none';
+    if(hit){ const g = el.previousElementSibling; }
+  });
+  // hide empty group labels
+  nav.querySelectorAll('.group-label').forEach(g => {
+    let n = g.nextElementSibling, any = false;
+    while(n && !n.classList.contains('group-label')){
+      if(n.classList.contains('item') && n.style.display !== 'none'){ any = true; break; }
+      n = n.nextElementSibling;
+    }
+    g.style.display = any ? '' : 'none';
+  });
+}
+
+/* ---------- WIRE UP ---------- */
+$('#toggle-sb').addEventListener('click', () => document.body.classList.toggle('collapsed'));
+$('#btn-home').addEventListener('click', showHome);
+$('#btn-prev').addEventListener('click', () => { if(current > 0) openModule(current - 1); });
+$('#btn-next').addEventListener('click', () => { if(current < MODULES.length-1) openModule(current + 1); });
+$('#btn-done2').addEventListener('click', () => { if(current >= 0) toggleDone(current); });
+$('#btn-open').addEventListener('click', () => {
+  const f = current >= 0 ? MODULES[current].file : null;
+  if(f) window.open(f, '_blank');
+});
+$('#search').addEventListener('input', e => doFilter(e.target.value));
+$('#reset-prog').addEventListener('click', () => {
+  if(confirm('Đặt lại toàn bộ tiến độ đã học?')){
+    store.done = {}; save(); buildSidebar(); buildHome(); updateProgress(); syncDoneBtn();
+    if(current >= 0) setActive(current);
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if(e.target.id === 'search') return;
+  if(e.altKey && e.key === 'ArrowRight'){ if(current < MODULES.length-1) openModule(current+1); }
+  if(e.altKey && e.key === 'ArrowLeft'){ if(current > 0) openModule(current-1); }
+  if(e.key === '\\'){ document.body.classList.toggle('collapsed'); }
+});
+
+viewer.addEventListener('load', () => {
+  // file:// cross-origin chặn đọc nội dung iframe; chỉ kiểm tra src rỗng
+  if(!viewer.getAttribute('src')){ nofile.style.display = 'grid'; }
+});
+
+/* ---------- INIT ---------- */
+buildSidebar(); buildHome(); updateProgress();
+if(store.last){
+  const idx = MODULES.findIndex(m => m.file === store.last);
+  if(idx >= 0) openModule(idx); else showHome();
+} else {
+  showHome();
+}
+</script>
+
+</body>
+</html>

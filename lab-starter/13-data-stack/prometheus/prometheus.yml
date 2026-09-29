@@ -1,0 +1,20 @@
+# =============================================================
+# Lab 13 — prometheus/prometheus.yml (scrape config tối thiểu)
+# Mount vào /etc/prometheus/prometheus.yml (xem docker-compose.yml).
+# =============================================================
+global:
+  scrape_interval: 15s          # bao lâu Prometheus "hỏi" mỗi target một lần
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Target chắc chắn có: Prometheus tự scrape chính nó.
+  # -> đủ để làm bài "xem metric" (up, prometheus_tsdb_head_series, ...).
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # (TÙY CHỌN) Metric của Postgres — bỏ comment CẢ khối này VÀ service
+  # postgres-exporter trong docker-compose.yml để có metric DB thật.
+  # - job_name: postgres
+  #   static_configs:
+  #     - targets: ["postgres-exporter:9187"]

@@ -1,0 +1,11 @@
+# Grafana provisioning — datasource Prometheus (tự nạp khi Grafana khởi động).
+# Nhờ file này, vào Grafana là đã có sẵn datasource, không phải add tay.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090     # tên service trong compose, cổng nội bộ
+    isDefault: true
+    editable: true

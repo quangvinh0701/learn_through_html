@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Platform Engineering cho Data Engineer &amp; MLOps — IaC, Terraform, CI/CD, GitOps, Observability · Khoá học chuyên sâu</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#f6f7f9; --bg-2:#eceef3; --bg-3:#e3e6ec; --bg-4:#d8dce5;
+    --border:#b0b8c840; --border-solid:#cdd3dd;
+    --text:#1e2536; --dim:#566173; --faint:#8c96a8;
+    --orange:#d55a1b; --orange-dim:#b04510;
+    --cyan:#0d8f7d; --cyan-dim:#0a7a69;
+    --green:#18873a; --red:#dc3545; --yellow:#b06d00; --purple:#6d3bc4; --blue:#2563eb;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --display:'Space Mono',monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--sans);
+    font-size:16px; line-height:1.7; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(900px 500px at 85% -5%, #d55a1b08, transparent 70%),
+      radial-gradient(800px 500px at 0% 10%, #0d8f7d06, transparent 70%);
+    background-attachment:fixed;
+  }
+  ::selection{background:var(--orange);color:#fff}
+
+  /* ---------- Header ---------- */
+  header.top{
+    position:sticky; top:0; z-index:50;
+    background:#ffffffe8; backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border-solid);
+  }
+  .top-inner{max-width:1180px; margin:0 auto; padding:14px 22px; display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .logo{
+    font-family:var(--display); font-weight:700; font-size:15px; letter-spacing:.5px;
+    display:flex; align-items:center; gap:9px; white-space:nowrap;
+  }
+  .logo .dot{width:11px;height:11px;border-radius:50%;background:var(--orange);box-shadow:0 0 6px var(--orange)}
+  .logo b{color:var(--orange)}
+  .logo .prompt{color:var(--cyan)}
+  .top-sub{color:var(--faint); font-family:var(--mono); font-size:12.5px; margin-left:auto}
+  .blink{animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* ---------- Tabs nav ---------- */
+  nav.tabs{
+    position:sticky; top:53px; z-index:40;
+    background:#f3f4f7f2; backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border-solid);
+  }
+  .tabs-scroll{
+    max-width:1180px; margin:0 auto; padding:0 12px;
+    display:flex; gap:4px; overflow-x:auto; scrollbar-width:thin; scrollbar-color:var(--border-solid) transparent;
+  }
+  .tabs-scroll::-webkit-scrollbar{height:4px;background:transparent}
+  .tabs-scroll::-webkit-scrollbar-track{background:transparent}
+  .tabs-scroll::-webkit-scrollbar-thumb{background:var(--border-solid);border-radius:6px}
+  .tabs-scroll::-webkit-scrollbar-thumb:hover{background:#a0a8b8}
+  .tab-btn{
+    flex:0 0 auto; background:none; border:none; cursor:pointer;
+    color:var(--dim); font-family:var(--mono); font-size:13px; font-weight:500;
+    padding:13px 13px 11px; border-bottom:2px solid transparent;
+    transition:.18s; white-space:nowrap; display:flex; align-items:center; gap:7px;
+  }
+  .tab-btn .num{color:var(--faint); font-size:11px}
+  .tab-btn:hover{color:var(--text)}
+  .tab-btn.active{color:var(--orange); border-bottom-color:var(--orange)}
+  .tab-btn.active .num{color:var(--orange)}
+  .tab-div{flex:0 0 auto;display:flex;align-items:center;gap:5px;color:var(--cyan);font-family:var(--mono);font-size:10px;letter-spacing:1.5px;padding:0 10px 0 14px;border-left:1px solid var(--border-solid);margin-left:6px;opacity:.75;white-space:nowrap}
+  .tab-btn.deep .num{color:var(--cyan-dim)}
+  .tab-btn.deep:hover{color:var(--cyan)}
+  .tab-btn.deep.active{color:var(--cyan); border-bottom-color:var(--cyan)}
+  .tab-btn.deep.active .num{color:var(--cyan)}
+  /* deep theory accents */
+  .panel.deep h1 .hl{color:var(--cyan)}
+  .panel.deep h2{border-left-color:var(--cyan)}
+  .panel.deep .lead{color:var(--purple)}
+  .panel.deep .lead::before{background:var(--purple)}
+  .defbox{background:linear-gradient(180deg,#f0faf888,#ecf5f388);border:1px solid var(--cyan-dim);border-left:4px solid var(--cyan);border-radius:0 12px 12px 0;padding:14px 18px;margin:18px 0}
+  .defbox .term-def{font-family:var(--mono);color:var(--cyan);font-weight:700;font-size:14.5px}
+  .deepnote{font-size:13px;color:var(--faint);font-style:italic;margin:6px 0 18px;border-top:1px dashed var(--border-solid);padding-top:10px}
+
+  /* ---------- Layout ---------- */
+  main{max-width:1180px; margin:0 auto; padding:34px 22px 90px}
+  .panel{display:none; animation:fade .4s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  .lead{
+    font-size:13px; font-family:var(--mono); color:var(--cyan);
+    letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .lead::before{content:"";width:26px;height:1px;background:var(--cyan)}
+  h1{
+    font-family:var(--display); font-weight:700; font-size:clamp(26px,4.4vw,40px);
+    line-height:1.15; letter-spacing:-.5px; margin-bottom:14px;
+  }
+  h1 .hl{color:var(--orange)}
+  h2{
+    font-family:var(--display); font-weight:700; font-size:23px; margin:42px 0 16px;
+    padding-left:14px; border-left:4px solid var(--orange); line-height:1.3;
+  }
+  h3{font-size:18px; font-weight:600; margin:26px 0 10px; color:var(--text)}
+  h3 .ic{color:var(--cyan); font-family:var(--mono)}
+  h4{font-size:15px; font-weight:600; margin:18px 0 8px; color:var(--cyan); font-family:var(--mono)}
+  p{margin:11px 0; color:#3b4555}
+  .intro-p{font-size:17px; color:var(--dim); max-width:760px; margin-bottom:8px}
+  ul,ol{margin:11px 0 11px 4px; padding-left:24px}
+  li{margin:7px 0; color:#3b4555}
+  li::marker{color:var(--orange)}
+  a{color:var(--cyan)}
+  strong{color:#111827; font-weight:600}
+  em{color:var(--yellow); font-style:normal; font-family:var(--mono); font-size:.93em}
+  code.inline{
+    font-family:var(--mono); font-size:.86em; background:var(--bg-4);
+    color:var(--orange); padding:2px 7px; border-radius:5px; border:1px solid var(--border-solid);
+    white-space:nowrap;
+  }
+  hr{border:none;border-top:1px dashed var(--border-solid);margin:34px 0}
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:linear-gradient(180deg,#ffffff,#f4f5f8);
+    border:1px solid var(--border-solid); border-radius:14px;
+    padding:22px 24px; margin:20px 0;
+  }
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+  .mini{
+    background:var(--bg-3); border:1px solid var(--border-solid); border-radius:12px; padding:16px 18px;
+  }
+  .mini h4{margin-top:0}
+
+  /* ---------- Terminal block ---------- */
+  .term{
+    background:#070a10; border:1px solid #2a3348; border-radius:11px;
+    margin:16px 0; overflow:hidden; box-shadow:0 8px 30px -16px #00000025;
+    --border-solid:#283145; --bg-4:#1c2433; --dim:#9aa6bd; --faint:#6b7689;
+    --orange:#ff8a4c; --cyan:#4ed8c4; --green:#7ee787; --red:#ff7a85;
+    --yellow:#ffd479; --purple:#b89cff; --blue:#6cb6ff; --text:#e8ebf2;
+  }
+  .term-bar{
+    display:flex; align-items:center; gap:8px; padding:9px 14px;
+    background:#0d1119; border-bottom:1px solid var(--border-solid);
+  }
+  .term-bar .b{width:11px;height:11px;border-radius:50%}
+  .b.r{background:#ff5f57}.b.y{background:#febc2e}.b.g{background:#28c840}
+  .term-title{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-left:8px}
+  .term-copy{
+    margin-left:auto; background:var(--bg-4); border:1px solid var(--border-solid); color:var(--dim);
+    font-family:var(--mono); font-size:11px; padding:3px 10px; border-radius:6px; cursor:pointer; transition:.15s;
+  }
+  .term-copy:hover{color:var(--orange);border-color:var(--orange)}
+  .term-body{padding:15px 17px; font-family:var(--mono); font-size:13.5px; line-height:1.85; overflow-x:auto}
+  .term-body .cmd{color:#eef1f7; white-space:pre}
+.term-body>.cmd,.term-body>.cmt,.term-body>.out,.term-body>.err{display:block}
+.term-body .cmt[style*="inline"]{display:inline!important}
+  .term-body .cmd::before{content:"$ ";color:var(--green);font-weight:700}
+  .term-body .cmd.root::before{content:"# ";color:var(--red);font-weight:700}
+  .term-body .cmd.cont::before{content:"  ";}
+  .term-body .out{color:var(--dim); white-space:pre}
+  .term-body .cmt{color:var(--faint); white-space:pre-wrap}
+  .term-body .cmt::before{content:"# "}
+  .term-body .ok{color:var(--green)}
+  .term-body .warn{color:var(--yellow)}
+  .term-body .err{color:var(--red)}
+  .term-body .hi{color:var(--orange)}
+  .term-body .cy{color:var(--cyan)}
+
+  /* ---------- Callouts ---------- */
+  .box{border-radius:12px; padding:15px 18px 15px 46px; margin:18px 0; position:relative; border:1px solid; font-size:14.5px}
+  .box::before{position:absolute; left:15px; top:14px; font-size:17px; font-family:var(--mono); font-weight:700}
+  .box p{margin:6px 0}
+  .box .t{font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.5px; text-transform:uppercase; display:block; margin-bottom:5px}
+  .box.tip{background:#ecfdf5; border-color:#2fa89755; }
+  .tip::before{content:"✓";color:var(--cyan)} .tip .t{color:var(--cyan)}
+  .box.warn{background:#fef9ec; border-color:#cc6a3755}
+  .warn::before{content:"!";color:var(--yellow)} .warn .t{color:var(--yellow)}
+  .box.danger{background:#fef2f2; border-color:#ff7a8544}
+  .danger::before{content:"⚠";color:var(--red)} .danger .t{color:var(--red)}
+  .box.note{background:#eff6ff; border-color:var(--border-solid)}
+  .note::before{content:"i";color:var(--blue);font-style:italic} .note .t{color:var(--blue)}
+  .box.scn{background:linear-gradient(180deg,#f6f1ff,#f1ecfa); border-color:#b89cff44; padding-left:18px}
+  .scn::before{content:none}
+  .scn .t{color:var(--purple); display:flex; align-items:center; gap:8px}
+  .scn .t::before{content:"▶ TÌNH HUỐNG THỰC TẾ"; font-family:var(--mono); font-weight:700; font-size:12px}
+  .scn .t span{display:none}
+
+  /* ---------- kbd ---------- */
+  kbd{
+    font-family:var(--mono); font-size:.8em; background:#eef0f5; color:#1e2536;
+    border:1px solid #c0c9d4; border-bottom-width:2px; border-radius:5px; padding:2px 7px; white-space:nowrap;
+  }
+
+  /* ---------- Tables ---------- */
+  .tbl-wrap{overflow-x:auto; margin:16px 0; border:1px solid var(--border-solid); border-radius:11px}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:480px}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--border)}
+  th{background:var(--bg-3); font-family:var(--mono); font-size:12px; color:var(--cyan); letter-spacing:.5px; text-transform:uppercase; font-weight:600}
+  td{color:#3b4555; vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#00000005}
+  td code,td .c{font-family:var(--mono); color:var(--orange); font-size:.92em; white-space:nowrap}
+
+  /* ---------- Diagram ---------- */
+  .diagram{background:#080b11; border:1px solid #2a3348; border-radius:13px; padding:20px; margin:20px 0; overflow-x:auto;
+    --faint:#6b7689; --dim:#9aa6bd; --border-solid:#283145}
+  .diagram svg{display:block; margin:0 auto; max-width:100%; height:auto}
+  .dcap{text-align:center; font-family:var(--mono); font-size:12px; color:var(--faint); margin-top:12px}
+
+  .badge{display:inline-block; font-family:var(--mono); font-size:11px; padding:2px 9px; border-radius:20px; border:1px solid; margin:2px 4px 2px 0}
+  .bg-o{color:var(--orange);border-color:var(--orange-dim)}
+  .bg-c{color:var(--cyan);border-color:var(--cyan-dim)}
+  .bg-p{color:var(--purple);border-color:#7a5fd9}
+
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+  .toc a{
+    font-family:var(--mono);font-size:12.5px;text-decoration:none;color:var(--dim);
+    background:var(--bg-3);border:1px solid var(--border-solid);border-radius:8px;padding:6px 12px;transition:.15s;
+  }
+  .toc a:hover{color:var(--orange);border-color:var(--orange)}
+
+  footer{border-top:1px solid var(--border-solid); padding:30px 22px; text-align:center; color:var(--faint); font-family:var(--mono); font-size:12.5px}
+</style></head>
+<body>
+<header class="top">
+<div class="top-inner">
+<span class="logo"><span class="dot"></span> <span class="prompt">~/</span><b>platform</b>-engineering<span class="blink">_</span></span>
+<span class="top-sub">Cho Data Engineer đã biết Docker/K8s &amp; Cloud · Terraform · CI/CD · GitOps · Observability · trung — cao cấp</span>
+</div>
+</header>
+<nav class="tabs">
+<div class="tabs-scroll" id="tabsScroll">
+<button class="tab-btn active" data-tab="t1"><span class="num">01</span> Tư duy Platform Engineering</button>
+<button class="tab-btn" data-tab="t2"><span class="num">02</span> Infrastructure as Code</button>
+<button class="tab-btn" data-tab="t3"><span class="num">03</span> Terraform căn bản</button>
+<button class="tab-btn" data-tab="t4"><span class="num">04</span> Terraform: State &amp; Module</button>
+<button class="tab-btn" data-tab="t5"><span class="num">05</span> CI/CD nền tảng</button>
+<button class="tab-btn" data-tab="t6"><span class="num">06</span> GitHub Actions thực chiến</button>
+<button class="tab-btn" data-tab="t7"><span class="num">07</span> GitOps · ArgoCD / Flux</button>
+<button class="tab-btn" data-tab="t8"><span class="num">08</span> Chiến lược triển khai</button>
+<button class="tab-btn" data-tab="t9"><span class="num">09</span> Observability: ba trụ cột</button>
+<button class="tab-btn" data-tab="t10"><span class="num">10</span> Metrics &amp; Prometheus</button>
+<button class="tab-btn" data-tab="t11"><span class="num">11</span> Grafana, Logs &amp; Dashboard</button>
+<button class="tab-btn" data-tab="t12"><span class="num">12</span> SLO, Error Budget &amp; Alert</button>
+<button class="tab-btn" data-tab="t13"><span class="num">13</span> Secrets &amp; Security</button>
+<span class="tab-div">⌗ CHUYÊN SÂU</span>
+<button class="tab-btn deep" data-tab="t14"><span class="num">14</span> Reliability Engineering</button>
+<button class="tab-btn deep" data-tab="t15"><span class="num">15</span> Platform cho Data &amp; ML</button>
+<span class="tab-div">⌗ MỞ RỘNG</span>
+<button class="tab-btn" data-tab="t16"><span class="num">16</span> Thực hành (mini-stack)</button>
+    <button class="tab-btn" data-tab="t18"><span class="num">17</span> Git cho Data Team</button>
+    <button class="tab-btn" data-tab="t19"><span class="num">18</span> CI/CD Pipeline dữ liệu</button>
+<button class="tab-btn" data-tab="t17"><span class="num">19</span> Cheatsheet + Lộ trình</button>
+</div>
+</nav>
+<main>
+<section class="panel active" id="t1">
+<div class="lead">Module 01 — Nền tảng</div>
+<h1>Tư duy <span class="hl">Platform Engineering</span></h1>
+<p class="intro-p">Bạn đã biết Docker, Kubernetes, và một cloud. Nhưng dựng được một container khác với việc <em>vận hành một nền tảng để cả đội triển khai an toàn, lặp lại, và quan sát được</em>. Platform Engineering là kỷ luật xây "đường ray" (golden path) để mọi người đi nhanh mà không ngã. Module này dựng khung tư duy: nền tảng là <strong>sản phẩm nội bộ</strong>, người dùng là chính các engineer của bạn.</p>
+
+<div class="toc">
+<a href="#t1-0">› 0. 📚 Lý thuyết nền tảng</a>
+<a href="#t1-1">› 1. Platform Engineering là gì</a>
+<a href="#t1-2">› 2. DevOps · SRE · Platform khác nhau ra sao</a>
+<a href="#t1-3">› 3. Golden path &amp; Internal Developer Platform</a>
+<a href="#t1-4">› 4. Bốn trụ cột của một nền tảng</a>
+<a href="#t1-5">› 5. Vì sao DE/MLOps cần nó</a>
+</div>
+
+<h2 id="t1-0">📚 Lý thuyết nền tảng</h2>
+<p class="intro-p">Phần này không phải "mẹo vặt" mà là bộ <em>khung tư duy</em> rút từ kỹ thuật phần mềm, lý thuyết hệ thống và kinh tế học tổ chức. Nắm chúng thì mọi công cụ cụ thể (Terraform, Prometheus…) chỉ còn là hiện thực của vài nguyên lý lặp đi lặp lại.</p>
+
+<h3>Lý thuyết 1.1 — Định luật Conway &amp; "Inverse Conway Maneuver"</h3>
+<p>Melvin Conway (1967): <em>"Các tổ chức thiết kế hệ thống... sẽ tạo ra thiết kế sao chép cấu trúc giao tiếp của chính tổ chức đó."</em> Tức <strong>kiến trúc phần mềm phản chiếu sơ đồ tổ chức</strong>. Ba đội data tách biệt sẽ đẻ ra ba pipeline không nói chuyện được với nhau. Hệ quả: muốn một <em>nền tảng dùng chung</em>, phải có một <em>đội sở hữu nền tảng</em>. "Inverse Conway Maneuver" là chủ động thiết kế tổ chức để <em>ép</em> ra kiến trúc mong muốn: lập platform team để golden path tồn tại được.</p>
+<div class="box note"><span class="t">Vì sao quan trọng cho DE</span><p>Nhiều "vấn đề kỹ thuật" của data team thực ra là vấn đề Conway: metric không nhất quán vì hai đội định nghĩa riêng (Module 9 — metric drift); pipeline chắp vá vì không ai <em>sở hữu</em> lớp nền. Giải bài toán tổ chức trước, công cụ sau.</p></div>
+
+<h3>Lý thuyết 1.2 — Tải nhận thức &amp; Team Topologies</h3>
+<p>Lý thuyết <em>cognitive load</em> (áp vào kỹ thuật bởi Skelton &amp; Pais trong <em>Team Topologies</em>) chia tải trí óc thành ba loại: <strong>intrinsic</strong> (bản chất bài toán nghiệp vụ — thứ duy nhất tạo giá trị), <strong>extraneous</strong> (do công cụ tồi — vd nhớ 200 cờ IAM), và <strong>germane</strong> (đầu tư học cái đáng học). Mỗi giờ một engineer tiêu vào extraneous load là một giờ <em>không</em> dành cho nghiệp vụ.</p>
+<p>Platform team là một <strong>"platform team"</strong> theo Team Topologies: nhiệm vụ là <em>hấp thụ extraneous load</em> hộ các "stream-aligned team" bằng cách đóng gói độ phức tạp sau giao diện tự phục vụ. Thước đo thành công: đội dùng nó có giảm được tải nhận thức không.</p>
+
+<h3>Lý thuyết 1.3 — Vòng điều khiển kín (control loop): nguyên lý hợp nhất</h3>
+<p>Đây là <em>lý thuyết quan trọng nhất</em> của khoá, vay từ điều khiển học (cybernetics): một <strong>vòng điều khiển kín</strong> liên tục so sánh <em>trạng thái mong muốn</em> (desired) với <em>thực tế</em> (actual), tính sai số, tác động để kéo thực tế về mong muốn — rồi lặp lại mãi.</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">         ┌──────────────► so sánh (desired − actual) = sai số
+  DESIRED│                         │
+  (mã,Git)                         ▼
+         │                    tác động (apply/reconcile)
+         │                         │
+         └────────── ACTUAL ◄──────┘  (đo lại) ──► lặp vô hạn</pre></div>
+<div class="dcap">Cùng vòng lặp này xuất hiện khắp nơi: Terraform (plan=sai số, apply=tác động), Kubernetes (reconcile), GitOps (M7), autoscaling, cả SLO/error budget (M12).</div>
+<p>Một khi nhận ra "đây lại là control loop", bạn hiểu ngay công cụ mới: chỉ cần hỏi <em>desired state lưu ở đâu? đo actual bằng gì? tác động ra sao? chu kỳ bao lâu?</em>. Đây là vì sao mô hình <em>khai báo</em> thắng <em>mệnh lệnh</em> cho hạ tầng: khai báo chỉ mô tả "desired", để vòng lặp lo "làm sao đạt" — và tự nhiên có self-healing khi thực tế trôi đi.</p>
+
+<h3>Lý thuyết 1.4 — Lý thuyết dòng chảy (flow) &amp; điểm nghẽn</h3>
+<p>Từ <em>Theory of Constraints</em> (Goldratt) và Lean/DevOps: <strong>thông lượng cả hệ thống bị giới hạn bởi điểm nghẽn duy nhất</strong>; tối ưu chỗ <em>không phải</em> nghẽn là lãng phí. Trong giao phần mềm/dữ liệu, nghẽn thường <em>không</em> phải viết code — mà là chờ deploy, chờ provision môi trường, chờ review thủ công. Platform Engineering tồn tại để <strong>dời điểm nghẽn ra khỏi đường giao hàng</strong>.</p>
+
+<h3>Lý thuyết 1.5 — Nền tảng là sản phẩm, không phải dự án</h3>
+<p>Một <em>dự án</em> có ngày kết thúc; một <em>sản phẩm</em> có người dùng, vòng đời, lộ trình, phải tiến hoá. Nền tảng nội bộ là sản phẩm — "khách hàng" là engineer, và họ có <strong>quyền không dùng</strong> (sẽ tự chế giải pháp riêng nếu nền tảng tệ). Hệ quả: cần product thinking — phỏng vấn người dùng, đo adoption, ưu tiên theo nỗi đau thật. Đo bằng <strong>kết quả</strong> (lead time, tần suất deploy, sự cố — xem DORA 1.8), không bằng "đã dựng xong hạ tầng chưa".</p>
+
+<h3>Lý thuyết 1.6 — Kinh tế học "đường ray" (paved road): chuẩn hoá ↔ tự chủ</h3>
+<p>Đánh đổi trung tâm. <strong>Chuẩn hoá</strong> cho lợi thế quy mô: sửa một chỗ cả tổ chức hưởng, onboarding nhanh, bảo mật áp một lần. <strong>Tự chủ</strong> cho linh hoạt nhưng đẻ phân mảnh (mỗi đội một kiểu → chi phí vận hành nhân lên). "Paved road" là lời giải: làm <em>con đường mặc định</em> tốt đến mức đi theo nó <em>rẻ hơn</em> tự chế — nhưng <strong>không cấm</strong> đi đường khác (ai cần khác biệt tự gánh chi phí). Tự nguyện vì hấp dẫn, không vì ép buộc.</p>
+<div class="defbox"><span class="term-def">GUARDRAILS vs GATES</span><p style="margin:6px 0 0"><strong>Guardrail</strong> là ràng buộc tự động cho đi nhanh <em>trong</em> khuôn khổ an toàn (policy-as-code chặn cấu hình nguy hiểm — M13). <strong>Gate</strong> là điểm dừng cần phê duyệt thủ công. Triết lý hiện đại: <em>nhiều guardrail, ít gate</em> — tự động hoá sự an toàn thay vì chặn bằng người.</p></div>
+
+<h3>Lý thuyết 1.7 — Mọi thứ là mã, mọi thứ versioned</h3>
+<p>Hạ tầng (Terraform), pipeline (YAML), cấu hình (manifests), chính sách (policy as code), dashboard (JSON) — tất cả là <em>mã khai báo</em> trong Git. Không chỉ "tiện": nó cho bốn năng lực không cách nào khác có đủ cùng lúc — <strong>review</strong> (đổi gì cũng qua PR), <strong>audit</strong> (lịch sử Git), <strong>rollback</strong> (revert commit), <strong>tái lập</strong> (cùng mã → cùng hệ thống). Cộng hưởng với 1.3: "desired state trong Git" + "control loop hội tụ" = GitOps (M7).</p>
+
+<h3>Lý thuyết 1.8 — Đo lường: DORA &amp; vòng phản hồi</h3>
+<p>Nghiên cứu DORA tìm ra <strong>bốn chỉ số</strong> dự báo hiệu năng giao phần mềm: (1) <em>Deployment Frequency</em>; (2) <em>Lead Time for Changes</em>; (3) <em>Change Failure Rate</em>; (4) <em>Time to Restore</em>. Phát hiện phản trực giác: <strong>tốc độ và ổn định KHÔNG đánh đổi nhau</strong> — đội giỏi nhất đồng thời deploy nhanh <em>và</em> ít hỏng. Lý do nằm ở lý thuyết <em>kích thước lô</em>: lô nhỏ → dễ review, dễ tìm lỗi, dễ rollback → vừa nhanh vừa an toàn. Platform Engineering chính là cách <em>kỹ thuật hoá</em> bốn chỉ số DORA cho cả tổ chức.</p>
+<div class="deepnote">Bốn lý thuyết trụ cột mang theo cả khoá: Conway (tổ chức ↔ kiến trúc), Cognitive Load (nền tảng hấp thụ độ phức tạp), Control Loop (desired vs actual, hội tụ), Flow/DORA (lô nhỏ, dời điểm nghẽn). Gần như mọi quyết định platform đều biện minh được bằng một trong bốn cái này.</div>
+
+<h2 id="t1-1">1. Platform Engineering là gì</h2>
+<div class="defbox"><span class="term-def">PLATFORM ENGINEERING</span><p style="margin:6px 0 0">Kỷ luật thiết k, xây và vận hành các <strong>nền tảng tự phục vụ</strong> (self-service) để các đội phát triển giao phần mềm/dữ liệu nhanh, an toàn, lặp lại — bằng cách đóng gói hạ tầng, CI/CD, observability và chính sách thành những "đường ray" (golden path) dùng được ngay.</p></div>
+<p>Nói ngắn: thay vì mỗi đội tự chế lại bánh xe (mỗi người một cách deploy, một cách giám sát), platform team xây <em>một</em> cách chuẩn, tốt, an toàn, rồi cho mọi người dùng lại. Đây là "DevOps ở quy mô" — biến best practice thành mặc định.</p>
+
+<h2 id="t1-2">2. DevOps · SRE · Platform khác nhau ra sao</h2>
+<div class="tbl-wrap">
+<table>
+<tr><th>Vai trò</th><th>Trọng tâm</th><th>Câu hỏi chủ đạo</th></tr>
+<tr><td>DevOps</td><td>Văn hoá &amp; thực hành: dev + ops cùng sở hữu</td><td>"Làm sao dev và ops hợp tác mượt?"</td></tr>
+<tr><td>SRE</td><td>Độ tin cậy bằng kỹ thuật (SLO, error budget)</td><td>"Hệ thống đủ tin cậy chưa, và rẻ tới đâu?"</td></tr>
+<tr><td>Platform Engineering</td><td>Xây nền tảng tự phục vụ cho đội khác</td><td>"Làm sao để đội khác đi nhanh &amp; an toàn?"</td></tr>
+</table>
+</div>
+<div class="box note"><span class="t">Không loại trừ nhau</span><p>Chúng chồng lấn: SRE đóng góp SLO/observability (M9–12, M14) <em>vào</em> nền tảng; DevOps là văn hoá làm nền cho cả hai. Platform Engineering là cách "sản phẩm hoá" các thực hành đó để dùng lại.</p></div>
+
+<h2 id="t1-3">3. Golden path &amp; Internal Developer Platform (IDP)</h2>
+<p><strong>Golden path</strong> là con đường được khuyến nghị, đã trải sẵn: "muốn deploy một dịch vụ? Dùng template này, push lên Git, CI/CD lo phần còn lại." <strong>IDP (Internal Developer Platform)</strong> là tập hợp công cụ + tự động hoá hiện thực các golden path đó — thường có một cổng tự phục vụ (vd Backstage) để tạo dịch vụ mới, xem trạng thái, truy cập tài liệu.</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">  Engineer ─► Cổng tự phục vụ (Backstage / CLI / PR template)
+                 │  chọn "Data pipeline service"
+                 ▼
+        ┌────────── GOLDEN PATH (đã rào chắn) ──────────┐
+        │ repo mẫu · CI/CD sẵn · IaC module · dashboard │
+        │ secrets · quyền least-privilege · alert mặc định│
+        └───────────────────────────────────────────────┘
+                 ▼
+        Hạ tầng được provision + dịch vụ chạy + quan sát được</pre></div>
+<div class="dcap">IDP biến "dựng một dịch vụ mới" từ vài ngày cấu hình tay thành vài phút điền form — trên đường ray an toàn.</div>
+
+<h2 id="t1-4">4. Bốn trụ cột của một nền tảng</h2>
+<div class="grid2">
+<div class="mini"><h4>① Provisioning (IaC)</h4><p style="font-size:13.5px">Khai báo hạ tầng bằng mã, dựng lại y hệt mọi môi trường. Terraform — M2–4.</p></div>
+<div class="mini"><h4>② Delivery (CI/CD + GitOps)</h4><p style="font-size:13.5px">Tự động build–test–deploy, Git là nguồn sự thật. M5–8.</p></div>
+<div class="mini"><h4>③ Observability</h4><p style="font-size:13.5px">Metrics, logs, traces, SLO, alert — biết hệ thống có khoẻ không. M9–12, M14.</p></div>
+<div class="mini"><h4>④ Security &amp; Governance</h4><p style="font-size:13.5px">Secrets, least privilege, policy as code. M13.</p></div>
+</div>
+
+<h2 id="t1-5">5. Vì sao DE/MLOps cần nó</h2>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Đội data 6 người: mỗi người deploy Airflow DAG một kiểu, secrets dán trong code, không ai biết pipeline nào đang chậm, mất 2 ngày để dựng môi trường staging mới vì toàn click tay trên console AWS. <strong>Khi có platform:</strong> một repo mẫu + CI chạy test DAG + Terraform module dựng môi trường trong 10 phút + dashboard freshness/độ trễ pipeline + secrets trong Vault. Kết quả: onboarding người mới trong 1 giờ, sự cố giảm, không còn "chỉ máy tôi chạy được". Đây chính là khoảng trống mà khoá học này lấp — nối Module 12 (Airflow), 13 (Docker/K8s), 14–15 (Cloud) thành một nền tảng vận hành được.</p></div>
+</section>
+
+<section class="panel" id="t2">
+<div class="lead">Module 02 — IaC</div>
+<h1>Infrastructure as <span class="hl">Code</span></h1>
+<p class="intro-p">Trước IaC, hạ tầng được dựng bằng tay trên console — không lặp lại được, không audit được, "chỉ Tuấn biết cấu hình đó". IaC biến hạ tầng thành <strong>mã khai báo</strong>: cùng một file cho ra cùng một hạ tầng, ở mọi môi trường, mọi lúc. Module này là nguyên lý nền trước khi vào Terraform cụ thể.</p>
+
+<div class="toc">
+<a href="#t2-0">› 0. 📚 Lý thuyết IaC</a>
+<a href="#t2-1">› 1. Vấn đề IaC giải quyết</a>
+<a href="#t2-2">› 2. Declarative vs Imperative</a>
+<a href="#t2-3">› 3. Idempotency &amp; hội tụ trạng thái</a>
+<a href="#t2-4">› 4. Immutable vs Mutable infrastructure</a>
+<a href="#t2-5">› 5. Bản đồ công cụ</a>
+</div>
+
+<h2 id="t2-0">📚 Lý thuyết: vì sao IaC khai báo thắng</h2>
+<p>IaC không chỉ là "viết hạ tầng ra file". Đằng sau là vài ý tưởng từ khoa học máy tính khiến cách khai báo vượt trội — và giải thích vì sao drift là tất yếu.</p>
+
+<h3>Lý thuyết 2.1 — Khai báo = mô tả "cái gì", uỷ thác "làm sao"</h3>
+<p>Lập trình <em>mệnh lệnh</em> mô tả <strong>chuỗi bước</strong>; bạn chịu trách nhiệm thứ tự, điều kiện, mọi trường hợp ("nếu đã tồn tại thì…"). Khai báo mô tả <strong>kết quả mong muốn</strong>; engine tính cách đạt. SQL là ví dụ: bạn nói "tôi muốn các dòng này", không nói "quét index ra sao". Lợi thế sâu xa: khi chỉ tuyên bố <em>desired state</em>, engine tự (a) tính diff với thực tế, (b) xử lý idempotency, (c) hội tụ lại khi sai lệch — ba thứ bạn phải tự code (và code sai) trong thế giới mệnh lệnh.</p>
+
+<h3>Lý thuyết 2.2 — Idempotency, hàm thuần &amp; điểm bất động</h3>
+<p>Thao tác <strong>idempotent</strong> thoả <code class="inline">f(f(x)) = f(x)</code>: áp nhiều lần như áp một lần. Về toán học, <em>trạng thái đích</em> là một <strong>điểm bất động (fixed point)</strong> của hàm apply — đạt rồi, áp thêm không đổi gì. Đây là tính chất khiến hạ tầng <em>đoán định được</em>: chạy <code class="inline">apply</code> lại sau khi job lỗi nửa chừng mà không sợ tạo trùng. So sánh: <code class="inline">aws s3 mb ...</code> chạy lần hai báo lỗi "đã tồn tại" — không idempotent, không an toàn để retry.</p>
+<div class="defbox"><span class="term-def">CONVERGENCE (hội tụ)</span><p style="margin:6px 0 0">Quá trình lặp đưa hệ thống từ trạng thái bất kỳ về đích. Mỗi vòng <code class="inline">apply</code> thu hẹp khoảng cách desired−actual tới khi bằng 0. Chính là <em>control loop</em> (Lý thuyết 1.3) áp vào hạ tầng; Kubernetes gọi là "reconciliation".</p></div>
+
+<h3>Lý thuyết 2.3 — Vấn đề "state": ánh xạ giữa mô hình và thực tại</h3>
+<p>Phần khó nhất về khái niệm. Terraform phải duy trì <strong>ánh xạ</strong> giữa "resource trong mã" và "tài nguyên thật" — đó là <em>state</em> (M4). Vì sao cần? Câu hỏi "tôi cần xoá gì?" không thể trả lời chỉ từ mã (mã chỉ nói cái còn lại). Bỏ một resource khỏi mã, engine cần biết nó <em>từng</em> quản resource đó để xoá. State là "trí nhớ" thu hẹp khoảng cách giữa <em>ý định</em> (mã) và <em>thực tại</em> (cloud). Mọi sự cố Terraform nghiêm trọng đều quy về state lệch thực tại.</p>
+
+<h3>Lý thuyết 2.4 — Entropy &amp; tính tất yếu của drift</h3>
+<p>Định luật hai nhiệt động học có ẩn dụ đúng đến đáng sợ: <strong>hệ thống để yên trôi về hỗn loạn</strong>. "Configuration drift" — thực tế lệch mã — là <em>không tránh khỏi</em>: ai đó sửa nóng lúc sự cố, cloud đổi default, dịch vụ tạo tài nguyên phụ. IaC không <em>ngăn</em> entropy; nó cho <strong>cách đo &amp; hoàn nguyên</strong>: <code class="inline">plan</code> phát hiện drift, <code class="inline">apply</code>/GitOps reconcile kéo về. Tư duy đúng: không phải "dựng xong là xong" mà "liên tục hội tụ về desired state".</p>
+
+<h3>Lý thuyết 2.5 — Immutable infrastructure &amp; "cattle, not pets"</h3>
+<p>Hai mô hình quản máy: <em>pets</em> (đặt tên, chăm từng con, sửa khi ốm) và <em>cattle</em> (đánh số, con hỏng thì thay, không chữa). Immutable theo mô hình cattle: <strong>không sửa máy đang chạy</strong> — dựng ảnh/đối tượng mới rồi thay. Lý thuyết nền: loại bỏ "biến thiên cấu hình" — nguồn của "chỉ máy tôi chạy được". Cùng triết lý "bất biến + đổi con trỏ" của table format (M16): đừng sửa tại chỗ, hãy tạo mới và chuyển hướng — dễ rollback, dễ audit, dễ tái lập.</p>
+
+<h2 id="t2-1">1. Vấn đề IaC giải quyết</h2>
+<p>Ba căn bệnh của hạ tầng thủ công: (1) <strong>snowflake servers</strong> — mỗi máy một kiểu, không ai dựng lại được; (2) <strong>configuration drift</strong> — sửa nóng trên production, file tài liệu lạc hậu; (3) <strong>không tái lập</strong> — staging khác production nên "chạy ở staging mà chết ở prod". IaC chữa cả ba bằng cách lấy <em>mã trong Git</em> làm nguồn sự thật duy nhất.</p>
+
+<h2 id="t2-2">2. Declarative vs Imperative</h2>
+<div class="grid2">
+<div class="mini"><h4>Imperative (mệnh lệnh)</h4><p style="font-size:13.5px">Mô tả <em>các bước</em>: "tạo VPC, rồi tạo subnet, rồi…". Bạn lo trình tự &amp; xử lý "nếu đã tồn tại". Vd script bash, AWS CLI.</p></div>
+<div class="mini"><h4>Declarative (khai báo)</h4><p style="font-size:13.5px">Mô tả <em>trạng thái đích</em>: "tôi muốn 1 VPC + 3 subnet". Công cụ tự tính cần làm gì để đạt đích. Vd Terraform, Kubernetes.</p></div>
+</div>
+<div class="box tip"><span class="t">Vì sao khai báo thắng cho hạ tầng</span><p>Bạn không phải viết logic "nếu đã có thì bỏ qua, nếu thiếu thì tạo, nếu thừa thì xoá" — công cụ làm việc đó (so trạng thái hiện tại với đích). Code ngắn hơn, an toàn hơn, và tự nhiên <em>idempotent</em>.</p></div>
+
+<h2 id="t2-3">3. Idempotency &amp; hội tụ trạng thái</h2>
+<div class="defbox"><span class="term-def">IDEMPOTENT</span><p style="margin:6px 0 0">Chạy thao tác <strong>nhiều lần</strong> cho cùng kết quả như chạy <strong>một lần</strong>. <code class="inline">terraform apply</code> hai lần liên tiếp: lần hai không đổi gì (vì trạng thái đã khớp đích). Đây là tính chất sống còn để hạ tầng đoán định được.</p></div>
+<p>Mô hình chung: công cụ đọc <strong>trạng thái mong muốn</strong> (mã) và <strong>trạng thái hiện tại</strong> (thực tế đám mây), tính ra hiệu (diff), rồi áp các thay đổi để <em>hội tụ</em> hiện tại về đích. Bạn sẽ gặp lại đúng mô hình này ở Kubernetes (reconcile) và GitOps (M7).</p>
+
+<h2 id="t2-4">4. Immutable vs Mutable infrastructure</h2>
+<p><strong>Mutable</strong>: sửa máy đang chạy (SSH vào, cập nhật, vá). Dễ drift, khó tái lập. <strong>Immutable</strong>: không sửa máy cũ — dựng máy/ảnh mới từ mã rồi thay thế (golden image, container). Đây là vì sao container (Module 13 của khoá) hợp với IaC: bạn không patch container đang chạy, bạn build image mới và rollout.</p>
+<div class="box note"><span class="t">Liên hệ Module Lakehouse</span><p>Tư duy "bất biến + thay thế" ở đây giống hệt "data file bất biến + đổi con trỏ" của table format (M16). Cùng một triết lý: đừng sửa tại chỗ, hãy tạo mới và chuyển con trỏ — dễ rollback, dễ audit.</p></div>
+
+<h2 id="t2-5">5. Bản đồ công cụ</h2>
+<div class="tbl-wrap">
+<table>
+<tr><th>Công cụ</th><th>Kiểu</th><th>Ghi chú</th></tr>
+<tr><td>Terraform / OpenTofu</td><td>Khai báo, đa cloud (HCL)</td><td>Chuẩn de-facto cho provisioning. OpenTofu là bản fork mã nguồn mở (sau khi Terraform đổi license 2023)</td></tr>
+<tr><td>Pulumi</td><td>Khai báo, dùng ngôn ngữ lập trình</td><td>Viết IaC bằng Python/TS — hợp đội thích ngôn ngữ thật</td></tr>
+<tr><td>AWS CloudFormation / CDK</td><td>Khai báo, riêng AWS</td><td>Native AWS; CDK cho viết bằng code</td></tr>
+<tr><td>Ansible</td><td>Thiên cấu hình (config mgmt)</td><td>Mạnh ở cấu hình máy/phần mềm hơn là provisioning</td></tr>
+</table>
+</div>
+<div class="box tip"><span class="t">Chọn gì để học</span><p>Học <strong>Terraform/OpenTofu</strong> trước — phổ biến nhất, đa cloud, kỹ năng chuyển được. Khoá này lấy nó làm trục (M3–4). OpenTofu tương thích cú pháp Terraform nên học một là dùng được cả hai.</p></div>
+</section>
+
+<section class="panel" id="t3">
+<div class="lead">Module 03 — Terraform</div>
+<h1>Terraform <span class="hl">căn bản</span></h1>
+<p class="intro-p">Terraform là công cụ IaC khai báo, đa cloud, dùng ngôn ngữ HCL. Module này đi qua vòng đời cốt lõi: viết tài nguyên, <code>init → plan → apply</code>, và vì sao <code>plan</code> là lưới an toàn quan trọng nhất khi vận hành hạ tầng.</p>
+
+<div class="toc">
+<a href="#t3-1">› 1. Provider &amp; Resource</a>
+<a href="#t3-2">› 2. Vòng đời init / plan / apply</a>
+<a href="#t3-3">› 3. Variables, outputs, data sources</a>
+<a href="#t3-4">› 4. Plan — lưới an toàn</a>
+</div>
+
+<h2 id="t3-1">1. Provider &amp; Resource</h2>
+<p><strong>Provider</strong> là plugin nói chuyện với một API (AWS, GCP, Kubernetes…). <strong>Resource</strong> là một mẩu hạ tầng bạn khai báo (một bucket, một cluster). Terraform đọc khai báo và gọi API provider để hiện thực.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">main.tf</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="cmt"># khai báo provider</span>
+<span class="cmd">terraform {</span>
+<span class="cmd cont">  required_providers { aws = { source = "hashicorp/aws", version = "~&gt; 5.0" } }</span>
+<span class="cmd cont">}</span>
+<span class="cmd">provider "aws" { region = "ap-southeast-1" }</span>
+<span class="cmt"># một resource: S3 bucket cho data lake</span>
+<span class="cmd">resource "aws_s3_bucket" "lake" {</span>
+<span class="cmd cont">  bucket = "my-company-datalake"</span>
+<span class="cmd cont">  tags   = { env = "prod", team = "data" }</span>
+<span class="cmd cont">}</span>
+</div>
+</div>
+
+<h2 id="t3-2">2. Vòng đời <code class="inline">init → plan → apply</code></h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">terraform-workflow</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="cmd">terraform init</span>
+<span class="out">Initializing provider plugins... aws v5.x đã tải</span>
+<span class="cmd">terraform plan</span>
+<span class="out cy">Plan: 1 to add, 0 to change, 0 to destroy.</span>
+<span class="cmt"># xem kỹ plan rồi mới áp</span>
+<span class="cmd">terraform apply</span>
+<span class="out ok">aws_s3_bucket.lake: Creation complete</span>
+<span class="cmd">terraform destroy   # gỡ toàn bộ khi không cần (vd môi trường tạm)</span>
+</div>
+</div>
+<p><code class="inline">init</code> tải provider + cấu hình backend; <code class="inline">plan</code> tính diff giữa mã và thực tế; <code class="inline">apply</code> áp diff đó. Đây là vòng lặp bạn sẽ chạy mỗi ngày.</p>
+
+<h2 id="t3-3">3. Variables, outputs, data sources</h2>
+<div class="grid3">
+<div class="mini"><h4>Variable (đầu vào)</h4><p style="font-size:13.5px"><code>var.region</code> — tham số hoá để cùng mã chạy nhiều môi trường.</p></div>
+<div class="mini"><h4>Output (đầu ra)</h4><p style="font-size:13.5px">Xuất giá trị (vd ARN bucket) để module/khâu khác dùng.</p></div>
+<div class="mini"><h4>Data source (tra cứu)</h4><p style="font-size:13.5px">Đọc thông tin tài nguyên <em>đã tồn tại</em> mà Terraform không tạo.</p></div>
+</div>
+
+<h2 id="t3-4">4. Plan — lưới an toàn</h2>
+<div class="box danger"><span class="t">Luôn đọc plan trước khi apply</span><p><code>plan</code> cho bạn thấy chính xác cái gì sẽ <em>add / change / destroy</em>. Dòng <code class="inline">N to destroy</code> là cảnh báo đỏ: một thay đổi tưởng vô hại có thể buộc xoá-tạo-lại tài nguyên (vd đổi tên DB = xoá DB!). Trong CI, bắt buộc review plan như review code; production thì <code>apply</code> phải qua phê duyệt.</p></div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Một kỹ sư đổi thuộc tính tên của một RDS instance trong file <code>.tf</code> rồi định <code>apply</code> thẳng. <strong>Cứu nguy nhờ plan:</strong> <code>plan</code> hiện <code class="inline">1 to destroy, 1 to add</code> — đổi tên đó buộc <em>xoá DB cũ</em> và tạo mới (mất dữ liệu!). Nhờ đọc plan, họ dừng lại, dùng <code class="inline">lifecycle { prevent_destroy = true }</code> và cách tiếp cận khác. Bài học: <code>plan</code> không phải thủ tục cho có — nó là phanh tay.</p></div>
+</section>
+
+<section class="panel" id="t4">
+<div class="lead">Module 04 — Terraform</div>
+<h1>Terraform: <span class="hl">State &amp; Module</span></h1>
+<p class="intro-p">Hai khái niệm phân biệt người mới với người vận hành Terraform thật: <strong>state</strong> (Terraform nhớ nó đã tạo gì) và <strong>module</strong> (đóng gói hạ tầng để dùng lại). Hiểu sai state là nguồn cơn của hầu hết sự cố Terraform nghiêm trọng.</p>
+
+<div class="toc">
+<a href="#t4-1">› 1. State là gì &amp; vì sao quan trọng</a>
+<a href="#t4-2">› 2. Remote state &amp; locking</a>
+<a href="#t4-3">› 3. Module — đóng gói dùng lại</a>
+<a href="#t4-4">› 4. Drift, import &amp; nhiều môi trường</a>
+</div>
+
+<h2 id="t4-1">1. State là gì &amp; vì sao quan trọng</h2>
+<p>Terraform lưu một file <strong>state</strong> (<code class="inline">terraform.tfstate</code>) ánh xạ "resource trong mã" ↔ "tài nguyên thật trên cloud". Nhờ state, Terraform biết tài nguyên nào nó đã quản lý để tính diff. Mất/hỏng state = Terraform "quên" mình đã tạo gì, có thể đòi tạo lại trùng hoặc không quản được nữa.</p>
+<div class="box danger"><span class="t">State chứa bí mật</span><p>State có thể chứa giá trị nhạy cảm (mật khẩu DB, khoá). <strong>Không bao giờ</strong> commit <code>terraform.tfstate</code> vào Git. Luôn dùng remote backend có mã hoá + kiểm soát truy cập.</p></div>
+
+<h2 id="t4-2">2. Remote state &amp; locking</h2>
+<p>State để cục bộ thì cả đội không chia sẻ được, và hai người <code>apply</code> cùng lúc sẽ giẫm lên nhau. Giải: <strong>remote backend</strong> — lưu state ở nơi chung (S3, GCS…) kèm <strong>lock</strong> (vd DynamoDB) để mỗi lúc chỉ một <code>apply</code> chạy.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">backend.tf</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="cmd">terraform {</span>
+<span class="cmd cont">  backend "s3" {</span>
+<span class="cmd cont">    bucket         = "company-tf-state"</span>
+<span class="cmd cont">    key            = "data-platform/prod.tfstate"</span>
+<span class="cmd cont">    region         = "ap-southeast-1"</span>
+<span class="cmd cont">    dynamodb_table = "tf-locks"   # khoá chống apply đồng thời</span>
+<span class="cmd cont">    encrypt        = true</span>
+<span class="cmd cont">  }</span>
+<span class="cmd cont">}</span>
+</div>
+</div>
+
+<div class="box note"><span class="t">Cập nhật: từ Terraform 1.10 không cần bảng DynamoDB nữa</span><p>Terraform <strong>1.10 (11/2024)</strong> thêm <em>native locking</em> cho backend S3: đặt <code class="inline">use_lockfile = true</code>, Terraform tạo một lock file <code class="inline">.tflock</code> ngay cạnh state trên S3 (dựa trên conditional write của S3) — không cần dựng và trả tiền cho bảng DynamoDB riêng. Từ <strong>1.11</strong>, cách khoá bằng DynamoDB bị đánh dấu <em>deprecated</em>. Khuyến nghị: dự án mới trên Terraform ≥ 1.10 dùng thẳng native locking; dự án cũ vẫn chạy DynamoDB bình thường, chuyển dần khi nâng version (giai đoạn chuyển tiếp có thể bật cả hai).</p></div>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">backend-native-locking.tf</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="cmd">terraform {</span>
+<span class="cmd cont">  backend "s3" {</span>
+<span class="cmd cont">    bucket       = "company-tf-state"</span>
+<span class="cmd cont">    key          = "data-platform/prod.tfstate"</span>
+<span class="cmd cont">    region       = "ap-southeast-1"</span>
+<span class="cmd cont">    use_lockfile = true   # Terraform >= 1.10: lock file .tflock cạnh state, khỏi cần DynamoDB</span>
+<span class="cmd cont">    encrypt      = true</span>
+<span class="cmd cont">  }</span>
+<span class="cmd cont">}</span>
+</div>
+</div>
+
+<h2 id="t4-3">3. Module — đóng gói dùng lại</h2>
+<p><strong>Module</strong> gói một nhóm resource thành một "đơn vị" có đầu vào (variables) và đầu ra (outputs) — như một hàm cho hạ tầng. Đây là cách platform team tạo <em>golden path</em>: viết một module "data-pipeline-stack" chuẩn, mọi đội chỉ cần gọi với vài tham số.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">use-module.tf</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="cmd">module "lake" {</span>
+<span class="cmd cont">  source      = "git::https://github.com/company/tf-modules//data-lake?ref=v1.4.0"</span>
+<span class="cmd cont">  env         = "prod"</span>
+<span class="cmd cont">  team        = "data"</span>
+<span class="cmd cont">  retention_days = 90</span>
+<span class="cmd cont">}</span>
+<span class="cmt"># một dòng gọi module = cả một stack chuẩn, đã rào chắn best practice</span>
+</div>
+</div>
+<div class="box tip"><span class="t">Ghim version module</span><p>Luôn <code class="inline">?ref=v1.4.0</code> (gắn tag) thay vì nhánh main — để nâng cấp hạ tầng là một hành động <em>có chủ đích</em> (đổi version + plan + review), không bị thay đổi bất ngờ khi ai đó đẩy commit vào module.</p></div>
+
+<h2 id="t4-4">4. Drift, import &amp; nhiều môi trường</h2>
+<div class="grid3">
+<div class="mini"><h4>Drift</h4><p style="font-size:13.5px">Ai đó sửa tay trên console → thực tế lệch state. <code>plan</code> phát hiện drift; sửa tay là điều cấm trên prod.</p></div>
+<div class="mini"><h4>Import</h4><p style="font-size:13.5px"><code>terraform import</code> đưa tài nguyên đã tồn tại (tạo tay) vào quản lý của Terraform.</p></div>
+<div class="mini"><h4>Nhiều môi trường</h4><p style="font-size:13.5px">Tách state theo dev/staging/prod (qua key/workspace/thư mục) để cô lập rủi ro.</p></div>
+</div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Production sập một dịch vụ. Để chữa cháy, một kỹ sư sửa tay security group trên console AWS. Tuần sau, người khác chạy <code>terraform apply</code> cho thay đổi không liên quan — Terraform thấy security group "lệch state" và <em>hoàn nguyên</em> nó về như mã, vô tình tái tạo sự cố. <strong>Bài học:</strong> sửa tay tạo drift nguy hiểm. Quy tắc: mọi thay đổi prod đi qua mã + plan + review; nếu buộc sửa nóng, phải đồng bộ lại vào mã ngay (hoặc <code>import</code>).</p></div>
+</section>
+<section class="panel" id="t5">
+<div class="lead">Module 05 — Delivery</div>
+<h1>CI/CD <span class="hl">nền tảng</span></h1>
+<p class="intro-p">CI/CD là dây chuyền tự động đưa thay đổi từ commit tới chạy thật, an toàn và lặp lại. Hiểu giải phẫu một pipeline (build → test → deploy) và các khái niệm artifact, môi trường, gate trước khi vào GitHub Actions cụ thể (M6).</p>
+
+<div class="toc">
+<a href="#t5-0">› 0. 📚 Lý thuyết CI/CD</a>
+<a href="#t5-1">› 1. CI vs CD vs CD</a>
+<a href="#t5-2">› 2. Giải phẫu một pipeline</a>
+<a href="#t5-3">› 3. Artifact &amp; môi trường</a>
+<a href="#t5-4">› 4. Nguyên tắc thiết kế pipeline</a>
+</div>
+
+<h2 id="t5-0">📚 Lý thuyết: kinh tế học của dòng chảy</h2>
+<p>CI/CD trông như chuyện công cụ, nhưng giá trị đến từ vài định luật về <em>dòng chảy công việc</em> và <em>vòng phản hồi</em>. Hiểu chúng giải thích vì sao "deploy thường xuyên, lô nhỏ" vừa nhanh vừa an toàn — điều phản trực giác.</p>
+
+<h3>Lý thuyết 5.1 — Kích thước lô (batch size): vì sao nhỏ thì tốt hơn</h3>
+<p>Từ Lean: <strong>lô càng lớn, chi phí &amp; rủi ro mỗi lần giao càng cao</strong>. Một release gộp 200 thay đổi: khó review, hỏng thì không biết thay đổi nào gây ra (tìm lỗi trong không gian 200 chiều), rollback đánh đổi tất cả. Một release một thay đổi: review vài phút, hỏng thì thủ phạm hiển nhiên, rollback chỉ mất một thứ. CI/CD <em>tự động hoá chi phí cố định</em> mỗi lần giao xuống gần 0 — và khi đó lô tối ưu trở nên <strong>rất nhỏ</strong>. Đây là cơ sở toán học của "deploy nhiều lần mỗi ngày".</p>
+<div class="box note"><span class="t">Đường cong chi phí lô</span><p>Tổng chi phí ≈ (chi phí mỗi lần giao × số lần) + (rủi ro tăng phi tuyến theo cỡ lô). Tự động hoá kéo số hạng đầu xuống; rủi ro tăng nhanh theo cỡ lô → tối ưu đẩy về lô nhỏ &amp; thường xuyên (chính là điều DORA đo).</p></div>
+
+<h3>Lý thuyết 5.2 — Định luật Little &amp; lead time</h3>
+<p>Định luật Little (lý thuyết hàng đợi): <code class="inline">Lead Time = WIP / Throughput</code>. Muốn giảm thời gian commit→prod, hoặc <em>giảm WIP</em> (ít việc dở dang — lô nhỏ!), hoặc <em>tăng throughput</em> (pipeline nhanh hơn). Pipeline 40 phút với 10 thay đổi xếp hàng tạo lead time khổng lồ; chia nhỏ + tăng tốc cắt nó mạnh. Vì sao "pipeline nhanh" không xa xỉ mà là đòn bẩy trực tiếp lên tốc độ giao hàng.</p>
+
+<h3>Lý thuyết 5.3 — Độ trễ vòng phản hồi (feedback latency)</h3>
+<p>Nguyên lý từ điều khiển &amp; tâm lý học: <strong>giá trị phản hồi giảm theo cấp số nhân với độ trễ</strong>. Test báo lỗi trong 30 giây — khi context còn nóng — đáng giá gấp bội cùng test báo sau 3 ngày. Vì vậy <em>fail fast</em> không chỉ tiết kiệm thời gian máy mà tiết kiệm <em>chi phí sửa</em>: lỗi bắt ở commit rẻ hơn ở staging, rẻ hơn nhiều ở prod (chi phí ~10× mỗi tầng). Thiết kế pipeline = sắp xếp để vòng phản hồi ngắn nhất cho lỗi hay gặp nhất.</p>
+
+<h3>Lý thuyết 5.4 — Bất biến của artifact: "build once, run anywhere"</h3>
+<p>Nguyên lý đảm bảo tính đúng: <strong>cái được test phải đúng là cái chạy ở prod</strong>. Build lại artifact ở mỗi môi trường thì mất đảm bảo đó (phiên bản thư viện, thời điểm build khác). Giải: build <em>một</em> artifact bất biến (gắn digest), promote chính nó qua dev→staging→prod. Lại là tư duy bất biến (M2.5, M16): cùng một vật thể đi qua các môi trường, chỉ <em>cấu hình</em> khác, không phải <em>nội dung</em>.</p>
+
+<h2 id="t5-1">1. CI vs CD vs CD</h2>
+<div class="tbl-wrap">
+<table>
+<tr><th>Thuật ngữ</th><th>Nghĩa</th><th>Mục tiêu</th></tr>
+<tr><td>Continuous Integration</td><td>Mỗi commit được tự động build + test, hợp nhất thường xuyên</td><td>Phát hiện lỗi sớm, tránh "merge hell"</td></tr>
+<tr><td>Continuous Delivery</td><td>Mọi thay đổi qua test luôn <em>sẵn sàng</em> deploy; nhấn nút để release</td><td>Release bất cứ lúc nào, rủi ro thấp</td></tr>
+<tr><td>Continuous Deployment</td><td>Tự động deploy thẳng lên prod nếu qua hết test</td><td>Không cần can thiệp tay</td></tr>
+</table>
+</div>
+<div class="box note"><span class="t">Phân biệt hai chữ "CD"</span><p><em>Delivery</em>: tự động tới cửa prod, người nhấn nút cuối. <em>Deployment</em>: tự động qua luôn cửa. Đa số đội data nên bắt đầu ở Delivery (có gate phê duyệt cho prod), tiến tới Deployment khi test &amp; observability đủ tin.</p></div>
+
+<h2 id="t5-2">2. Giải phẫu một pipeline</h2>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">  commit/PR ─► [CI] ───────────────► [CD] ──────────────►
+              lint → test → build      deploy staging → (gate) → deploy prod
+              │                         │                         │
+              └ fail nhanh, báo PR      └ smoke test               └ phê duyệt + theo dõi
+  Mọi bước chạy lại được, idempotent, log đầy đủ — fail ở đâu thấy ngay ở đó.</pre></div>
+<div class="dcap">Pipeline tốt: fail sớm &amp; rẻ (lint/test trước), việc đắt (deploy) ở sau và có gate.</div>
+
+<h2 id="t5-3">3. Artifact &amp; môi trường</h2>
+<p><strong>Artifact</strong> là sản phẩm build bất biến (image Docker, wheel Python, gói dbt) — build <em>một lần</em>, dùng lại qua mọi môi trường để đảm bảo "cái test ở staging chính là cái chạy ở prod". <strong>Môi trường</strong> (dev → staging → prod) là các bậc thang với độ giống prod tăng dần; thay đổi <em>thăng cấp</em> (promote) qua từng bậc.</p>
+<div class="box tip"><span class="t">Build once, deploy many</span><p>Đừng build lại image ở mỗi môi trường — build một artifact, gắn tag bất biến (vd digest), rồi promote chính artifact đó. Build lại = rủi ro "phiên bản prod khác phiên bản đã test".</p></div>
+
+<h2 id="t5-4">4. Nguyên tắc thiết kế pipeline</h2>
+<div class="grid3">
+<div class="mini"><h4>Fail fast</h4><p style="font-size:13.5px">Đặt bước rẻ &amp; hay fail (lint, unit test) lên đầu để báo lỗi trong giây, không phút.</p></div>
+<div class="mini"><h4>Lặp lại &amp; cô lập</h4><p style="font-size:13.5px">Mỗi lần chạy từ trạng thái sạch; không phụ thuộc "máy build có sẵn gì".</p></div>
+<div class="mini"><h4>Nhanh</h4><p style="font-size:13.5px">Cache phụ thuộc, chạy song song. Pipeline &gt; 15 phút là người ta bắt đầu né.</p></div>
+<div class="mini"><h4>Quan sát được</h4><p style="font-size:13.5px">Log rõ, báo trạng thái lên PR, biết ai/khi nào/cái gì đã deploy.</p></div>
+<div class="mini"><h4>Bảo mật</h4><p style="font-size:13.5px">Secrets không in ra log; quyền deploy theo môi trường; quét phụ thuộc.</p></div>
+<div class="mini"><h4>Rollback dễ</h4><p style="font-size:13.5px">Mỗi deploy gắn version; quay lui = redeploy artifact cũ, một lệnh.</p></div>
+</div>
+</section>
+
+<section class="panel" id="t6">
+<div class="lead">Module 06 — Delivery</div>
+<h1>GitHub Actions <span class="hl">thực chiến</span></h1>
+<p class="intro-p">GitHub Actions là nền CI/CD tích hợp ngay trong repo: workflow viết bằng YAML, kích hoạt bởi sự kiện Git. Module này dạy cấu trúc workflow, runner, secrets, và mẫu quan trọng nhất cho cloud: <strong>OIDC</strong> để xác thực không cần lưu khoá dài hạn.</p>
+
+<div class="toc">
+<a href="#t6-1">› 1. Workflow · Job · Step · Runner</a>
+<a href="#t6-2">› 2. Một workflow CI hoàn chỉnh</a>
+<a href="#t6-3">› 3. Secrets &amp; OIDC tới cloud</a>
+<a href="#t6-4">› 4. Matrix &amp; reusable workflow</a>
+</div>
+
+<h2 id="t6-1">1. Workflow · Job · Step · Runner</h2>
+<div class="tbl-wrap">
+<table>
+<tr><th>Khái niệm</th><th>Là gì</th></tr>
+<tr><td>Workflow</td><td>Một file YAML trong <code>.github/workflows/</code>, kích hoạt bởi sự kiện (push, pull_request, schedule, workflow_dispatch)</td></tr>
+<tr><td>Job</td><td>Một nhóm step chạy trên một runner; các job có thể song song hoặc phụ thuộc nhau (<code>needs</code>)</td></tr>
+<tr><td>Step</td><td>Một lệnh shell hoặc một <code>action</code> dùng lại</td></tr>
+<tr><td>Runner</td><td>Máy chạy job: GitHub-hosted (sẵn) hoặc self-hosted (của bạn)</td></tr>
+</table>
+</div>
+
+<h2 id="t6-2">2. Một workflow CI hoàn chỉnh</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">.github/workflows/ci.yml</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="cmd">name: ci</span>
+<span class="cmd">on:</span>
+<span class="cmd cont">  pull_request:</span>
+<span class="cmd cont">  push: { branches: [main] }</span>
+<span class="cmd">jobs:</span>
+<span class="cmd cont">  test:</span>
+<span class="cmd cont">    runs-on: ubuntu-latest</span>
+<span class="cmd cont">    steps:</span>
+<span class="cmd cont">      - uses: actions/checkout@v4</span>
+<span class="cmd cont">      - uses: actions/setup-python@v5</span>
+<span class="cmd cont">        with: { python-version: "3.12" }</span>
+<span class="cmd cont">      - run: pip install -r requirements.txt</span>
+<span class="cmd cont">      - run: ruff check . &amp;&amp; pytest -q   # fail fast: lint rồi test</span>
+</div>
+</div>
+
+<h2 id="t6-3">3. Secrets &amp; OIDC tới cloud</h2>
+<p>Đừng dán khoá cloud dài hạn vào secrets. Dùng <strong>OIDC</strong>: GitHub cấp một token ngắn hạn cho workflow, cloud tin token đó qua một IAM role — <em>không có khoá tĩnh nào để rò rỉ</em>. Đây là chuẩn vàng hiện nay.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">deploy-with-oidc.yml</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="cmd">permissions:</span>
+<span class="cmd cont">  id-token: write    # cho phép lấy OIDC token</span>
+<span class="cmd cont">  contents: read</span>
+<span class="cmd">jobs:</span>
+<span class="cmd cont">  deploy:</span>
+<span class="cmd cont">    environment: production   # gate phê duyệt theo môi trường</span>
+<span class="cmd cont">    steps:</span>
+<span class="cmd cont">      - uses: aws-actions/configure-aws-credentials@v4</span>
+<span class="cmd cont">        with:</span>
+<span class="cmd cont">          role-to-assume: arn:aws:iam::123:role/gha-deploy</span>
+<span class="cmd cont">          aws-region: ap-southeast-1   # token ngắn hạn, không khoá tĩnh</span>
+</div>
+</div>
+<div class="box danger"><span class="t">Đừng làm</span><p>In secret ra log, commit <code>.env</code>, hay dùng access key dài hạn trong CI. Một secret lọt vào log công khai là sự cố bảo mật. Dùng OIDC + GitHub Environments (có required reviewers cho prod).</p></div>
+
+<h2 id="t6-4">4. Matrix &amp; reusable workflow</h2>
+<div class="grid2">
+<div class="mini"><h4>Matrix</h4><p style="font-size:13.5px">Chạy cùng job trên nhiều cấu hình (vd Python 3.10/3.11/3.12) song song — <code>strategy.matrix</code>.</p></div>
+<div class="mini"><h4>Reusable workflow</h4><p style="font-size:13.5px">Viết một workflow chuẩn, các repo khác <code>uses</code> lại — đây là golden path cho CI/CD ở quy mô tổ chức.</p></div>
+</div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> 12 repo data, mỗi repo một file CI hơi khác → sửa một best practice phải đi sửa 12 nơi. <strong>Giải:</strong> platform team viết <em>một</em> reusable workflow "python-data-ci" (lint, test, build image, push, deploy qua OIDC); mỗi repo chỉ cần 5 dòng <code>uses</code>. Nâng cấp một chỗ, cả 12 repo hưởng. Đây chính là "nền tảng" thay vì "12 bản sao".</p></div>
+</section>
+
+<section class="panel" id="t7">
+<div class="lead">Module 07 — Delivery</div>
+<h1>GitOps · <span class="hl">ArgoCD / Flux</span></h1>
+<p class="intro-p">GitOps đưa nguyên lý "Git là nguồn sự thật" tới việc vận hành cluster: trạng thái mong muốn nằm trong Git, một agent trong cluster liên tục <em>đối chiếu</em> và kéo cluster về khớp Git. Bạn không "push deploy" nữa — bạn "commit, và cluster tự hội tụ".</p>
+
+<div class="toc">
+<a href="#t7-1">› 1. GitOps là gì</a>
+<a href="#t7-2">› 2. Push vs Pull deployment</a>
+<a href="#t7-3">› 3. Reconciliation &amp; drift</a>
+<a href="#t7-4">› 4. ArgoCD vs Flux</a>
+</div>
+
+<h2 id="t7-1">1. GitOps là gì</h2>
+<div class="defbox"><span class="term-def">GITOPS</span><p style="margin:6px 0 0">Mô hình vận hành trong đó <strong>trạng thái mong muốn của hệ thống được khai báo trong Git</strong>, và một tác nhân tự động liên tục đối chiếu trạng thái thực tế của cluster với Git, tự động hội tụ về khớp. Deploy = merge một PR; rollback = revert một commit.</p></div>
+<p>Bốn nguyên tắc: (1) khai báo; (2) versioned &amp; bất biến trong Git; (3) tự động kéo về (pulled automatically); (4) liên tục đối chiếu (continuously reconciled).</p>
+
+<h2 id="t7-2">2. Push vs Pull deployment</h2>
+<div class="grid2">
+<div class="mini"><h4>Push (CI/CD cổ điển)</h4><p style="font-size:13.5px">Pipeline bên ngoài <code>kubectl apply</code> vào cluster. Cluster phải mở quyền cho CI; CI giữ credentials cluster.</p></div>
+<div class="mini"><h4>Pull (GitOps)</h4><p style="font-size:13.5px">Agent <em>trong</em> cluster tự kéo từ Git và áp. Credentials không rời cluster; an toàn hơn, tự sửa drift.</p></div>
+</div>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">  PUSH:  CI ──kubectl apply──► Cluster      (CI cầm chìa khoá cluster)
+  PULL:  Git ◄──watch── Agent(ArgoCD/Flux) ──apply──► Cluster
+                         │ thấy lệch Git → tự kéo về khớp (self-heal)</pre></div>
+<div class="dcap">GitOps đảo chiều: cluster tự kéo trạng thái từ Git, thay vì để hệ thống ngoài đẩy vào.</div>
+
+<h2 id="t7-3">3. Reconciliation &amp; drift</h2>
+<p>Agent chạy vòng lặp <em>reconcile</em>: so trạng thái cluster với Git; nếu lệch (ai đó <code>kubectl edit</code> tay, hoặc Git có commit mới) → áp lại cho khớp Git. Đây là <strong>self-healing</strong>: sửa tay trên cluster sẽ bị hoàn nguyên về đúng Git. Cùng mô hình "hội tụ trạng thái" của Terraform (M2) và Kubernetes (Module 13 của khoá).</p>
+
+<h2 id="t7-4">4. ArgoCD vs Flux</h2>
+<div class="tbl-wrap">
+<table>
+<tr><th>Tiêu chí</th><th>ArgoCD</th><th>Flux</th></tr>
+<tr><td>Giao diện</td><td>Có UI trực quan (xem trạng thái sync)</td><td>Thiên CLI/CRD, gọn nhẹ</td></tr>
+<tr><td>Mô hình</td><td>Application CRD, app-of-apps</td><td>Bộ controller modular (source, kustomize, helm)</td></tr>
+<tr><td>Hợp khi</td><td>Đội thích UI, nhiều app, nhiều team</td><td>Thích tối giản, tích hợp sâu vào GitOps thuần</td></tr>
+</table>
+</div>
+<div class="box tip"><span class="t">Liên hệ Module 13 (Docker/K8s)</span><p>GitOps giả định bạn đã có Kubernetes. Manifests/Helm chart của các dịch vụ data (Airflow, Spark operator, dịch vụ API ở Module 08–11 của khoá) nằm trong Git; ArgoCD/Flux giữ cluster luôn khớp. Đây là cách "vận hành K8s ở quy mô" mà không ai phải <code>kubectl apply</code> tay lên prod.</p></div>
+</section>
+
+<section class="panel" id="t8">
+<div class="lead">Module 08 — Delivery</div>
+<h1>Chiến lược <span class="hl">triển khai</span></h1>
+<p class="intro-p">Deploy không phải bật/tắt nhị phân. Cách bạn đưa phiên bản mới ra quyết định mức rủi ro: thay toàn bộ cùng lúc (rủi ro cao) hay thả từ từ và theo dõi (rủi ro thấp, rollback nhanh). Module này là bộ công cụ giảm rủi ro release.</p>
+
+<div class="toc">
+<a href="#t8-1">› 1. Rolling update</a>
+<a href="#t8-2">› 2. Blue-Green</a>
+<a href="#t8-3">› 3. Canary</a>
+<a href="#t8-4">› 4. Feature flag &amp; rollback</a>
+</div>
+
+<h2 id="t8-1">1. Rolling update</h2>
+<p>Thay dần từng phần instance/pod cũ bằng mới, giữ dịch vụ luôn sẵn sàng. Mặc định của Kubernetes Deployment. Đơn giản, không cần gấp đôi tài nguyên, nhưng rollback chậm hơn (phải lăn ngược) và có giai đoạn chạy lẫn hai phiên bản.</p>
+
+<h2 id="t8-2">2. Blue-Green</h2>
+<p>Chạy <strong>hai môi trường song song</strong>: blue (đang phục vụ) và green (phiên bản mới). Test green xong thì <em>chuyển toàn bộ lưu lượng</em> sang green tức thì. Rollback = chuyển ngược về blue, gần như tức thời. Đổi lại: tốn gấp đôi tài nguyên trong lúc chuyển.</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">  BLUE-GREEN:  [Blue v1] ◄─ 100% traffic        rollback = bật lại Blue
+               [Green v2] ◄─ 0% (đang test)  ──switch──►  [Green v2] ◄─ 100%
+  CANARY:      [v1] ◄─ 95%   [v2] ◄─ 5% ──theo dõi metric──► tăng dần 5→25→100%</pre></div>
+<div class="dcap">Blue-green: chuyển dứt khoát, rollback tức thì. Canary: thả từ từ, quan sát rồi mới tăng.</div>
+
+<h2 id="t8-3">3. Canary</h2>
+<p>Thả phiên bản mới cho <strong>một phần nhỏ</strong> lưu lượng (vd 5%), theo dõi metric (lỗi, độ trễ — M10–12); nếu khoẻ thì tăng dần 25% → 50% → 100%; nếu xấu thì rút về 0%. Rủi ro được giới hạn ở phần nhỏ người dùng. Cần observability tốt để "quan sát" canary — đây là lý do M9–12 gắn chặt với module này.</p>
+
+<h2 id="t8-4">4. Feature flag &amp; rollback</h2>
+<div class="grid2">
+<div class="mini"><h4>Feature flag</h4><p style="font-size:13.5px">Tách <em>deploy</em> khỏi <em>release</em>: đẩy code lên (tắt cờ), bật tính năng cho từng nhóm bằng cờ, không cần redeploy. Tắt cờ = "rollback" tức thì cho tính năng.</p></div>
+<div class="mini"><h4>Rollback</h4><p style="font-size:13.5px">Luôn có đường lui: artifact cũ còn đó (M5), GitOps thì <em>revert commit</em>, blue-green thì bật lại blue. Rollback phải nhanh hơn fix-forward.</p></div>
+</div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Phiên bản mới của API phục vụ dữ liệu (Module 08–09 của khoá) có một query làm chậm p99 lên gấp 5 — nhưng chỉ lộ ra dưới tải thật. <strong>Nhờ canary:</strong> chỉ 5% lưu lượng dính, dashboard độ trễ (M11) báo đỏ, alert (M12) bắn, hệ thống tự rút canary về 0% trước khi đa số người dùng bị ảnh hưởng. Nếu deploy "tất tay" kiểu thay toàn bộ, 100% người dùng đã lãnh đủ. Chiến lược triển khai = bảo hiểm rủi ro, và nó <em>chỉ hiệu quả khi có observability</em>.</p></div>
+</section>
+<section class="panel" id="t9">
+<div class="lead">Module 09 — Observability</div>
+<h1>Observability: <span class="hl">ba trụ cột</span></h1>
+<p class="intro-p">Monitoring trả lời "hệ thống có hỏng không?" theo các câu hỏi định sẵn. Observability trả lời "vì sao nó hỏng?" cho cả câu hỏi bạn <em>chưa</em> nghĩ tới. Nền tảng của nó là ba loại tín hiệu: metrics, logs, traces — và một chuẩn chung để thu thập chúng: OpenTelemetry.</p>
+
+<div class="toc">
+<a href="#t9-0">› 0. 📚 Lý thuyết Observability</a>
+<a href="#t9-1">› 1. Monitoring vs Observability</a>
+<a href="#t9-2">› 2. Ba trụ cột</a>
+<a href="#t9-3">› 3. OpenTelemetry — chuẩn trung lập</a>
+<a href="#t9-4">› 4. Chọn đo cái gì</a>
+</div>
+
+<h2 id="t9-0">📚 Lý thuyết: từ điều khiển học tới ba trụ cột</h2>
+<p>Từ "observability" vay từ <em>lý thuyết điều khiển</em> những năm 1960. Hiểu gốc gác làm rõ vì sao ba trụ cột tồn tại và vì sao cardinality nguy hiểm.</p>
+
+<h3>Lý thuyết 9.1 — Observability &amp; Controllability (Kalman, 1960)</h3>
+<p>Rudolf Kálmán định nghĩa: hệ thống là <strong>observable</strong> nếu có thể suy ra <em>trạng thái nội tại</em> chỉ từ các <em>đầu ra</em> quan sát được; cặp đôi là <em>controllability</em> (đưa được hệ về trạng thái mong muốn không). Đưa vào phần mềm: hệ observable nếu chỉ nhìn tín hiệu nó phát (metric/log/trace), bạn suy được nó đang làm gì bên trong — kể cả trạng thái <em>chưa</em> lường trước. Đây là khác biệt với monitoring: monitoring kiểm tra trạng thái <em>đã biết</em> (known-unknowns: "CPU cao không?"); observability nhắm <em>unknown-unknowns</em> ("vì sao nhóm khách X trên endpoint Y chậm lúc 3h sáng?").</p>
+<div class="defbox"><span class="term-def">KNOWN-UNKNOWN vs UNKNOWN-UNKNOWN</span><p style="margin:6px 0 0"><strong>Known-unknown</strong>: câu hỏi bạn biết để hỏi trước (dashboard/alert dựng sẵn). <strong>Unknown-unknown</strong>: câu hỏi chỉ nảy ra <em>trong</em> lúc điều tra sự cố lạ. Monitoring lo cái đầu; observability phải trả lời cả cái sau — đòi dữ liệu giàu chiều &amp; truy vấn tự do, không chỉ vài chỉ số đóng hộp.</p></div>
+
+<h3>Lý thuyết 9.2 — Ba trụ cột là ba <em>loại thông tin</em></h3>
+<p>Đừng nghĩ "Prometheus + Loki + Jaeger". Hãy nghĩ ba <em>dạng thông tin</em> với đánh đổi chi phí ↔ độ giàu ngữ cảnh: <strong>Metrics</strong> — số đã tổng hợp, rẻ &amp; nén tốt theo thời gian, mất chi tiết cá thể ("cái gì, bao nhiêu"). <strong>Logs</strong> — sự kiện rời rạc giàu ngữ cảnh, đắt hơn để lưu/tìm ("chuyện gì ở dòng này"). <strong>Traces</strong> — quan hệ nhân quả &amp; thời gian qua các dịch vụ, đắt nhất, thường phải lấy mẫu ("ở đâu trong chuỗi gọi"). Chúng tạo phổ <em>tổng hợp → chi tiết</em>; điều tra giỏi là nhảy đúng tầng (metric phát hiện → trace khoanh vùng → log xác nhận).</p>
+
+<h3>Lý thuyết 9.3 — Cardinality &amp; lời nguyền số chiều</h3>
+<p>Vì sao label lực lượng cao giết metric? Vì metric lưu như <strong>tích Descartes của các chiều label</strong>: số chuỗi thời gian = ∏ (số giá trị mỗi label). Thêm <code class="inline">user_id</code> 2 triệu giá trị nhân không gian lên 2 triệu lần — "cardinality explosion". Đây là <em>curse of dimensionality</em>: không gian phình theo cấp số nhân với số chiều. Bài học: metric hợp chiều <em>thấp &amp; hữu hạn</em> (để tổng hợp); danh tính lực lượng cao (id, request) thuộc về log/trace — lưu theo <em>sự kiện</em>, không theo <em>tích chiều</em> (xem M10).</p>
+
+<h3>Lý thuyết 9.4 — Lấy mẫu (sampling) &amp; đánh đổi tín hiệu/chi phí</h3>
+<p>Trace mọi request ở quy mô lớn bất khả thi về chi phí. Hai chiến lược: <em>head-based</em> (quyết giữ/bỏ ngay đầu — đơn giản, dễ bỏ sót lỗi hiếm) và <em>tail-based</em> (đợi trace xong mới quyết — giữ được trace lỗi/chậm, tốn bộ nhớ đệm). Bài toán đánh đổi cổ điển: <strong>độ phủ tín hiệu ↔ chi phí lưu trữ</strong>. Hiểu nó giúp cấu hình quan sát đúng mức — đủ thấy vấn đề, không phá ngân sách (nối FinOps, M15).</p>
+
+<h2 id="t9-1">1. Monitoring vs Observability</h2>
+<p><strong>Monitoring</strong>: theo dõi các chỉ số đã biết, báo động khi vượt ngưỡng ("CPU &gt; 90%"). <strong>Observability</strong>: hệ thống phát ra đủ tín hiệu để bạn <em>truy vấn tự do</em> và hiểu trạng thái nội tại — kể cả những trục trặc chưa từng lường trước ("vì sao p99 của <em>nhóm khách hàng X</em> trên <em>endpoint Y</em> tăng lúc 3h sáng?"). Monitoring là tập con; observability là năng lực điều tra.</p>
+
+<h2 id="t9-2">2. Ba trụ cột</h2>
+<div class="grid3">
+<div class="mini"><h4>Metrics</h4><p style="font-size:13.5px">Số đo tổng hợp theo thời gian (request/s, độ trễ, lỗi). Rẻ, gọn, hợp dashboard &amp; alert. Trả lời "<em>cái gì</em> đang xảy ra".</p></div>
+<div class="mini"><h4>Logs</h4><p style="font-size:13.5px">Bản ghi sự kiện rời rạc, giàu ngữ cảnh. Hợp điều tra chi tiết một ca. Trả lời "<em>chuyện gì</em> đã xảy ra ở dòng này".</p></div>
+<div class="mini"><h4>Traces</h4><p style="font-size:13.5px">Đường đi của một request qua nhiều dịch vụ, kèm thời gian từng chặng. Trả lời "<em>ở đâu</em> chậm/lỗi trong chuỗi gọi".</p></div>
+</div>
+<div class="box tip"><span class="t">Dùng phối hợp</span><p>Quy trình điều tra điển hình: <em>metric</em> báo p99 tăng → <em>trace</em> chỉ ra chặng gọi DB chậm → <em>log</em> của chặng đó cho thấy query timeout. Ba trụ cột bổ trợ, không thay thế nhau. Correlation (gắn trace_id vào log) làm chúng nối liền.</p></div>
+
+<h2 id="t9-3">3. OpenTelemetry — chuẩn trung lập</h2>
+<p><strong>OpenTelemetry (OTel)</strong> là chuẩn mở, trung lập nhà cung cấp để <em>tạo</em> và <em>thu thập</em> cả ba loại tín hiệu: một bộ SDK để instrument code + một <em>Collector</em> để nhận, xử lý, xuất tín hiệu sang backend bất kỳ (Prometheus, Grafana, Jaeger, vendor…) qua giao thức OTLP. Lợi ích lớn: instrument <em>một lần</em>, đổi backend mà không sửa code — gỡ khoá nhà cung cấp ở tầng quan sát.</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">  App (OTel SDK) ──OTLP──► OTel Collector ──► Prometheus (metrics)
+                                          ├──► Loki / ELK    (logs)
+                                          └──► Jaeger/Tempo  (traces)
+  Instrument 1 lần · đổi backend không sửa code</pre></div>
+<div class="dcap">OTel chuẩn hoá "phát &amp; gom tín hiệu"; backend chỉ là nơi lưu/trực quan hoá có thể thay thế.</div>
+
+<h2 id="t9-4">4. Chọn đo cái gì</h2>
+<p>Đừng đo tất cả — đo cái phản ánh <em>trải nghiệm người dùng</em> và <em>sức khoẻ hệ thống</em>. Hai khung phổ biến:</p>
+<div class="tbl-wrap">
+<table>
+<tr><th>Khung</th><th>Đo gì</th><th>Hợp cho</th></tr>
+<tr><td>RED</td><td>Rate (req/s), Errors, Duration</td><td>Dịch vụ/request-driven (API — M08–11 của khoá)</td></tr>
+<tr><td>USE</td><td>Utilization, Saturation, Errors</td><td>Tài nguyên (CPU, đĩa, hàng đợi)</td></tr>
+<tr><td>Four Golden Signals</td><td>Latency, Traffic, Errors, Saturation</td><td>Khung SRE tổng quát</td></tr>
+</table>
+</div>
+</section>
+
+<section class="panel" id="t10">
+<div class="lead">Module 10 — Observability</div>
+<h1>Metrics &amp; <span class="hl">Prometheus</span></h1>
+<p class="intro-p">Prometheus là chuẩn de-facto cho metrics trong thế giới cloud-native: cơ sở dữ liệu chuỗi thời gian + mô hình <em>pull</em> + ngôn ngữ truy vấn PromQL. Hiểu mô hình kéo, kiểu metric, và bẫy cardinality là đủ để vận hành nó tốt.</p>
+
+<div class="toc">
+<a href="#t10-1">› 1. Mô hình pull &amp; scrape</a>
+<a href="#t10-2">› 2. Bốn kiểu metric</a>
+<a href="#t10-3">› 3. PromQL nhập môn</a>
+<a href="#t10-4">› 4. Bẫy cardinality</a>
+</div>
+
+<h2 id="t10-1">1. Mô hình pull &amp; scrape</h2>
+<p>Khác nhiều hệ thống "đẩy" metric đi, Prometheus <strong>chủ động kéo (scrape)</strong>: mỗi dịch vụ expose một endpoint <code class="inline">/metrics</code>, Prometheus định kỳ gọi vào để thu. Service discovery (qua Kubernetes, Consul…) cho Prometheus biết kéo từ đâu. Ưu điểm: Prometheus kiểm soát tần suất, dễ biết "target nào đang chết" (scrape fail).</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">/metrics (định dạng phơi bày)</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="cmt"># HELP http_requests_total Tổng số request</span>
+<span class="cmt"># TYPE http_requests_total counter</span>
+<span class="out">http_requests_total{method="GET",status="200"} 12843</span>
+<span class="out">http_requests_total{method="GET",status="500"} 17</span>
+<span class="out">http_request_duration_seconds_bucket{le="0.1"} 9001</span>
+</div>
+</div>
+
+<h2 id="t10-2">2. Bốn kiểu metric</h2>
+<div class="tbl-wrap">
+<table>
+<tr><th>Kiểu</th><th>Ý nghĩa</th><th>Ví dụ</th></tr>
+<tr><td>Counter</td><td>Chỉ tăng (reset khi restart)</td><td>tổng số request, tổng lỗi</td></tr>
+<tr><td>Gauge</td><td>Lên xuống tuỳ ý</td><td>số kết nối hiện tại, dung lượng đĩa</td></tr>
+<tr><td>Histogram</td><td>Phân bố vào các "bucket"</td><td>độ trễ request (tính p50/p95/p99)</td></tr>
+<tr><td>Summary</td><td>Phân vị tính sẵn ở client</td><td>tương tự histogram, ít linh hoạt hơn khi tổng hợp</td></tr>
+</table>
+</div>
+<div class="box note"><span class="t">Latency dùng histogram</span><p>Để tính p95/p99 độ trễ <em>tổng hợp nhiều instance</em>, dùng <strong>histogram</strong> (bucket) rồi <code class="inline">histogram_quantile()</code>. Summary tính phân vị tại từng instance nên khó cộng gộp đúng giữa các instance.</p></div>
+
+<h2 id="t10-3">3. PromQL nhập môn</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">promql</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="cmt"># tỉ lệ lỗi 5xx trên tổng request, cửa sổ 5 phút</span>
+<span class="cmd">sum(rate(http_requests_total{status=~"5.."}[5m]))</span>
+<span class="cmd cont">  / sum(rate(http_requests_total[5m]))</span>
+<span class="cmt"># p99 độ trễ từ histogram</span>
+<span class="cmd">histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))</span>
+<span class="cmt"># bộ nhớ theo pod</span>
+<span class="cmd">sum(container_memory_usage_bytes) by (pod)</span>
+</div>
+</div>
+<p><code class="inline">rate()</code> trên counter cho "tốc độ mỗi giây" — nền tảng của hầu hết truy vấn. Luôn <code>rate()</code> counter trước khi tổng hợp, đừng dùng giá trị thô.</p>
+
+<h2 id="t10-4">4. Bẫy cardinality</h2>
+<div class="box danger"><span class="t">Cardinality explosion</span><p>Mỗi tổ hợp giá trị <em>label</em> tạo một chuỗi thời gian riêng. Gắn label lực lượng cao (user_id, request_id, email…) → hàng triệu chuỗi → Prometheus phình bộ nhớ và sập. <strong>Quy tắc:</strong> label chỉ dùng giá trị lực lượng <em>thấp &amp; hữu hạn</em> (method, status, region). ID/giá trị tự do thuộc về <em>log/trace</em>, không phải label metric.</p></div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Một kỹ sư thêm label <code>customer_id</code> vào metric để "tiện lọc theo khách". Vài ngày sau Prometheus OOM, sập, mất luôn alert. <strong>Nguyên nhân:</strong> 2 triệu khách = 2 triệu chuỗi thời gian cho một metric. <strong>Sửa:</strong> bỏ <code>customer_id</code> khỏi label; muốn điều tra theo khách thì dùng trace (gắn customer_id làm attribute của span) hoặc log. Bài học: metric để <em>tổng hợp</em>, không để <em>định danh</em>.</p></div>
+</section>
+
+<section class="panel" id="t11">
+<div class="lead">Module 11 — Observability</div>
+<h1>Grafana, Logs &amp; <span class="hl">Dashboard</span></h1>
+<p class="intro-p">Có metric/log rồi cần <em>nhìn thấy</em> và <em>tra cứu</em> chúng. Grafana là lớp trực quan hoá đa nguồn; logs cần một hệ tập trung (Loki hoặc ELK). Module này về cách biến tín hiệu thô thành thứ con người đọc được khi sự cố xảy ra lúc 3h sáng.</p>
+
+<div class="toc">
+<a href="#t11-1">› 1. Grafana — dashboard đa nguồn</a>
+<a href="#t11-2">› 2. Logs tập trung: Loki vs ELK</a>
+<a href="#t11-3">› 3. Structured logging</a>
+<a href="#t11-4">› 4. Dashboard tốt trông thế nào</a>
+</div>
+
+<h2 id="t11-1">1. Grafana — dashboard đa nguồn</h2>
+<p>Grafana không lưu dữ liệu — nó <em>truy vấn &amp; vẽ</em> từ nhiều nguồn (Prometheus, Loki, Tempo, cả SQL/warehouse). Một dashboard gồm các <em>panel</em>, mỗi panel là một truy vấn (vd PromQL) trực quan hoá. Dashboard nên versioned trong Git (Grafana hỗ trợ provisioning bằng JSON/IaC) — đúng tinh thần "mọi thứ là mã".</p>
+
+<h2 id="t11-2">2. Logs tập trung: Loki vs ELK</h2>
+<div class="tbl-wrap">
+<table>
+<tr><th>Hệ</th><th>Cách hoạt động</th><th>Đánh đổi</th></tr>
+<tr><td>Loki (Grafana)</td><td>Index theo <em>label</em> (như Prometheus cho log), không index full-text</td><td>Rẻ, gọn, hợp cloud-native; tìm full-text yếu hơn</td></tr>
+<tr><td>ELK (Elasticsearch)</td><td>Index full-text mạnh</td><td>Tìm kiếm mạnh nhưng tốn tài nguyên &amp; vận hành nặng hơn</td></tr>
+</table>
+</div>
+<div class="box tip"><span class="t">Chọn theo nhu cầu</span><p>Cần tích hợp gọn với Prometheus/Grafana và tiết kiệm → <strong>Loki</strong>. Cần tìm kiếm full-text phức tạp, phân tích log sâu → <strong>ELK</strong>. Nhiều đội data bắt đầu với Loki vì đã có Grafana.</p></div>
+
+<h2 id="t11-3">3. Structured logging</h2>
+<p>Log dạng văn bản tự do rất khó truy vấn. Hãy log <strong>JSON có cấu trúc</strong> với các trường chuẩn (level, service, trace_id, message, ngữ cảnh). Gắn <code class="inline">trace_id</code> vào log để nối log ↔ trace (M9). Đây là khác biệt giữa "grep tuyệt vọng" và "lọc theo trường trong vài giây".</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">structured-log.json</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="out">{"ts":"2026-06-19T03:14:00Z","level":"error","service":"sales-api",</span>
+<span class="out"> "trace_id":"a1b2c3","msg":"db timeout","query_ms":5021,"customer_id":42}</span>
+<span class="cmt"># lọc được theo level/service/trace_id; nối thẳng tới trace tương ứng</span>
+</div>
+</div>
+
+<h2 id="t11-4">4. Dashboard tốt trông thế nào</h2>
+<div class="grid3">
+<div class="mini"><h4>Trên xuống: tổng → chi tiết</h4><p style="font-size:13.5px">Hàng đầu là Golden Signals của dịch vụ; cuộn xuống mới tới chi tiết tài nguyên.</p></div>
+<div class="mini"><h4>Hướng người đọc lúc sự cố</h4><p style="font-size:13.5px">Người trực 3h sáng phải hiểu trong 10 giây "đang đỏ ở đâu", không cần là tác giả dashboard.</p></div>
+<div class="mini"><h4>Versioned</h4><p style="font-size:13.5px">Dashboard là JSON trong Git, deploy qua IaC — không "sửa tay rồi mất".</p></div>
+</div>
+</section>
+
+<section class="panel" id="t12">
+<div class="lead">Module 12 — Reliability</div>
+<h1>SLO, Error Budget &amp; <span class="hl">Alerting</span></h1>
+<p class="intro-p">Đo lường vô nghĩa nếu không gắn với mục tiêu. SLO định nghĩa "đủ tốt là bao nhiêu"; error budget biến độ tin cậy thành ngân sách có thể tiêu; alert tốt chỉ đánh thức người khi thực sự cần. Đây là trái tim của tư duy SRE đưa vào nền tảng.</p>
+
+<div class="toc">
+<a href="#t12-0">› 0. 📚 Lý thuyết độ tin cậy</a>
+<a href="#t12-1">› 1. SLI · SLO · SLA</a>
+<a href="#t12-2">› 2. Error budget</a>
+<a href="#t12-3">› 3. Alert dựa trên triệu chứng &amp; burn rate</a>
+<a href="#t12-4">› 4. Chống alert fatigue</a>
+</div>
+
+<h2 id="t12-0">📚 Lý thuyết: toán học của độ tin cậy</h2>
+<p>SLO/error budget dựa trên xác suất, lý thuyết hàng đợi và kinh tế học. Phần này là nền toán giúp đặt mục tiêu <em>đúng</em> thay vì đuổi theo "100%".</p>
+
+<h3>Lý thuyết 12.1 — Độ khả dụng là xác suất; thành phần nối tiếp nhân nhau</h3>
+<p>Availability A = xác suất hệ thống chạy đúng tại một thời điểm. Các thành phần mắc <strong>nối tiếp</strong> (cần tất cả cùng sống) → độ khả dụng tổng = <strong>tích</strong>: <code class="inline">A_total = A₁ × A₂ × …</code>. Năm dịch vụ mỗi cái 99.9% nối tiếp → 0.999⁵ ≈ <strong>99.5%</strong> — tệ hơn từng cái! Càng nhiều phụ thuộc nối tiếp, độ tin cậy giảm nhân. Muốn cải thiện: <strong>dư thừa song song</strong> — hai bản sao mỗi cái 99% song song → 1 − (0.01)² = 99.99%. Lý thuyết này định hướng kiến trúc: giảm phụ thuộc nối tiếp, thêm dư thừa cho thành phần trọng yếu.</p>
+<div class="box note"><span class="t">Hệ quả cho data pipeline</span><p>Pipeline 8 bước nối tiếp, mỗi bước "thường chạy được" 99% → toàn pipeline chỉ ~92% thành công. Vì sao retry, idempotency (M2), checkpoint (M16/streaming) sống còn: chúng biến chuỗi nối tiếp mong manh thành thứ chịu lỗi được.</p></div>
+
+<h3>Lý thuyết 12.2 — "Bảng nines": vì sao mỗi số 9 đắt gấp bội</h3>
+<div class="tbl-wrap">
+<table>
+<tr><th>SLO</th><th>Downtime/tháng</th><th>Downtime/năm</th><th>Error budget</th></tr>
+<tr><td>99% (hai nines)</td><td>~7.2 giờ</td><td>~3.65 ngày</td><td>1%</td></tr>
+<tr><td>99.9% (ba nines)</td><td>~43 phút</td><td>~8.8 giờ</td><td>0.1%</td></tr>
+<tr><td>99.99% (bốn nines)</td><td>~4.3 phút</td><td>~52 phút</td><td>0.01%</td></tr>
+<tr><td>99.999% (năm nines)</td><td>~26 giây</td><td>~5.3 phút</td><td>0.001%</td></tr>
+</table>
+</div>
+<p>Mỗi số 9 thêm vào <em>chia mười</em> ngân sách lỗi nhưng thường <em>nhân nhiều lần</em> chi phí (dư thừa đa vùng, tự động phục hồi, on-call dày hơn). Chọn SLO là quyết định <strong>kinh tế</strong>: 99.999% cho dashboard nội bộ là lãng phí khổng lồ. Quy tắc: đặt SLO ở mức người dùng <em>không phân biệt được</em> với hoàn hảo — cao hơn nữa là đốt tiền vô ích.</p>
+
+<h3>Lý thuyết 12.3 — Error budget là một cơ chế điều khiển</h3>
+<p>Error budget = 1 − SLO biến độ tin cậy thành <strong>đại lượng có thể tiêu</strong>, vận hành như một control loop (1.3): đo tỉ lệ lỗi → so ngân sách → <em>điều chỉnh hành vi đội</em>. Còn ngân sách → được mạo hiểm, ship nhanh. Cháy ngân sách → "phanh": đóng băng tính năng, dồn lực ổn định. Cái hay: nó <strong>chấm dứt cuộc chiến chính trị</strong> "ổn định vs tốc độ" bằng một con số khách quan cả dev lẫn ops cùng nhìn. 100% uptime không phải mục tiêu — nó để lại 0 ngân sách đổi mới, và bất khả thi về kinh tế.</p>
+
+<h3>Lý thuyết 12.4 — Vì sao trung bình nói dối: phân vị &amp; đuôi</h3>
+<p>Độ trễ <strong>không</strong> phân phối chuẩn — lệch phải, đuôi dài. Độ trễ <em>trung bình</em> 100ms có thể che giấu 1% người dùng chịu 5 giây. Ở quy mô lớn, mỗi người chạm <em>nhiều</em> request nên ai cũng dễ "trúng" đuôi p99 ít nhất một lần — đuôi <em>chính là</em> trải nghiệm điển hình, không phải ngoại lệ. Do đó SLO độ trễ luôn đặt theo <strong>phân vị</strong> (p95, p99), không theo trung bình; và metric độ trễ phải dùng histogram (M10) để tính phân vị tổng hợp đúng. <em>"Trung bình là lời an ủi; phân vị là sự thật."</em></p>
+
+<h3>Lý thuyết 12.5 — Burn rate: bắt nhanh sự cố lớn, làm ngơ trục trặc nhỏ</h3>
+<p>Thay vì alert "đã vi phạm SLO" (quá trễ) hay "có một lỗi" (quá ồn), <strong>burn-rate alert</strong> cảnh báo theo <em>tốc độ tiêu ngân sách</em>. Burn rate = (tỉ lệ lỗi hiện tại) / (tỉ lệ cho phép bởi SLO). Burn rate = 1 là tiêu đúng nhịp; = 14.4 nghĩa là cháy ngân sách 30 ngày trong ~2 giờ → khẩn cấp. Dùng <em>đa cửa sổ</em> (vd 1h nhanh + 5m xác nhận) để vừa nhạy với sự cố lớn vừa không nổ vì trục trặc thoáng qua. Đây là toán đứng sau alert tốt ở mục 3.</p>
+
+<h2 id="t12-1">1. SLI · SLO · SLA</h2>
+<div class="tbl-wrap">
+<table>
+<tr><th>Thuật ngữ</th><th>Là gì</th><th>Ví dụ</th></tr>
+<tr><td>SLI (Indicator)</td><td>Một <em>chỉ số</em> đo trải nghiệm</td><td>% request thành công &lt; 300ms</td></tr>
+<tr><td>SLO (Objective)</td><td>Mục tiêu nội bộ cho SLI</td><td>99.9% trong 30 ngày</td></tr>
+<tr><td>SLA (Agreement)</td><td>Cam kết với khách + hậu quả nếu vi phạm</td><td>"&lt; 99.5% → hoàn tiền"</td></tr>
+</table>
+</div>
+<div class="box note"><span class="t">Quan hệ</span><p>SLI là thước, SLO là vạch đích nội bộ (thường chặt hơn SLA), SLA là hợp đồng có chế tài. Đặt SLO trước; SLA (nếu có) luôn lỏng hơn SLO để có biên an toàn.</p></div>
+
+<h2 id="t12-2">2. Error budget</h2>
+<div class="defbox"><span class="term-def">ERROR BUDGET</span><p style="margin:6px 0 0">Phần "được phép hỏng" = <strong>100% − SLO</strong>. SLO 99.9%/30 ngày → ngân sách lỗi ≈ <strong>43 phút</strong> downtime/tháng. Còn ngân sách → được mạo hiểm release nhanh; cháy ngân sách → đóng băng tính năng, dồn lực vào ổn định.</p></div>
+<p>Error budget biến tranh cãi "ổn định hay tính năng" thành <em>quyết định dựa trên số</em>: nó cho phép một mức hỏng <em>có chủ đích</em> để đổi lấy tốc độ. 100% uptime không phải mục tiêu — nó quá đắt và không cần thiết.</p>
+
+<h2 id="t12-3">3. Alert dựa trên triệu chứng &amp; burn rate</h2>
+<p>Quy tắc vàng: <strong>alert trên triệu chứng người dùng cảm nhận</strong> (tỉ lệ lỗi, độ trễ — vi phạm SLO), không alert trên mọi nguyên nhân nội bộ ("CPU 80%" có thể hoàn toàn bình thường). <strong>Burn rate alert</strong>: cảnh báo khi ngân sách lỗi đang bị tiêu <em>quá nhanh</em> (vd sẽ cháy hết trong 1 giờ) — vừa nhạy với sự cố lớn, vừa không ồn với trục trặc nhỏ.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">alert-rule.yml (Prometheus)</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="cmd">- alert: HighErrorBurnRate</span>
+<span class="cmd cont">  expr: |</span>
+<span class="cmd cont">    sum(rate(http_requests_total{status=~"5.."}[5m]))</span>
+<span class="cmd cont">      / sum(rate(http_requests_total[5m])) &gt; 0.02   # &gt;2% lỗi</span>
+<span class="cmd cont">  for: 5m</span>
+<span class="cmd cont">  labels: { severity: page }       # đánh thức người trực</span>
+<span class="cmd cont">  annotations: { summary: "Tỉ lệ lỗi vượt ngân sách" }</span>
+</div>
+</div>
+
+<h2 id="t12-4">4. Chống alert fatigue</h2>
+<div class="box danger"><span class="t">Alert fatigue giết độ tin cậy</span><p>Quá nhiều alert vô nghĩa → người trực chai lì → bỏ lỡ alert thật. Mỗi alert <em>page</em> (đánh thức) phải: (1) khẩn cấp, (2) có thể hành động, (3) gắn runbook "làm gì khi nổ". Thứ không cần hành động ngay → đưa vào dashboard/ticket, đừng page. Alertmanager gom &amp; chặn trùng (grouping, inhibition, silence).</p></div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Đội đặt alert cho mọi thứ: CPU, RAM, mỗi lỗi lẻ. Người trực nhận 60 page/đêm, đa số tự khỏi. Một đêm pipeline thật sự chết — page đó chìm trong biển nhiễu, 4 tiếng sau mới ai đó để ý. <strong>Sửa:</strong> chuyển sang alert dựa trên SLO + burn rate; bỏ alert nguyên nhân không hành động được; mỗi page gắn runbook. Số page giảm còn vài cái/tuần, và đều là thật. Độ tin cậy <em>tăng</em> nhờ alert <em>ít</em> đi.</p></div>
+</section>
+
+<section class="panel" id="t13">
+<div class="lead">Module 13 — Security</div>
+<h1>Secrets &amp; <span class="hl">Security</span></h1>
+<p class="intro-p">Một nền tảng nhanh mà rò khoá thì vô giá trị. Module này về quản lý bí mật đúng cách, nguyên tắc đặc quyền tối thiểu, và "policy as code" — biến quy tắc bảo mật thành thứ máy kiểm tra tự động trong pipeline.</p>
+
+<div class="toc">
+<a href="#t13-1">› 1. Vì sao secrets khó</a>
+<a href="#t13-2">› 2. Quản lý bí mật đúng cách</a>
+<a href="#t13-3">› 3. Least privilege &amp; OIDC</a>
+<a href="#t13-4">› 4. Policy as Code &amp; quét IaC</a>
+</div>
+
+<h2 id="t13-1">1. Vì sao secrets khó</h2>
+<p>Bí mật (mật khẩu DB, API key, chứng chỉ) rò rỉ qua đủ ngả: commit nhầm vào Git, in ra log CI, nhúng trong image, để trong biến môi trường lộ. Một khoá lọt vào lịch sử Git là <em>mãi mãi</em> ở đó (phải xoay khoá, không chỉ xoá commit). Nguyên tắc số một: <strong>không bao giờ để bí mật ở dạng tĩnh trong mã/repo</strong>.</p>
+
+<h2 id="t13-2">2. Quản lý bí mật đúng cách</h2>
+<div class="grid2">
+<div class="mini"><h4>Secret manager tập trung</h4><p style="font-size:13.5px">Vault / AWS Secrets Manager / GCP Secret Manager: lưu mã hoá, kiểm soát truy cập, audit ai đọc gì.</p></div>
+<div class="mini"><h4>Dynamic secrets</h4><p style="font-size:13.5px">Vault cấp credential <em>ngắn hạn</em> theo yêu cầu (vd mật khẩu DB sống 1 giờ) → giảm thiệt hại khi rò.</p></div>
+<div class="mini"><h4>External Secrets Operator</h4><p style="font-size:13.5px">Đồng bộ bí mật từ secret manager vào Kubernetes Secret tự động, không nhét tay.</p></div>
+<div class="mini"><h4>Xoay khoá (rotation)</h4><p style="font-size:13.5px">Đổi định kỳ &amp; khi nghi rò. Dynamic secrets làm rotation gần như tự nhiên.</p></div>
+</div>
+
+<h2 id="t13-3">3. Least privilege &amp; OIDC</h2>
+<p><strong>Least privilege</strong>: mỗi danh tính (người, dịch vụ, pipeline) chỉ có đúng quyền tối thiểu cần để làm việc — không hơn. Pipeline deploy chỉ được đụng môi trường nó phụ trách; job đọc data lake không có quyền xoá bucket. Kết hợp <strong>OIDC</strong> (M6) để loại bỏ khoá tĩnh: danh tính workload được liên kết động qua token ngắn hạn.</p>
+<div class="box tip"><span class="t">Blast radius</span><p>Thiết kế quyền theo "nếu danh tính này bị chiếm, kẻ tấn công làm được gì?". Least privilege thu nhỏ <em>bán kính sát thương</em> đó. Một CI key có quyền admin toàn tài khoản là thảm hoạ chờ sẵn.</p></div>
+
+<h2 id="t13-4">4. Policy as Code &amp; quét IaC</h2>
+<p>Biến quy tắc bảo mật thành mã máy kiểm tra tự động <em>trong CI</em>, trước khi hạ tầng được tạo:</p>
+<div class="tbl-wrap">
+<table>
+<tr><th>Công cụ</th><th>Vai trò</th></tr>
+<tr><td>OPA / Rego, Sentinel</td><td>Viết chính sách ("cấm S3 bucket public") máy thực thi được</td></tr>
+<tr><td>tfsec / checkov</td><td>Quét file Terraform tìm cấu hình sai bảo mật trước khi apply</td></tr>
+<tr><td>Trivy / Grype</td><td>Quét lỗ hổng trong image &amp; phụ thuộc</td></tr>
+<tr><td>gitleaks</td><td>Chặn bí mật lọt vào commit</td></tr>
+</table>
+</div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Một kỹ sư vô tình khai báo S3 bucket data lake là public trong Terraform; PR được duyệt vội. <strong>Lưới an toàn policy-as-code:</strong> bước <code>checkov</code> trong CI chặn PR với lỗi "S3 bucket không được public", build đỏ trước khi <code>apply</code>. Hạ tầng nhạy cảm không bao giờ ra đời ở trạng thái sai. Đây là cách "shift left" bảo mật — bắt lỗi ở commit, không phải sau khi rò dữ liệu. Liên hệ Module 10 (Data Quality) của khoá: cùng tinh thần "kiểm thử tự động chặn cái xấu trước khi vào prod".</p></div>
+</section>
+<section class="panel deep" id="t14">
+<div class="lead">Module 14 — Chuyên sâu</div>
+<h1>Reliability <span class="hl">Engineering</span></h1>
+<p class="intro-p">Hệ thống sẽ hỏng — câu hỏi là bạn phát hiện nhanh thế nào, phản ứng có tổ chức ra sao, và học được gì. Module này về vận hành độ tin cậy như một kỷ luật: quản lý sự cố, postmortem không đổ lỗi, và chủ động kiểm thử khả năng chịu lỗi.</p>
+
+<div class="toc">
+<a href="#t14-0">› 0. 📚 Lý thuyết an toàn hệ thống</a>
+<a href="#t14-1">› 1. Vòng đời sự cố &amp; on-call</a>
+<a href="#t14-2">› 2. MTTD, MTTR &amp; runbook</a>
+<a href="#t14-3">› 3. Postmortem không đổ lỗi</a>
+<a href="#t14-4">› 4. Chaos &amp; capacity</a>
+</div>
+
+<h2 id="t14-0">📚 Lý thuyết: vì sao hệ thống phức tạp hỏng</h2>
+<p>Quản lý sự cố có nền lý thuyết sâu từ kỹ thuật an toàn (hàng không, hạt nhân). Hiểu nó là khác biệt giữa "tìm người để đổ lỗi" và "tìm hệ thống để vá".</p>
+
+<h3>Lý thuyết 14.1 — Normal Accidents (Perrow): sự cố là tất yếu thống kê</h3>
+<p>Charles Perrow (1984): trong hệ thống vừa <strong>phức tạp tương tác</strong> (các phần ảnh hưởng nhau khó lường) vừa <strong>liên kết chặt</strong> (lỗi lan nhanh, ít đệm), sự cố nghiêm trọng là <em>tính chất nội tại</em> — "normal accidents". Hệ thống data hiện đại đúng loại đó. Hệ quả: <strong>đừng kỳ vọng "không bao giờ hỏng"</strong>. Hãy thiết kế để <em>nới lỏng liên kết</em> (hàng đợi, retry, bulkhead, circuit breaker) và <em>giảm độ phức tạp tương tác</em> (ranh giới rõ, giao diện đơn giản). Mục tiêu khả thi: hỏng thì <em>cô lập &amp; hồi phục nhanh</em>, không phải triệt tiêu hỏng.</p>
+
+<h3>Lý thuyết 14.2 — Mô hình Phô mai Thuỵ Sĩ (Reason): phòng thủ nhiều lớp</h3>
+<p>James Reason: tai nạn lớn hiếm khi do một nguyên nhân — chúng xảy ra khi <strong>nhiều lớp phòng thủ cùng có lỗ hổng thẳng hàng</strong> tại một thời điểm (như các lát phô mai có lỗ, lỗ trùng thì xuyên qua). Suy ra: (a) tăng <em>số lớp</em> phòng thủ độc lập (test, review, canary M8, alert M12, guardrail M13); (b) sau sự cố, hỏi "<em>những</em> lớp nào đã thủng cùng lúc, vá lớp nào để lần sau không thẳng hàng". Đây là nền của phòng thủ chiều sâu.</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">  Lỗi ──►│ test │ review │ canary │ alert │ guardrail │──► (chặn)
+          ◯       ◯        ◯ ◯       ◯         ◯
+  Sự cố xuyên qua CHỈ KHI các lỗ (◯) tình cờ thẳng hàng cùng lúc.
+  → Thêm lớp &amp; vá lỗ ⇒ xác suất thẳng hàng giảm theo cấp số nhân.</pre></div>
+<div class="dcap">Không lớp nào hoàn hảo; sức mạnh ở nhiều lớp độc lập. Sửa sự cố = vá lỗ, không trừng phạt người.</div>
+
+<h3>Lý thuyết 14.3 — Safety-II &amp; kỹ thuật khả năng phục hồi (Hollnagel)</h3>
+<p>Quan điểm cũ (<em>Safety-I</em>): an toàn = vắng mặt sự cố; truy tìm "cái hỏng". Quan điểm hiện đại (<em>Safety-II</em>): hệ thống chạy đúng phần lớn thời gian nhờ con người <strong>liên tục thích nghi</strong> — và chính khả năng đó là nguồn an toàn. Hệ quả: ngoài "vì sao nó hỏng?", hãy hỏi "vì sao nó <em>thường</em> chạy được, và làm sao củng cố khả năng thích nghi?". Lý giải vì sao runbook, chaos engineering, đào tạo on-call quan trọng: chúng <em>tăng năng lực ứng biến</em> của con người, không chỉ vá lỗi máy.</p>
+
+<h3>Lý thuyết 14.4 — Nguyên nhân gốc là số nhiều &amp; "second story"</h3>
+<p>"The root cause" (số ít) gây hiểu lầm: hệ thống phức tạp hỏng vì <em>nhiều</em> yếu tố (kỹ thuật + tổ chức + con người). "Human error" gần như không bao giờ là nguyên nhân gốc — nó là <em>điểm khởi đầu</em> điều tra, không phải kết luận. Sidney Dekker gọi việc đào sâu hơn lời đổ lỗi bề mặt là tìm <strong>"second story"</strong>: vì sao hành động đó <em>hợp lý</em> với người thực hiện lúc đó (thiếu thông tin? công cụ gây nhầm? áp lực? thiếu guardrail?). Đây là nền của postmortem không đổ lỗi (mục 3).</p>
+<div class="box danger"><span class="t">Hệ quả vận hành</span><p>Văn hoá đổ lỗi tạo vòng xoáy chết: người ta giấu sự cố → không học → hệ thống không được vá → sự cố lặp lại nặng hơn. An toàn tâm lý để báo cáo thẳng thắn <em>là một yêu cầu kỹ thuật</em>, không phải đãi bôi.</p></div>
+
+<h2 id="t14-1">1. Vòng đời sự cố &amp; on-call</h2>
+<p>Một sự cố đi qua các pha: <em>phát hiện</em> (alert/báo cáo) → <em>phân loại</em> (severity) → <em>ứng cứu</em> (giảm thiểu trước, sửa gốc sau) → <em>khôi phục</em> → <em>học</em> (postmortem). <strong>On-call</strong> là người trực nhận page (M12); cần lịch xoay công bằng, có người dự phòng (escalation), và <em>vai trò rõ</em> (Incident Commander điều phối, không tự mình sửa).</p>
+<div class="box tip"><span class="t">Giảm thiểu trước, gốc rễ sau</span><p>Lúc cháy nhà: ưu tiên <em>dập lửa</em> (rollback, tăng instance, tắt feature flag) để khôi phục dịch vụ — đừng debug nguyên nhân gốc khi người dùng đang chịu trận. Truy gốc để ở postmortem.</p></div>
+
+<h2 id="t14-2">2. MTTD, MTTR &amp; runbook</h2>
+<div class="grid3">
+<div class="mini"><h4>MTTD</h4><p style="font-size:13.5px">Mean Time To Detect — bao lâu để <em>biết</em> có sự cố. Observability tốt (M9–12) kéo nó xuống.</p></div>
+<div class="mini"><h4>MTTR</h4><p style="font-size:13.5px">Mean Time To Recover — bao lâu để khôi phục. Rollback nhanh + runbook kéo nó xuống.</p></div>
+<div class="mini"><h4>Runbook</h4><p style="font-size:13.5px">Hướng dẫn từng bước cho một loại sự cố, gắn vào alert. Biến "chuyên gia duy nhất biết" thành "ai trực cũng xử được".</p></div>
+</div>
+<p>Mục tiêu thực dụng không phải "không bao giờ hỏng" (bất khả thi) mà là <strong>hỏng thì phát hiện nhanh, hồi phục nhanh</strong> — tối ưu MTTD + MTTR quan trọng hơn cố đạt zero sự cố.</p>
+
+<h2 id="t14-3">3. Postmortem không đổ lỗi</h2>
+<div class="defbox"><span class="term-def">BLAMELESS POSTMORTEM</span><p style="margin:6px 0 0">Bản phân tích sau sự cố tập trung vào <strong>hệ thống &amp; quy trình</strong> nào đã cho phép lỗi xảy ra, <em>không</em> vào "ai gây ra". Giả định mọi người hành động hợp lý với thông tin họ có lúc đó. Mục tiêu: rút bài học &amp; hành động phòng ngừa, không trừng phạt.</p></div>
+<div class="box danger"><span class="t">Vì sao "không đổ lỗi" là kỹ thuật, không phải xã giao</span><p>Văn hoá đổ lỗi → người ta giấu sự cố, không khai báo, không học. Postmortem không đổ lỗi → người ta báo cáo thẳng thắn, hệ thống được vá thật. Một con người bấm nhầm nút không phải "nguyên nhân gốc" — câu hỏi đúng là "vì sao hệ thống <em>cho phép</em> một cú bấm nhầm gây thảm hoạ?" (thiếu xác nhận? thiếu guardrail?).</p></div>
+
+<h2 id="t14-4">4. Chaos &amp; capacity</h2>
+<p><strong>Chaos engineering</strong>: chủ động tiêm lỗi (giết pod, thêm độ trễ mạng) trong môi trường có kiểm soát để kiểm chứng hệ thống chịu lỗi <em>trước khi</em> sự cố thật xảy ra — "tiêm vaccine cho hệ thống". <strong>Capacity planning</strong>: dùng metric (M10) để dự báo nhu cầu tài nguyên, đặt autoscaling, tránh cả quá tải lẫn lãng phí (gắn với FinOps — M15).</p>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Đội tin "hệ thống có HA, mất một node không sao" — nhưng chưa từng thử. Một chaos experiment giết ngẫu nhiên một node cơ sở dữ liệu trong staging → phát hiện ứng dụng không retry đúng, treo 90 giây. Họ sửa logic retry <em>trước</em> khi điều đó xảy ra thật trên prod lúc nửa đêm. Niềm tin vào HA giờ <em>dựa trên bằng chứng</em>, không phải hy vọng.</p></div>
+</section>
+
+<section class="panel deep" id="t15">
+<div class="lead">Module 15 — Chuyên sâu</div>
+<h1>Platform cho <span class="hl">Data &amp; ML</span></h1>
+<p class="intro-p">Mọi thứ ở trên áp dụng cho phần mềm nói chung; module này lắp chúng riêng cho workload data/ML — nơi "deploy" không chỉ là code mà còn là <em>pipeline, dữ liệu, và model</em>. Đây là chỗ Platform Engineering gặp đúng thế giới của khoá học này.</p>
+
+<div class="toc">
+<a href="#t15-1">› 1. CI/CD cho dbt &amp; Airflow</a>
+<a href="#t15-2">› 2. Provisioning hạ tầng data bằng IaC</a>
+<a href="#t15-3">› 3. Observability cho pipeline &amp; data</a>
+<a href="#t15-4">› 4. MLOps &amp; FinOps</a>
+</div>
+
+<h2 id="t15-1">1. CI/CD cho dbt &amp; Airflow</h2>
+<p>Pipeline dữ liệu cũng cần CI/CD như code. <strong>dbt</strong>: CI chạy <code class="inline">dbt build</code> trên PR, dùng "slim CI" (chỉ chạy model thay đổi + downstream nhờ so state) để nhanh; test &amp; contract (Module 10 của khoá) chạy như gate. <strong>Airflow</strong>: DAG là code → CI lint &amp; test DAG (import error, cấu trúc), rồi deploy DAG vào môi trường (sync repo, hoặc image) — không sửa DAG tay trên prod.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">dbt-ci.yml (rút gọn)</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="cmd">- run: dbt deps</span>
+<span class="cmd">- run: dbt build --select state:modified+ --defer --state ./prod-manifest</span>
+<span class="cmt"># chỉ chạy model đã đổi + phụ thuộc xuôi dòng → CI nhanh, vẫn an toàn</span>
+<span class="cmd">- run: dbt test   # contract/test là gate trước khi merge</span>
+</div>
+</div>
+
+<h2 id="t15-2">2. Provisioning hạ tầng data bằng IaC</h2>
+<p>Toàn bộ hạ tầng data nên là Terraform module (M4): bucket S3/GCS cho lake (Module 16 Lakehouse), warehouse/BigQuery dataset, cluster Spark/EMR/Dataproc, Airflow (MWAA/Composer), quyền IAM least-privilege. Platform team gói thành module "data-platform" — một đội mới gọi vài tham số là có đủ môi trường, thay vì click console hàng ngày.</p>
+<div class="box note"><span class="t">Nối M14–M15 (Cloud) của khoá</span><p>Module AWS/GCP của khoá dạy <em>dịch vụ</em> (S3, Glue, BigQuery, Dataproc…); module này dạy cách <em>provision &amp; vận hành</em> chúng có kỷ luật bằng IaC + CI/CD + observability — biến kiến thức dịch vụ thành một nền tảng lặp lại được.</p></div>
+
+<h2 id="t15-3">3. Observability cho pipeline &amp; data</h2>
+<p>Quan sát data có hai tầng: <strong>hạ tầng/pipeline</strong> (job chạy bao lâu, fail không, tài nguyên — Prometheus/Grafana M10–11) và <strong>chất lượng dữ liệu</strong> (freshness: dữ liệu mới đến đúng giờ không; volume: số dòng có bất thường không; schema: có lệch contract không — Module 10 của khoá). Cả hai cần SLO riêng: vd "bảng <code>fact_sales</code> phải tươi trong vòng 2 giờ, 99% số ngày".</p>
+<div class="box tip"><span class="t">Data SLO</span><p>SLO không chỉ cho API. Một <em>data freshness SLO</em> + alert burn-rate cho phép đội data biết pipeline trễ <em>trước khi</em> sếp hỏi "sao dashboard chưa cập nhật". Đây là M12 áp cho dữ liệu.</p></div>
+
+<h2 id="t15-4">4. MLOps &amp; FinOps</h2>
+<div class="grid2">
+<div class="mini"><h4>MLOps trên nền platform</h4><p style="font-size:13.5px">Versioning model + data, CI/CD cho pipeline train/serve, giám sát <em>drift</em> &amp; chất lượng dự đoán (giống monitoring nhưng cho model), rollback model qua registry. Cùng các trụ cột IaC/CD/observability, thêm "model" là một artifact.</p></div>
+<div class="mini"><h4>FinOps</h4><p style="font-size:13.5px">Data/ML đốt tiền nhanh (cluster lớn, warehouse scan). Gắn tag chi phí (qua IaC), dashboard chi phí theo team/job, alert khi vượt ngân sách. Cost là một tín hiệu observability.</p></div>
+</div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Một dbt model bị sửa thành full-refresh hằng giờ, quét toàn bảng trên warehouse → hoá đơn tháng tăng gấp 3, không ai biết tới khi tài chính hỏi. <strong>Platform chữa:</strong> tag chi phí theo model (IaC), dashboard FinOps theo team, và alert khi chi phí job vượt ngưỡng. Sự cố tiền bạc giờ được phát hiện trong giờ, không phải cuối tháng. FinOps = observability cho ví tiền.</p></div>
+</section>
+
+<section class="panel" id="t16">
+<div class="lead">Module 16 — Thực hành</div>
+<h1>Thực hành: <span class="hl">mini-stack</span></h1>
+<p class="intro-p">Ghép mọi thứ thành một mini-platform chạy được trên máy: Terraform provision một dịch vụ, GitHub Actions build &amp; deploy, Prometheus + Grafana quan sát. Thực hành trước, cơ chế đã hiểu ở các module trên.</p>
+
+<div class="toc">
+<a href="#t16-1">› 1. IaC: Terraform một stack nhỏ</a>
+<a href="#t16-2">› 2. CI/CD: workflow deploy</a>
+<a href="#t16-3">› 3. Observability: Prometheus + Grafana</a>
+<a href="#t16-4">› 4. Bài tập tự làm</a>
+</div>
+
+<h2 id="t16-1">1. IaC: Terraform một stack nhỏ</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">local-stack.tf (docker provider)</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="cmt"># dựng một container app + mạng, hoàn toàn local — không tốn tiền cloud</span>
+<span class="cmd">terraform { required_providers { docker = { source = "kreuzwerker/docker" } } }</span>
+<span class="cmd">resource "docker_image" "app" { name = "ghcr.io/acme/sales-api:v1" }</span>
+<span class="cmd">resource "docker_container" "app" {</span>
+<span class="cmd cont">  name  = "sales-api"</span>
+<span class="cmd cont">  image = docker_image.app.image_id</span>
+<span class="cmd cont">  ports {</span>
+<span class="cmd cont">    internal = 8000</span>
+<span class="cmd cont">    external = 8000</span>
+<span class="cmd cont">  }</span>
+<span class="cmd cont">}</span>
+<span class="cmd">terraform init &amp;&amp; terraform plan &amp;&amp; terraform apply</span>
+</div>
+</div>
+
+<h2 id="t16-2">2. CI/CD: workflow deploy</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">.github/workflows/cd.yml</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="cmd">on: { push: { tags: ["v*"] } }     # release khi gắn tag</span>
+<span class="cmd">jobs:</span>
+<span class="cmd cont">  deploy:</span>
+<span class="cmd cont">    runs-on: ubuntu-latest</span>
+<span class="cmd cont">    environment: production         # gate phê duyệt</span>
+<span class="cmd cont">    steps:</span>
+<span class="cmd cont">      - uses: actions/checkout@v4</span>
+<span class="cmd cont">      - run: docker build -t ghcr.io/acme/sales-api:${{ github.ref_name }} .</span>
+<span class="cmd cont">      - run: docker push ghcr.io/acme/sales-api:${{ github.ref_name }}</span>
+<span class="cmd cont">      - run: terraform apply -auto-approve -var="tag=${{ github.ref_name }}"</span>
+</div>
+</div>
+
+<h2 id="t16-3">3. Observability: Prometheus + Grafana</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">prometheus.yml + docker compose</span></div><button class="term-copy">copy</button>
+<div class="term-body">
+<span class="cmt"># prometheus.yml: kéo metric từ app mỗi 15s</span>
+<span class="cmd">scrape_configs:</span>
+<span class="cmd cont">  - job_name: sales-api</span>
+<span class="cmd cont">    static_configs: [{ targets: ["sales-api:8000"] }]</span>
+<span class="cmt"># chạy nhanh cả stack quan sát:</span>
+<span class="cmd">docker run -p 9090:9090 -v $PWD/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus</span>
+<span class="cmd">docker run -p 3000:3000 grafana/grafana   # thêm Prometheus làm data source</span>
+<span class="out ok"># mở localhost:3000 → dashboard RED cho sales-api</span>
+</div>
+</div>
+
+<h2 id="t16-4">4. Bài tập tự làm</h2>
+<div class="grid2">
+<div class="mini"><h4>BT1 — Plan an toàn</h4><p style="font-size:13.5px">Đổi một thuộc tính buộc tái tạo tài nguyên; đọc <code>plan</code>, nhận diện dòng <em>destroy</em>, thêm <code>prevent_destroy</code>.</p></div>
+<div class="mini"><h4>BT2 — Canary thủ công</h4><p style="font-size:13.5px">Chạy hai phiên bản app, chia 90/10 lưu lượng, theo dõi tỉ lệ lỗi trên Grafana, quyết định tăng hay rút.</p></div>
+<div class="mini"><h4>BT3 — SLO &amp; alert</h4><p style="font-size:13.5px">Định nghĩa SLO 99% &lt;300ms; viết PromQL tỉ lệ vi phạm; tạo alert burn-rate; bắn thử bằng cách inject lỗi.</p></div>
+<div class="mini"><h4>BT4 — Chặn secret</h4><p style="font-size:13.5px">Thêm <code>gitleaks</code> + <code>tfsec</code> vào CI; thử commit một "khoá" giả &amp; một S3 public → xác nhận CI chặn.</p></div>
+</div>
+</section>
+
+<section class="panel" id="t18">
+<div class="lead">Module 17 — Thực hành</div>
+<h1>Git cho data team: <span class="hl">workflow, conflict, review</span></h1>
+<p class="intro-p">Module 05-06 dạy CI/CD ở mức khái niệm và YAML. Module này là phần bị mọi giáo trình DE bỏ qua nhưng tuần đầu đi làm đã phải dùng: làm việc với Git trong một repo <em>dữ liệu</em> — nơi code là SQL, nơi "chạy đúng ở máy tôi" không có nghĩa gì, và nơi một PR đổi 3 dòng có thể đổi số liệu của cả công ty.</p>
+<div class="box note"><span class="t"><span>Code đã chạy thật</span></span><p>Toàn bộ lệnh git, pre-commit 4.6, sqlfluff 4.2 trong module này chạy thật trong sandbox Linux — 18/07/2026. Output dán nguyên văn.</p></div>
+
+<h2>1. Repo dữ liệu khác repo ứng dụng ở đâu</h2>
+<p>Ba khác biệt định hình mọi quy tắc phía dưới: (1) <strong>SQL là code</strong> — được review, lint, test như Python; (2) <strong>dữ liệu không bao giờ vào Git</strong> — Git giữ <em>công thức</em>, warehouse giữ <em>món ăn</em>; (3) hậu quả của một thay đổi không nằm trong repo mà nằm ở <em>downstream</em> — dashboard, báo cáo, quyết định. Vì thế .gitignore của repo data là chốt chặn an toàn đầu tiên:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">.gitignore — chuẩn cho repo pipeline/dbt</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">.env                  # secrets — RÒ RỈ PHỔ BIẾN NHẤT trong repo data
+profiles.yml          # connection string dbt (để ngoài repo hoặc dùng env_var)
+*.duckdb
+*.parquet
+data/
+target/               # artifact build cua dbt
+__pycache__/
+.venv/</span>
+<span class="cmt"># Nguyên tắc: thứ gì SINH RA ĐƯỢC từ code + thứ gì là BÍ MẬT → không vào Git.
+# Lịch sử git không quên: lỡ commit secret thì coi như đã lộ — rotate key, đừng chỉ xoá file.</span>
+</div>
+</div>
+
+<h2>2. Trunk-based với nhánh ngắn — và quy ước đặt tên</h2>
+<p>Team data 2-6 người không cần GitFlow. Mẫu vận hành gọn: <code class="inline">main</code> luôn deploy được; mỗi thay đổi một nhánh ngắn (sống 1-3 ngày) từ main; vào lại main bằng PR có review + CI xanh. Nhánh sống càng lâu, conflict càng to — nhánh 2 tuần là món nợ, không phải sự cẩn thận. Quy ước tên giúp lịch sử tự kể chuyện:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">quy ước — nhánh &amp; commit (Conventional Commits)</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">feat/them-so-don          fix/null-customer-thang6          chore/bump-dbt-1.11
+feat(models): them cot so_don vao fact_sales
+fix(ingest): retry transient khi ERP tra 503
+refactor(marts): tach dim_customer khoi fact — KHONG doi logic</span>
+<span class="cmt"># Dong dau commit tra loi "lam GI, o DAU". Chi tiet vi sao → than commit hoac PR description.</span>
+</div>
+</div>
+
+<h2>3. Conflict trên file SQL — demo thật từ đầu đến cuối</h2>
+<p>Hai người cùng thêm cột vào <code class="inline">fact_sales.sql</code> trên hai nhánh. Merge và xử lý:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">terminal — đã chạy thật</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">git merge feat/them-so-don</span>
+<span class="out">CONFLICT (content): Merge conflict in models/fact_sales.sql
+Automatic merge failed; fix conflicts and then commit the result.</span>
+<span class="cmd">cat models/fact_sales.sql</span>
+<span class="out">    sum(qty * price) as revenue,
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+    avg(price) as gia_tb
+=======
+    count(*) as so_don
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feat/them-so-don</span>
+<span class="cmt"># Đọc: HEAD = main hiện tại (gia_tb), dưới ======= là nhánh đang merge (so_don).
+# Với SQL, cách giải quyết thường là GIỮ CẢ HAI — hai cột không loại trừ nhau:</span>
+<span class="cmd"># sửa file giữ cả gia_tb lẫn so_don, xoá 3 dòng marker, rồi:
+git add models/fact_sales.sql
+git commit -m "merge: giu ca hai cot (gia_tb + so_don)"
+git log --oneline --graph</span>
+<span class="out">*   a7e751e merge: giu ca hai cot (gia_tb + so_don)
+|\
+| * 442f5f3 feat(models): them cot so_don vao fact_sales
+* | 25f5b39 feat(models): them gia_tb
+|/
+* e50a5e5 feat(models): fact_sales grain khach hang</span>
+</div>
+</div>
+<div class="box warn"><span class="t"><span>Conflict SQL có một bẫy riêng</span></span><p>Sau khi giải conflict, file <em>hợp lệ về text</em> chưa chắc <em>đúng về logic</em>: hai nhánh cùng sửa mệnh đề WHERE hoặc cùng đổi grain thì "giữ cả hai" tạo ra query sai không báo lỗi. Luật: <strong>sau mọi lần giải conflict file SQL, chạy lại unit test + build model đó</strong> (Module 18) trước khi commit — đừng tin mắt thường.</p></div>
+
+<h2>4. PR review cho SQL/pipeline — checklist 8 điểm của reviewer</h2>
+<p>Review PR data không phải soi dấu phẩy — soi <em>hậu quả</em>. Tám câu theo thứ tự:</p>
+<p>1. <strong>Grain có đổi không?</strong> Thêm JOIN 1-n là nghi phạm fan-out số một (khoá Modeling). 2. <strong>Ai đang đọc cột/bảng này?</strong> Đổi tên, đổi kiểu, bỏ cột = breaking change với BI — cần lineage trước khi bấm approve. 3. <strong>Incremental logic đúng chưa?</strong> Lookback đủ chưa, late data có bị nuốt không. 4. <strong>Có test đi kèm không?</strong> Thay đổi logic mà không kèm test là PR chưa xong. 5. <strong>Chi phí:</strong> filter partition có bị bọc trong hàm làm mất pruning không, có full scan bảng tỷ dòng không. 6. <strong>Idempotent:</strong> chạy 2 lần có ra 2 bản dữ liệu không. 7. <strong>Backfill plan:</strong> thay đổi này có cần chạy lại quá khứ? Ghi rõ trong PR description. 8. <strong>Secrets/PII:</strong> có credential, có cột nhạy cảm mới lộ ra mart nào không.</p>
+<div class="box tip"><span class="t"><span>Văn hoá review đáng học</span></span><p>Comment tốt nêu <em>hậu quả</em> chứ không nêu khẩu vị: "JOIN này nhân đôi dòng khi một đơn có nhiều lô — tổng revenue sẽ phồng" thuyết phục hơn "nên viết CTE". Và PR nhỏ được review kỹ; PR 40 file được approve bằng niềm tin — người viết PR khôn ngoan tự chia nhỏ.</p></div>
+
+<h2>5. pre-commit — gác cổng ngay trên máy, trước khi CI kịp chạy</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">.pre-commit-config.yaml + kết quả chạy thật</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">repos:
+  - repo: local
+    hooks:
+      - id: sqlfluff-lint
+        name: sqlfluff lint (dialect duckdb)
+        entry: sqlfluff lint --dialect duckdb
+        language: system
+        files: \.sql$
+      - id: ruff
+        name: ruff check
+        entry: ruff check
+        language: system
+        files: \.py$</span>
+<span class="cmd">pip install pre-commit &amp;&amp; pre-commit install   # gắn vào .git/hooks một lần
+pre-commit run --all-files</span>
+<span class="out">sqlfluff lint (dialect duckdb)...........................................Passed
+ruff check...........................................(no files to check)Skipped</span>
+<span class="cmt"># Từ giờ mỗi git commit tự chạy lint trên file thay đổi — lỗi format không bao giờ
+# tới được PR, reviewer chỉ còn phải nghĩ về logic. Đây là 15 phút setup lãi nhất của team.</span>
+</div>
+</div>
+</section>
+
+<section class="panel" id="t19">
+<div class="lead">Module 18 — Thực hành</div>
+<h1>CI/CD cho pipeline dữ liệu: <span class="hl">tháp test + workflow hoàn chỉnh</span></h1>
+<p class="intro-p">GitHub Actions ở Module 06 dạy cú pháp; module này trả lời câu khó hơn: <em>test cái gì</em> trong một repo dữ liệu, theo thứ tự nào, và một workflow CI trưởng thành cho repo dbt trông ra sao. Nguyên tắc xuyên suốt: lỗi bắt càng sớm càng rẻ — trên máy dev (pre-commit) rẻ hơn trên CI, trên CI rẻ hơn trên production, trên production rẻ hơn trong cuộc họp giải trình.</p>
+<div class="box note"><span class="t"><span>Phạm vi kiểm chứng</span></span><p>sqlfluff, unit test duckdb, pytest trong module này <strong>chạy thật</strong> trong sandbox (18/07/2026, output dán nguyên văn). Riêng file GitHub Actions YAML không chạy thử được trong sandbox — viết bám docs chính thức (actions/checkout@v4, setup-python@v5), đã dùng đúng mẫu slim CI mà lab khoá 23 chạy thật với dbt-duckdb.</p></div>
+
+<h2>1. Tháp test cho data — khác hẳn tháp test cho app</h2>
+<p>Từ rẻ đến đắt, từ chạy mỗi commit đến chạy sau build: <strong>(1) Static</strong> — sqlfluff lint + <code class="inline">dbt parse</code>/compile: bắt SQL sai cú pháp, ref gãy, không cần chạm dữ liệu. <strong>(2) Unit</strong> — logic transform trên dữ liệu tí hon dựng trong test (mục 2): nhanh, không cần warehouse, chạy trên mọi PR. <strong>(3) Contract/schema</strong> — model trả đúng cột, đúng kiểu đã cam kết (dbt contracts — khoá 23). <strong>(4) Data test sau build</strong> — unique/not_null/relationships chạy TRÊN dữ liệu thật sau khi build (khoá 10 &amp; 23): bắt vấn đề của <em>dữ liệu</em>, không phải của code. <strong>(5) Smoke production</strong> — sau deploy: bảng tươi không, row count hợp lý không. Nhầm tầng là bệnh phổ biến: dùng data test (đắt, sau build) để bắt lỗi logic (đáng lẽ unit test bắt từ PR) — CI chậm 20 phút mà lỗi vẫn lọt.</p>
+
+<h2>2. Unit test SQL bằng DuckDB — không cần warehouse, chạy thật</h2>
+<p>Mẹo giá trị nhất module: logic SQL test được như hàm Python — dựng bảng nhỏ trong DuckDB in-memory, chạy transform, so kết quả:</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">python — 3 test, đã chạy thật</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">import duckdb
+
+TRANSFORM = """
+SELECT customer_id,
+       SUM(qty * price) AS revenue,
+       COUNT(*)         AS so_don
+FROM {src}
+WHERE qty &gt; 0
+GROUP BY customer_id
+"""
+
+def chay_transform(rows):
+    con = duckdb.connect()
+    con.sql("CREATE TABLE src (customer_id VARCHAR, qty INT, price DOUBLE)")
+    if rows:                       # duckdb KHONG nhan executemany voi list rong — bat duoc nho chay thu
+        con.executemany("INSERT INTO src VALUES (?, ?, ?)", rows)
+    return {r[0]: (r[1], r[2]) for r in con.sql(TRANSFORM.format(src='src')).fetchall()}
+
+def test_tong_dung():
+    assert chay_transform([("KH1",2,100.0),("KH1",3,100.0),("KH2",1,50.0)]) == {"KH1":(500.0,2),"KH2":(50.0,1)}
+def test_loai_qty_am():
+    assert chay_transform([("KH1",-2,100.0),("KH1",3,100.0)]) == {"KH1":(300.0,1)}
+def test_input_rong_an_toan():
+    assert chay_transform([]) == {}</span>
+<span class="out">test 1 PASS: tổng đúng, đếm đúng
+test 2 PASS: qty âm bị loại
+test 3 PASS: input rỗng an toàn
+→ 3/3 pass, chạy &lt; 1 giây — đủ nhanh để chạy trên MỌI commit</span>
+</div>
+</div>
+<p>Mỗi test là một <em>đặc tả hành vi</em>: "qty âm bị loại" giờ là điều luật có máy gác, không phải trí nhớ của người viết. Dùng dbt thì tầng này chính là <code class="inline">unit_tests:</code> (dbt 1.8+, khoá 23) — cùng triết lý, khai báo bằng YAML.</p>
+
+<h2>3. sqlfluff — trước và sau, trên file thật</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">terminal — đã chạy thật, sqlfluff 4.2</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">sqlfluff lint bad_model.sql --dialect duckdb</span>
+<span class="out">L:1 | LT09 | Select targets should be on a new line...
+L:2 | CP03 | Function names must be consistently upper case
+L:2 | CP01 | Keywords must be consistently lower case
+L:3 | LT14 | The 'group' keyword should always start a new line
+... 7 fixable linting violations found</span>
+<span class="cmd">sqlfluff fix bad_model.sql --dialect duckdb -f &amp;&amp; cat bad_model.sql</span>
+<span class="out">select
+    customer_id,
+    SUM(revenue) as rev,
+    COUNT(*) as so_don
+from fact_sales
+where order_date &gt;= '2026-01-01'
+group by customer_id</span>
+<span class="cmt"># Style thống nhất không phải chuyện thẩm mỹ: diff của PR chỉ còn thay đổi LOGIC,
+# không lẫn 50 dòng đổi format — review nhanh và an toàn hơn hẳn. Cấu hình rule trong .sqlfluff.</span>
+</div>
+</div>
+
+<h2>4. Workflow GitHub Actions hoàn chỉnh cho repo dbt</h2>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">.github/workflows/ci.yml — bám docs, mẫu slim CI như lab khoá 23</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">name: data-ci
+on:
+  pull_request:            # PR: kiem tra
+  push:
+    branches: [main]       # main: build production
+
+jobs:
+  lint-va-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -r requirements.txt      # dbt-duckdb, sqlfluff, pytest
+      - run: sqlfluff lint models/ --dialect duckdb
+      - run: pytest tests/unit -q                 # unit test muc 2
+      - run: dbt deps &amp;&amp; dbt parse                # ref/macro gay la biet ngay
+
+  build-pr:                # slim CI: chi build model DOI + downstream, defer phan con lai
+    needs: lint-va-unit
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -r requirements.txt
+      - name: Tai manifest cua lan build prod gan nhat (artifact/S3)
+        run: ./scripts/pull_prod_manifest.sh state/
+      - run: dbt build --select state:modified+ --defer --state state/
+        env:
+          DBT_TARGET: ci        # schema rieng cho CI, khong dung cham prod
+
+  build-prod:
+    if: github.ref == 'refs/heads/main' &amp;&amp; github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production   # secrets + required reviewers gan o day
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -r requirements.txt
+      - run: dbt build --target prod
+        env:
+          DBT_PROFILES_DIR: .
+          WAREHOUSE_TOKEN: ${{ secrets.WAREHOUSE_TOKEN }}</span>
+<span class="cmt"># 3 diem an tien: (1) slim CI — PR 5 phut thay vi build lai 300 model;
+# (2) environment: production tach secrets + co the yeu cau nguoi duyet truoc khi chay;
+# (3) build prod CHI tu main sau merge — khong ai deploy tu nhanh ca nhan.</span>
+</div>
+</div>
+
+<h2>5. Promote, rollback, và CI tối thiểu cho team 2 người</h2>
+<p><strong>Promote dev→prod</strong> trong repo data không phải copy file — là <em>cùng code, khác target</em>: dev build vào schema cá nhân, CI build schema tạm, merge vào main → build target prod. <strong>Rollback</strong> nhờ transform idempotent (khoá 04) trở nên tầm thường: <code class="inline">git revert</code> commit hỏng → CI build lại từ code cũ → dữ liệu quay về trạng thái đúng. Không cần "khôi phục backup" cho tầng transform — code là backup.</p>
+<div class="box tip"><span class="t"><span>Bắt đầu từ đâu nếu team chỉ có 2 người</span></span><p>Đừng dựng cả cỗ máy ngày một. Thứ tự lãi kép: (1) pre-commit với sqlfluff — 15 phút; (2) một workflow CI chạy lint + <code class="inline">dbt parse</code> trên PR — 30 phút; (3) 5 unit test cho 2 model quan trọng nhất — 1 buổi; (4) slim CI khi số model vượt ~50. Tới bước 2 bạn đã hơn phần lớn team data đang "deploy bằng cách sửa thẳng trên server".</p></div>
+</section>
+
+<section class="panel" id="t17">
+<div class="lead">Module 17 — Tổng kết</div>
+<h1>Cheatsheet + <span class="hl">Lộ trình</span></h1>
+<p class="intro-p">Bản đồ bỏ túi: lệnh hay dùng, bẫy thường gặp, lộ trình theo vai trò, và cách module này khoá lại toàn bộ khoá Data Engineering thành một nền tảng vận hành được.</p>
+
+<div class="toc">
+<a href="#t17-1">› 1. Cheatsheet lệnh</a>
+<a href="#t17-2">› 2. Bảy cái bẫy thường gặp</a>
+<a href="#t17-3">› 3. Lộ trình theo vai trò</a>
+<a href="#t17-4">› 4. Ghép vào bức tranh khoá học</a>
+</div>
+
+<h2 id="t17-1">1. Cheatsheet lệnh</h2>
+<div class="tbl-wrap">
+<table>
+<tr><th>Việc</th><th>Lệnh / cách</th></tr>
+<tr><td>Vòng đời Terraform</td><td><code>terraform init → plan → apply → destroy</code></td></tr>
+<tr><td>Xem drift</td><td><code>terraform plan</code> (diff mã vs thực tế)</td></tr>
+<tr><td>Đưa tài nguyên có sẵn vào</td><td><code>terraform import &lt;addr&gt; &lt;id&gt;</code></td></tr>
+<tr><td>CI trên PR</td><td>GitHub Actions: <code>on: pull_request</code></td></tr>
+<tr><td>Auth cloud không khoá tĩnh</td><td>OIDC + <code>permissions: id-token: write</code></td></tr>
+<tr><td>Tỉ lệ lỗi (PromQL)</td><td><code>rate(...{status=~"5.."}[5m]) / rate(...[5m])</code></td></tr>
+<tr><td>p99 độ trễ</td><td><code>histogram_quantile(0.99, ...bucket...)</code></td></tr>
+<tr><td>Error budget</td><td><code>100% − SLO</code> (99.9% ≈ 43 phút/tháng)</td></tr>
+<tr><td>Rollback GitOps</td><td><code>git revert</code> commit → agent tự hội tụ</td></tr>
+</table>
+</div>
+
+<h2 id="t17-2">2. Bảy cái bẫy thường gặp</h2>
+<div class="grid2">
+<div class="mini"><h4>① Apply không đọc plan</h4><p style="font-size:13.5px">Bỏ qua dòng <em>destroy</em> → mất tài nguyên/dữ liệu. Plan là phanh tay (M3).</p></div>
+<div class="mini"><h4>② State trong Git / không lock</h4><p style="font-size:13.5px">Rò bí mật + apply giẫm nhau. Remote backend + lock bắt buộc (M4).</p></div>
+<div class="mini"><h4>③ Sửa tay trên prod</h4><p style="font-size:13.5px">Tạo drift, bị Terraform/GitOps hoàn nguyên bất ngờ. Mọi thay đổi qua mã (M4, M7).</p></div>
+<div class="mini"><h4>④ Khoá dài hạn trong CI</h4><p style="font-size:13.5px">Rò là thảm hoạ. Dùng OIDC + least privilege (M6, M13).</p></div>
+<div class="mini"><h4>⑤ Cardinality explosion</h4><p style="font-size:13.5px">Label lực lượng cao làm Prometheus sập. ID thuộc về log/trace (M10).</p></div>
+<div class="mini"><h4>⑥ Alert mọi thứ</h4><p style="font-size:13.5px">Alert fatigue → bỏ lỡ alert thật. Alert theo SLO + burn rate (M12).</p></div>
+<div class="mini"><h4>⑦ Deploy tất tay không canary</h4><p style="font-size:13.5px">100% người dùng lãnh lỗi cùng lúc. Canary/blue-green + rollback (M8).</p></div>
+</div>
+
+<h2 id="t17-3">3. Lộ trình theo vai trò</h2>
+<div class="grid3">
+<div class="mini"><h4>Data Engineer → Platform</h4><p style="font-size:13.5px">M1→M2→M3→M4→M5→M6→M9→M10. Nắm IaC + CI/CD + metrics cơ bản trước.</p></div>
+<div class="mini"><h4>MLOps Engineer</h4><p style="font-size:13.5px">M5→M6→M7→M8→M12→M15. Trọng tâm CD, GitOps, SLO, platform cho ML.</p></div>
+<div class="mini"><h4>SRE / Reliability</h4><p style="font-size:13.5px">M9→M10→M11→M12→M14. Observability sâu + SLO + quản lý sự cố.</p></div>
+</div>
+
+<h2 id="t17-4">4. Ghép vào bức tranh khoá học</h2>
+<div class="tbl-wrap">
+<table>
+<tr><th>Liên kết tới</th><th>Quan hệ</th></tr>
+<tr><td>M08–M11 — Web/Data API</td><td>Dịch vụ được CI/CD deploy, canary, và quan sát bằng RED/SLO</td></tr>
+<tr><td>M10 — Data Quality &amp; Contract</td><td>Cùng tinh thần "test/policy chặn cái xấu trước prod"; data SLO &amp; freshness</td></tr>
+<tr><td>M12 — Airflow</td><td>DAG là code → CI test &amp; deploy; lịch bảo trì lakehouse chạy như DAG</td></tr>
+<tr><td>M13 — Docker &amp; Kubernetes</td><td>Nền cho GitOps (ArgoCD/Flux), deployment strategy, immutable infra</td></tr>
+<tr><td>M14–M15 — AWS &amp; GCP</td><td>Provision &amp; vận hành dịch vụ cloud có kỷ luật bằng IaC + observability</td></tr>
+<tr><td>M16 — Lakehouse</td><td>Bucket/catalog/quyền của lakehouse được provision &amp; bảo trì qua platform</td></tr>
+</table>
+</div>
+<div class="box tip"><span class="t">Một câu chốt</span><p>Các module khác dạy bạn <em>xây</em> dữ liệu &amp; dịch vụ; Platform Engineering dạy bạn <strong>vận hành chúng an toàn, lặp lại, và quan sát được</strong> — biến một đống công cụ rời rạc thành một nền tảng để cả đội đi nhanh mà không ngã. Mọi thứ là mã, mọi thứ versioned, mọi thứ quan sát được.</p></div>
+</section>
+</main>
+<footer>
+platform-engineering — Platform Engineering cho Data Engineer &amp; MLOps · Mọi thứ là mã · IaC · CI/CD · GitOps · Observability · SLO · 17 module
+</footer>
+<script>
+  // Tab switching
+  const btns = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.panel');
+  btns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.tab;
+      btns.forEach(b=>b.classList.remove('active'));
+      panels.forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(id).classList.add('active');
+      window.scrollTo({top:0, behavior:'smooth'});
+      btn.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+    });
+  });
+  // Copy buttons
+  function attachCopy(){
+    document.querySelectorAll('.term-copy').forEach(btn=>{
+      if(btn.dataset.bound) return; btn.dataset.bound='1';
+      btn.addEventListener('click', ()=>{
+        const body = btn.closest('.term').querySelector('.term-body');
+        const cmds = [...body.querySelectorAll('.cmd')].map(c=>c.textContent).join('\n');
+        const text = cmds || body.innerText;
+        navigator.clipboard.writeText(text).then(()=>{
+          const old = btn.textContent; btn.textContent='✓ copied'; btn.style.color='#7ee787';
+          setTimeout(()=>{btn.textContent=old; btn.style.color='';},1400);
+        });
+      });
+    });
+  }
+  attachCopy();
+  window.addEventListener('load', attachCopy);
+</script>
+</body>
+</html>

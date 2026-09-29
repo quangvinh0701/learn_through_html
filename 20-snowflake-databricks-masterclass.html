@@ -1,0 +1,2451 @@
+<!DOCTYPE html>
+
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Snowflake &amp; Databricks — Cloud Data Warehouse, Lakehouse, Delta, Unity Catalog · Khoá học chuyên sâu</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#f6f7f9; --bg-2:#eceef3; --bg-3:#e3e6ec; --bg-4:#d8dce5;
+    --border:#b0b8c840; --border-solid:#cdd3dd;
+    --text:#1e2536; --dim:#566173; --faint:#8c96a8;
+    --orange:#d55a1b; --orange-dim:#b04510;
+    --cyan:#0d8f7d; --cyan-dim:#0a7a69;
+    --green:#18873a; --red:#dc3545; --yellow:#b06d00; --purple:#6d3bc4; --blue:#2563eb;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --display:'Space Mono',monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--sans);
+    font-size:16px; line-height:1.7; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(900px 500px at 85% -5%, #d55a1b08, transparent 70%),
+      radial-gradient(800px 500px at 0% 10%, #0d8f7d06, transparent 70%);
+    background-attachment:fixed;
+  }
+  ::selection{background:var(--orange);color:#fff}
+
+  /* ---------- Header ---------- */
+  header.top{
+    position:relative; z-index:10;
+    background:#ffffffe8; backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border-solid);
+  }
+  .top-inner{max-width:1180px; margin:0 auto; padding:14px 22px; display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .logo{
+    font-family:var(--display); font-weight:700; font-size:15px; letter-spacing:.5px;
+    display:flex; align-items:center; gap:9px; white-space:nowrap;
+  }
+  .logo .dot{width:11px;height:11px;border-radius:50%;background:var(--orange);box-shadow:0 0 6px var(--orange)}
+  .logo b{color:var(--orange)}
+  .logo .prompt{color:var(--cyan)}
+  .top-sub{color:var(--faint); font-family:var(--mono); font-size:12.5px; margin-left:auto}
+  .blink{animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* ---------- Tabs nav ---------- */
+  nav.tabs{
+    position:sticky; top:0; z-index:50;
+    background:#f3f4f7f2; backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border-solid);
+  }
+  .tabs-scroll{
+    max-width:1180px; margin:0 auto; padding:0 12px;
+    display:flex; gap:4px; overflow-x:auto; scrollbar-width:thin; scrollbar-color:var(--border-solid) transparent;
+  }
+  .tabs-scroll::-webkit-scrollbar{height:4px;background:transparent}
+  .tabs-scroll::-webkit-scrollbar-track{background:transparent}
+  .tabs-scroll::-webkit-scrollbar-thumb{background:var(--border-solid);border-radius:6px}
+  .tabs-scroll::-webkit-scrollbar-thumb:hover{background:#a0a8b8}
+  .tab-btn{
+    flex:0 0 auto; background:none; border:none; cursor:pointer;
+    color:var(--dim); font-family:var(--mono); font-size:13px; font-weight:500;
+    padding:13px 13px 11px; border-bottom:2px solid transparent;
+    transition:.18s; white-space:nowrap; display:flex; align-items:center; gap:7px;
+  }
+  .tab-btn .num{color:var(--faint); font-size:11px}
+  .tab-btn:hover{color:var(--text)}
+  .tab-btn.active{color:var(--orange); border-bottom-color:var(--orange)}
+  .tab-btn.active .num{color:var(--orange)}
+  .tab-div{flex:0 0 auto;display:flex;align-items:center;gap:5px;color:var(--cyan);font-family:var(--mono);font-size:10px;letter-spacing:1.5px;padding:0 10px 0 14px;border-left:1px solid var(--border-solid);margin-left:6px;opacity:.75;white-space:nowrap}
+  .tab-btn.deep .num{color:var(--cyan-dim)}
+  .tab-btn.deep:hover{color:var(--cyan)}
+  .tab-btn.deep.active{color:var(--cyan); border-bottom-color:var(--cyan)}
+  .tab-btn.deep.active .num{color:var(--cyan)}
+  /* deep theory accents */
+  .panel.deep h1 .hl{color:var(--cyan)}
+  .panel.deep h2{border-left-color:var(--cyan)}
+  .panel.deep .lead{color:var(--purple)}
+  .panel.deep .lead::before{background:var(--purple)}
+  .defbox{background:linear-gradient(180deg,#f0faf888,#ecf5f388);border:1px solid var(--cyan-dim);border-left:4px solid var(--cyan);border-radius:0 12px 12px 0;padding:14px 18px;margin:18px 0}
+  .defbox .term-def{font-family:var(--mono);color:var(--cyan);font-weight:700;font-size:14.5px}
+  .deepnote{font-size:13px;color:var(--faint);font-style:italic;margin:6px 0 18px;border-top:1px dashed var(--border-solid);padding-top:10px}
+
+  /* ---------- Layout ---------- */
+  main{max-width:1180px; margin:0 auto; padding:34px 22px 90px}
+  .panel{display:none; animation:fade .4s ease}
+  .panel.active{display:block; animation:none}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+
+  .lead{
+    font-size:13px; font-family:var(--mono); color:var(--cyan);
+    letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .lead::before{content:"";width:26px;height:1px;background:var(--cyan)}
+  h1{
+    font-family:var(--display); font-weight:700; font-size:clamp(26px,4.4vw,40px);
+    line-height:1.15; letter-spacing:-.5px; margin-bottom:14px;
+  }
+  h1 .hl{color:var(--orange)}
+  h2{
+    font-family:var(--display); font-weight:700; font-size:23px; margin:42px 0 16px;
+    padding-left:14px; border-left:4px solid var(--orange); line-height:1.3;
+  }
+  h3{font-size:18px; font-weight:600; margin:26px 0 10px; color:var(--text)}
+  h3 .ic{color:var(--cyan); font-family:var(--mono)}
+  h4{font-size:15px; font-weight:600; margin:18px 0 8px; color:var(--cyan); font-family:var(--mono)}
+  p{margin:11px 0; color:#3b4555}
+  .intro-p{font-size:17px; color:var(--dim); max-width:760px; margin-bottom:8px}
+  ul,ol{margin:11px 0 11px 4px; padding-left:24px}
+  li{margin:7px 0; color:#3b4555}
+  li::marker{color:var(--orange)}
+  a{color:var(--cyan)}
+  strong{color:#111827; font-weight:600}
+  em{color:var(--yellow); font-style:normal; font-family:var(--mono); font-size:.93em}
+  code.inline{
+    font-family:var(--mono); font-size:.86em; background:var(--bg-4);
+    color:var(--orange); padding:2px 7px; border-radius:5px; border:1px solid var(--border-solid);
+    white-space:nowrap;
+  }
+  hr{border:none;border-top:1px dashed var(--border-solid);margin:34px 0}
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:linear-gradient(180deg,#ffffff,#f4f5f8);
+    border:1px solid var(--border-solid); border-radius:14px;
+    padding:22px 24px; margin:20px 0;
+  }
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+  .mini{
+    background:var(--bg-3); border:1px solid var(--border-solid); border-radius:12px; padding:16px 18px;
+  }
+  .mini h4{margin-top:0}
+
+  /* ---------- Terminal block ---------- */
+  .term{
+    background:#070a10; border:1px solid #2a3348; border-radius:11px;
+    margin:16px 0; overflow:hidden; box-shadow:0 8px 30px -16px #00000025;
+    --border-solid:#283145; --bg-4:#1c2433; --dim:#9aa6bd; --faint:#6b7689;
+    --orange:#ff8a4c; --cyan:#4ed8c4; --green:#7ee787; --red:#ff7a85;
+    --yellow:#ffd479; --purple:#b89cff; --blue:#6cb6ff; --text:#e8ebf2;
+  }
+  .term-bar{
+    display:flex; align-items:center; gap:8px; padding:9px 14px;
+    background:#0d1119; border-bottom:1px solid var(--border-solid);
+  }
+  .term-bar .b{width:11px;height:11px;border-radius:50%}
+  .b.r{background:#ff5f57}.b.y{background:#febc2e}.b.g{background:#28c840}
+  .term-title{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-left:8px}
+  .term-copy{
+    margin-left:auto; background:var(--bg-4); border:1px solid var(--border-solid); color:var(--dim);
+    font-family:var(--mono); font-size:11px; padding:3px 10px; border-radius:6px; cursor:pointer; transition:.15s;
+  }
+  .term-copy:hover{color:var(--orange);border-color:var(--orange)}
+  .term-body{padding:15px 17px; font-family:var(--mono); font-size:13.5px; line-height:1.85; overflow-x:auto}
+  .term-body .cmd{color:#eef1f7; white-space:pre}
+.term-body>.cmd,.term-body>.cmt,.term-body>.out,.term-body>.err{display:block}
+.term-body .cmt[style*="inline"]{display:inline!important}
+  .term-body .cmd::before{content:"$ ";color:var(--green);font-weight:700}
+  .term-body .cmd.root::before{content:"# ";color:var(--red);font-weight:700}
+  .term-body .cmd.cont::before{content:"  ";}
+  .term-body .out{color:var(--dim); white-space:pre}
+  .term-body .cmt{color:var(--faint); white-space:pre-wrap}
+  .term-body .cmt::before{content:"# "}
+  .term-body .ok{color:var(--green)}
+  .term-body .warn{color:var(--yellow)}
+  .term-body .err{color:var(--red)}
+  .term-body .hi{color:var(--orange)}
+  .term-body .cy{color:var(--cyan)}
+
+  /* ---------- Callouts ---------- */
+  .box{border-radius:12px; padding:15px 18px 15px 46px; margin:18px 0; position:relative; border:1px solid; font-size:14.5px}
+  .box::before{position:absolute; left:15px; top:14px; font-size:17px; font-family:var(--mono); font-weight:700}
+  .box p{margin:6px 0}
+  .box .t{font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.5px; text-transform:uppercase; display:block; margin-bottom:5px}
+  .box.tip{background:#ecfdf5; border-color:#2fa89755; }
+  .tip::before{content:"✓";color:var(--cyan)} .tip .t{color:var(--cyan)}
+  .box.warn{background:#fef9ec; border-color:#cc6a3755}
+  .warn::before{content:"!";color:var(--yellow)} .warn .t{color:var(--yellow)}
+  .box.danger{background:#fef2f2; border-color:#ff7a8544}
+  .danger::before{content:"⚠";color:var(--red)} .danger .t{color:var(--red)}
+  .box.note{background:#eff6ff; border-color:var(--border-solid)}
+  .note::before{content:"i";color:var(--blue);font-style:italic} .note .t{color:var(--blue)}
+  .box.scn{background:linear-gradient(180deg,#f6f1ff,#f1ecfa); border-color:#b89cff44; padding-left:18px}
+  .scn::before{content:none}
+  .scn .t{color:var(--purple); display:flex; align-items:center; gap:8px}
+  .scn .t::before{content:"▶ TÌNH HUỐNG THỰC TẾ"; font-family:var(--mono); font-weight:700; font-size:12px}
+  .scn .t span{display:none}
+
+  /* ---------- kbd ---------- */
+  kbd{
+    font-family:var(--mono); font-size:.8em; background:#eef0f5; color:#1e2536;
+    border:1px solid #c0c9d4; border-bottom-width:2px; border-radius:5px; padding:2px 7px; white-space:nowrap;
+  }
+
+  /* ---------- Tables ---------- */
+  .tbl-wrap{overflow-x:auto; margin:16px 0; border:1px solid var(--border-solid); border-radius:11px}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:480px}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--border)}
+  th{background:var(--bg-3); font-family:var(--mono); font-size:12px; color:var(--cyan); letter-spacing:.5px; text-transform:uppercase; font-weight:600}
+  td{color:#3b4555; vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#00000005}
+  td code,td .c{font-family:var(--mono); color:var(--orange); font-size:.92em; white-space:nowrap}
+
+  /* ---------- Diagram ---------- */
+  .diagram{background:#080b11; border:1px solid #2a3348; border-radius:13px; padding:20px; margin:20px 0; overflow-x:auto;
+    --faint:#6b7689; --dim:#9aa6bd; --border-solid:#283145}
+  .diagram svg{display:block; margin:0 auto; max-width:100%; height:auto}
+  .dcap{text-align:center; font-family:var(--mono); font-size:12px; color:var(--faint); margin-top:12px}
+
+  .badge{display:inline-block; font-family:var(--mono); font-size:11px; padding:2px 9px; border-radius:20px; border:1px solid; margin:2px 4px 2px 0}
+  .bg-o{color:var(--orange);border-color:var(--orange-dim)}
+  .bg-c{color:var(--cyan);border-color:var(--cyan-dim)}
+  .bg-p{color:var(--purple);border-color:#7a5fd9}
+
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+  .toc a{
+    font-family:var(--mono);font-size:12.5px;text-decoration:none;color:var(--dim);
+    background:var(--bg-3);border:1px solid var(--border-solid);border-radius:8px;padding:6px 12px;transition:.15s;
+  }
+  .toc a:hover{color:var(--orange);border-color:var(--orange)}
+
+  footer{border-top:1px solid var(--border-solid); padding:30px 22px; text-align:center; color:var(--faint); font-family:var(--mono); font-size:12.5px}
+</style></head>
+<body>
+<header class="top"><div class="top-inner"><span class="logo"><span class="dot"></span> <span class="prompt">~/</span><b>snowflake</b>-databricks<span class="blink">_</span></span><span class="top-sub">Virtual Warehouse · Micro-partition · Time Travel · Zero-copy Clone · Streams &amp; Tasks · Databricks · Delta Lake · Unity Catalog · Photon · Medallion</span></div></header>
+<nav class="tabs"><div class="tabs-scroll" id="tabsScroll">
+<button class="tab-btn active" data-tab="t1"><span class="num">01</span> Kiến trúc Snowflake</button>
+<button class="tab-btn" data-tab="t2"><span class="num">02</span> Vận hành Snowflake</button>
+<button class="tab-btn" data-tab="t3"><span class="num">03</span> Nâng cao Snowflake</button>
+<button class="tab-btn" data-tab="t4"><span class="num">04</span> Chi phí &amp; tối ưu</button>
+<button class="tab-btn" data-tab="t5"><span class="num">05</span> Databricks &amp; Lakehouse</button>
+<button class="tab-btn" data-tab="t6"><span class="num">06</span> Databricks nâng cao</button>
+<button class="tab-btn" data-tab="t7"><span class="num">07</span> So sánh &amp; chọn lựa</button>
+<span class="tab-div">⌗ CHUYÊN SÂU LÝ THUYẾT</span>
+<button class="tab-btn deep" data-tab="t8"><span class="num">08</span> ⭐ Lý thuyết nền tảng</button>
+<button class="tab-btn deep" data-tab="t9"><span class="num">09</span> ⭐ Snowflake Internals</button>
+<button class="tab-btn deep" data-tab="t10"><span class="num">10</span> ⭐ Delta &amp; Databricks Internals</button>
+<span class="tab-div">⌗ THỰC CHIẾN</span>
+<button class="tab-btn" data-tab="t11"><span class="num">11</span> Cheatsheet &amp; Bài tập</button>
+</div></nav>
+<main>
+
+<section class="panel active" id="t1">
+<div class="lead">Module 20 — Cloud DW &amp; Lakehouse</div>
+<h1>Kiến trúc <span class="hl">Snowflake</span>: tách Storage – Compute</h1>
+<p class="intro-p">Snowflake không phải warehouse cổ điển kiểu Teradata cũng không phải data lake. Nó là một <em>cloud data platform</em> được thiết kế từ đầu để tách hoàn toàn ba thứ: nơi lưu dữ liệu, nơi tính toán, và bộ não điều phối. Hiểu được kiến trúc ba lớp này là chìa khoá để vận hành, tối ưu chi phí và giải thích vì sao Snowflake xử lý concurrency tốt đến vậy.</p>
+
+<div class="toc">
+<a href="#t1-1">› 1. Vấn đề của warehouse gắn chặt (shared-nothing / shared-disk)</a>
+<a href="#t1-2">› 2. ⭐ Kiến trúc ba lớp (Multi-cluster Shared Data)</a>
+<a href="#t1-3">› 3. Lớp Centralized Storage</a>
+<a href="#t1-4">› 4. ⭐ Micro-partitions &amp; partition pruning</a>
+<a href="#t1-5">› 5. Automatic clustering</a>
+<a href="#t1-6">› 6. Lớp Multi-cluster Compute (Virtual Warehouses)</a>
+<a href="#t1-7">› 7. Lớp Cloud Services</a>
+</div>
+
+<h2 id="t1-1">1. Vấn đề của warehouse gắn chặt</h2>
+<p>Warehouse truyền thống chọn một trong hai kiến trúc, và cả hai đều có nhược điểm chí mạng trên cloud:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Kiến trúc</th><th>Cách hoạt động</th><th>Nhược điểm</th></tr>
+<tr><td><strong>Shared-disk</strong></td><td>Nhiều CPU dùng chung một kho đĩa qua mạng (Oracle RAC)</td><td>Đĩa thành nút thắt; khó scale tính toán</td></tr>
+<tr><td><strong>Shared-nothing</strong> (MPP)</td><td>Dữ liệu chia (shard) sẵn lên từng node có đĩa riêng (Teradata, Redshift cổ điển)</td><td>Storage và compute gắn chặt; thêm CPU phải reshuffle/thêm đĩa; concurrency kém vì cùng tranh một cluster</td></tr>
+</table></div>
+<p>Trên cloud, object storage (S3/GCS/Azure Blob) rẻ và gần như vô hạn, còn compute thì muốn bật/tắt theo phút. Gắn chặt hai thứ này khiến bạn trả tiền cho compute cả khi không query, và không thể cấp nhiều cluster độc lập cho nhiều đội. Snowflake giải quyết bằng cách tách triệt để.</p>
+
+<h2 id="t1-2">2. ⭐ Kiến trúc ba lớp (Multi-cluster Shared Data)</h2>
+<p>Snowflake gọi kiến trúc của mình là <strong>multi-cluster, shared data</strong>: <em>một</em> bản dữ liệu trung tâm, <em>nhiều</em> cụm compute độc lập đọc/ghi lên nó, điều phối bởi một lớp dịch vụ luôn bật.</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">  ┌──────────────────────────────────────────────────────────┐
+  │  ☁  CLOUD SERVICES LAYER   (luôn bật, serverless)          │
+  │     Optimizer · Metadata · Transaction mgr · Security      │
+  │     Result cache · Infrastructure mgr · Access control     │
+  └───────────────┬──────────────┬──────────────┬─────────────┘
+                  │              │              │
+        ┌─────────▼───┐  ┌───────▼─────┐  ┌─────▼───────┐
+        │   VWH  ETL  │  │  VWH  BI    │  │  VWH  ADHOC │   ← MULTI-CLUSTER
+        │  (Large)    │  │  (Medium)   │  │  (XSmall)   │     COMPUTE
+        │  compute +  │  │  compute +  │  │  compute +  │   (Virtual
+        │  local SSD  │  │  local SSD  │  │  local SSD  │    Warehouses)
+        └─────────┬───┘  └───────┬─────┘  └─────┬───────┘
+                  │              │              │
+  ┌───────────────▼──────────────▼──────────────▼─────────────┐
+  │  🗄  CENTRALIZED STORAGE   (1 bản dữ liệu duy nhất)         │
+  │     Micro-partitions (~16MB columnar, nén) trên S3/GCS/Blob │
+  └────────────────────────────────────────────────────────────┘</pre></div>
+<div class="dcap">Ba VWH chạy độc lập trên cùng một kho dữ liệu — không tranh CPU của nhau, nhưng luôn thấy cùng một sự thật.</div>
+<p>Điểm cốt lõi: ba VWH ở trên <strong>không chia sẻ CPU/RAM</strong> với nhau (đội ETL không làm chậm dashboard BI), nhưng <strong>chia sẻ cùng một kho dữ liệu</strong> (không cần copy data ra). Đây là thứ warehouse shared-nothing không làm được.</p>
+
+<h2 id="t1-3">3. Lớp Centralized Storage</h2>
+<p>Khi bạn nạp dữ liệu, Snowflake tự động: tổ chức lại thành định dạng cột nén nội bộ, chia thành các <strong>micro-partition</strong>, và lưu lên object storage của cloud provider. Bạn <em>không</em> thấy file, không quản lý partition thủ công, không đặt index B-tree. Storage tính tiền riêng theo $/TB/tháng (nén), độc lập hoàn toàn với compute.</p>
+<div class="box note"><span class="t">Khác biệt với data lake</span><p>Trong data lake (Parquet trên S3) bạn <em>thấy</em> và quản lý file. Trong Snowflake, storage là một hộp đen được tối ưu: bạn chỉ tương tác qua SQL. Đổi lại tính mở, bạn nhận lại micro-partition tự động + metadata phong phú cho pruning.</p></div>
+
+<h2 id="t1-4">4. ⭐ Micro-partitions &amp; partition pruning</h2>
+<p>Đây là viên gạch nền của hiệu năng Snowflake. Mỗi micro-partition là một đơn vị lưu trữ <strong>~16MB (nén)</strong>, chứa dữ liệu theo <em>cột</em>, được tạo <strong>tự động</strong> khi nạp — không cấu hình. Với mỗi micro-partition, Snowflake lưu sẵn metadata: khoảng <code class="inline">MIN</code>/<code class="inline">MAX</code> của mỗi cột, số distinct value, số NULL.</p>
+<p><strong>Partition pruning</strong>: khi query có điều kiện lọc, optimizer dùng metadata MIN/MAX để <em>loại bỏ</em> những micro-partition chắc chắn không chứa dữ liệu khớp — không cần đọc chúng. Quét ít byte hơn = nhanh hơn và rẻ hơn.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — quan sát pruning qua SYSTEM$CLUSTERING_INFORMATION</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmt">-- Query có lọc theo order_date: chỉ những MP có MIN..MAX phủ ngày đó mới được quét</span>
+<span class="cmd">SELECT SUM(amount)</span>
+<span class="cmd">FROM   orders</span>
+<span class="cmd">WHERE  order_date BETWEEN '2026-06-01' AND '2026-06-07';</span>
+<span class="cmt">-- Xem độ "phân tầng" của bảng theo một cột (giúp đoán pruning có tốt không)</span>
+<span class="cmd">SELECT SYSTEM$CLUSTERING_INFORMATION('orders', '(order_date)');</span>
+<span class="out">{ "total_partition_count" : 12840,</span>
+<span class="out">  "average_overlaps" : 1.3,        -- overlap thấp = pruning tốt</span>
+<span class="out">  "average_depth" : 2.1 }          -- depth thấp = ít MP chồng lấn theo cột này</span>
+</div>
+</div>
+<div class="box tip"><span class="t">Đọc số liệu thế nào</span><p><em>average_overlaps</em> và <em>average_depth</em> càng thấp thì micro-partition càng tách bạch theo cột đó, pruning càng mạnh. Nếu depth cao (vd &gt; 10) trên cột bạn hay lọc, cân nhắc clustering key (mục 5).</p></div>
+
+<h2 id="t1-5">5. Automatic clustering</h2>
+<p>Dữ liệu nạp theo thời gian thường tự nhiên đã sắp xếp theo ngày (insert ngày nào nằm gần ngày đó). Nhưng nếu bạn hay lọc theo một cột <em>khác</em> (vd <code class="inline">region</code>), dữ liệu của cùng region nằm rải rác khắp các micro-partition → pruning kém. Định nghĩa <strong>clustering key</strong>, Snowflake sẽ tự sắp xếp lại (re-cluster) micro-partition theo cột đó trong nền (serverless, tính phí riêng).</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — định nghĩa clustering key</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmt">-- Khi bảng lớn (&gt; vài trăm GB) và truy vấn lọc theo region + order_date</span>
+<span class="cmd">ALTER TABLE orders CLUSTER BY (region, order_date);</span>
+<span class="cmt">-- Snowflake tự re-cluster nền; theo dõi phí qua AUTOMATIC_CLUSTERING_HISTORY</span>
+<span class="cmd">SELECT * FROM TABLE(INFORMATION_SCHEMA.AUTOMATIC_CLUSTERING_HISTORY(</span>
+<span class="cmd">  DATE_RANGE_START =&gt; DATEADD('day', -7, CURRENT_DATE())));</span>
+</div>
+</div>
+<div class="box warn"><span class="t">Khi nào KHÔNG dùng</span><p>Clustering tốn credit liên tục. Đừng cluster bảng nhỏ, bảng ít query, hay bảng bị cập nhật ào ạt (re-cluster sẽ chạy mãi). Chỉ dùng cho bảng lớn, đọc nhiều, lọc nhất quán theo cùng vài cột.</p></div>
+
+<h2 id="t1-6">6. Lớp Multi-cluster Compute (Virtual Warehouses)</h2>
+<p>Một <strong>Virtual Warehouse (VWH)</strong> là một cụm node compute (MPP) có RAM và <em>local SSD cache</em>. Nó là đơn vị bạn bật/tắt và bị tính tiền theo giây. Mỗi VWH độc lập: bạn có thể cấp một VWH lớn cho ETL ban đêm, một VWH nhỏ cho dashboard, và chúng không giẫm chân nhau dù đọc cùng bảng. Đây là cách Snowflake giải quyết bài toán concurrency mà chương sau sẽ đi sâu.</p>
+<div class="defbox"><span class="term-def">Virtual Warehouse</span><p>Cụm compute tạm thời, tách rời storage, có thể resize tức thì và auto-suspend khi rảnh. "Warehouse" ở đây nghĩa là <em>cỗ máy tính toán</em>, KHÔNG phải kho dữ liệu (storage là lớp riêng bên dưới).</p></div>
+
+<h2 id="t1-7">7. Lớp Cloud Services</h2>
+<p>Lớp "bộ não" luôn bật, serverless, do Snowflake quản lý: tối ưu hoá truy vấn (query optimizer), quản lý metadata &amp; micro-partition, quản lý transaction (đảm bảo ACID), xác thực &amp; phân quyền, và <strong>result cache</strong> (trả lại kết quả query trùng mà không cần bật VWH). Lớp này thường miễn phí nếu chiếm &lt; 10% compute hằng ngày; vượt ngưỡng mới bị tính.</p>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Đội BI than dashboard chậm vào 9h sáng, đúng lúc job ETL ban đêm còn đang chạy "đuôi" trên Redshift dùng chung cluster. Mọi truy vấn xếp hàng sau job nặng. <strong>Bài học:</strong> trên Snowflake, tách thành hai VWH — <code class="inline">WH_ETL</code> (Large) và <code class="inline">WH_BI</code> (Small) — đọc cùng kho dữ liệu nhưng không tranh CPU. Dashboard sáng ra mượt vì compute đã được cô lập; nhờ tách storage–compute, không phải copy hay reshard dữ liệu nào cả.</p></div>
+
+<div class="box note"><span class="t">⭐ Điểm chốt</span><p>Snowflake = <strong>Centralized Storage</strong> (micro-partition ~16MB cột, metadata MIN/MAX cho pruning) + <strong>Multi-cluster Compute</strong> (nhiều VWH độc lập, không tranh CPU) + <strong>Cloud Services</strong> (optimizer, metadata, transaction, result cache). Tách storage/compute cho phép scale độc lập, trả tiền compute theo giây, và chạy concurrency cao bằng cách cấp VWH riêng cho từng workload.</p></div>
+</section>
+
+<section class="panel" id="t2">
+<div class="lead">Module 20 — Cloud DW &amp; Lakehouse</div>
+<h1>Vận hành <span class="hl">Snowflake</span>: warehouse, RBAC, nạp dữ liệu</h1>
+<p class="intro-p">Hiểu kiến trúc rồi, giờ là phần bạn gõ mỗi ngày: cấp đúng kích thước warehouse để không đốt credit, dựng hệ thống phân quyền RBAC sạch sẽ, và nạp dữ liệu vào Snowflake một cách đáng tin cậy — từ batch (COPY INTO) tới gần real-time (Snowpipe).</p>
+
+<div class="toc">
+<a href="#t2-1">› 1. ⭐ Warehouse sizing XS → 4XL</a>
+<a href="#t2-2">› 2. Auto-suspend &amp; auto-resume</a>
+<a href="#t2-3">› 3. Multi-cluster warehouse &amp; scaling policy</a>
+<a href="#t2-4">› 4. ⭐ RBAC: role hierarchy &amp; GRANT</a>
+<a href="#t2-5">› 5. Databases, schemas, đối tượng</a>
+<a href="#t2-6">› 6. Stages &amp; COPY INTO (batch load)</a>
+<a href="#t2-7">› 7. Snowpipe (auto-ingest gần real-time)</a>
+</div>
+
+<h2 id="t2-1">1. ⭐ Warehouse sizing XS → 4XL</h2>
+<p>Kích thước VWH quyết định số node — và credit/giờ <strong>gấp đôi mỗi cấp</strong>. Quan trọng: VWH lớn gấp đôi thường chạy nhanh gấp ~đôi cho query nặng, nên <em>chi phí tổng có thể bằng nhau</em> nhưng trả kết quả nhanh hơn (và tránh spilling). Đây là nguyên tắc "scale up cho query nặng, scale out cho concurrency".</p>
+<div class="tbl-wrap"><table>
+<tr><th>Size</th><th>Credit / giờ</th><th>Tương đối node</th><th>Dùng cho</th></tr>
+<tr><td>X-Small</td><td>1</td><td>1</td><td>Dev, dashboard nhẹ, query nhỏ</td></tr>
+<tr><td>Small</td><td>2</td><td>2</td><td>BI thường ngày</td></tr>
+<tr><td>Medium</td><td>4</td><td>4</td><td>ETL vừa</td></tr>
+<tr><td>Large</td><td>8</td><td>8</td><td>ETL nặng, transform lớn</td></tr>
+<tr><td>X-Large</td><td>16</td><td>16</td><td>Batch lớn, join khổng lồ</td></tr>
+<tr><td>2XL → 4XL</td><td>32 → 128</td><td>32 → 128</td><td>Khối lượng cực lớn, nạp khởi tạo</td></tr>
+</table></div>
+<p>Lưu ý billing: tính theo <strong>giây</strong>, nhưng có <strong>tối thiểu 60 giây</strong> mỗi lần resume. Bật VWL lớn để chạy 5 giây query rồi suspend vẫn bị tính trọn phút đầu.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — tạo warehouse với auto-suspend</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">CREATE WAREHOUSE wh_etl</span>
+<span class="cmd">  WAREHOUSE_SIZE   = 'LARGE'</span>
+<span class="cmd">  AUTO_SUSPEND     = 60          -- giây rảnh trước khi tự tắt</span>
+<span class="cmd">  AUTO_RESUME      = TRUE        -- tự bật khi có query đến</span>
+<span class="cmd">  INITIALLY_SUSPENDED = TRUE;    -- tạo xong KHÔNG chạy ngay (đỡ tốn)</span>
+<span class="cmt">-- Đổi size tức thì, không cần dừng workload</span>
+<span class="cmd">ALTER WAREHOUSE wh_etl SET WAREHOUSE_SIZE = 'XLARGE';</span>
+</div>
+</div>
+
+<h2 id="t2-2">2. Auto-suspend &amp; auto-resume</h2>
+<p>Vì credit chỉ tính khi VWH chạy, <strong>auto-suspend</strong> là cần câu tiết kiệm số một. Đặt VWH tự tắt sau N giây rảnh; <strong>auto-resume</strong> tự bật lại khi query mới đến (độ trễ bật vài giây). Trade-off: suspend xoá <em>local SSD cache</em> — query đầu sau khi resume sẽ chậm hơn (cache lạnh).</p>
+<div class="box tip"><span class="t">Chọn ngưỡng auto-suspend</span><p>Dashboard hỏi liên tục → đặt cao hơn (300–600s) để giữ cache nóng. ETL chạy theo lịch rồi nghỉ dài → đặt thấp (60s) để tắt nhanh. Đừng đặt 0 (suspend ngay) cho VWH dùng liên tục: bạn sẽ trả giá bằng cache lạnh liên miên.</p></div>
+
+<h2 id="t2-3">3. Multi-cluster warehouse &amp; scaling policy</h2>
+<p>Khi <em>nhiều người</em> cùng query một VWH và hàng đợi bắt đầu dài, bạn cần <strong>scale OUT</strong> (thêm cluster) chứ không phải scale up (size to hơn). Multi-cluster warehouse tự thêm cluster (cùng size) khi có query xếp hàng, và bớt khi rảnh — mỗi cluster là một bản sao compute độc lập.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Scaling policy</th><th>Hành vi</th><th>Khi nào dùng</th></tr>
+<tr><td><strong>Standard</strong></td><td>Thêm cluster ngay khi có query xếp hàng (ưu tiên giảm chờ)</td><td>Workload tương tác, không muốn user chờ</td></tr>
+<tr><td><strong>Economy</strong></td><td>Chờ cho chắc có đủ tải mới thêm cluster; gom việc để cluster chạy "no" hơn (ưu tiên tiết kiệm)</td><td>Batch/queue chịu được trễ, tối ưu credit</td></tr>
+</table></div>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — multi-cluster cho BI concurrency cao</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">CREATE WAREHOUSE wh_bi</span>
+<span class="cmd">  WAREHOUSE_SIZE = 'MEDIUM'</span>
+<span class="cmd">  MIN_CLUSTER_COUNT = 1</span>
+<span class="cmd">  MAX_CLUSTER_COUNT = 4         -- tự scale 1..4 cluster theo tải</span>
+<span class="cmd">  SCALING_POLICY = 'STANDARD'</span>
+<span class="cmd">  AUTO_SUSPEND = 120 AUTO_RESUME = TRUE;</span>
+</div>
+</div>
+<div class="box warn"><span class="t">Scale UP vs scale OUT</span><p><strong>Scale UP</strong> (size to hơn) cho <em>một query nặng</em> chạy nhanh hơn / hết spilling. <strong>Scale OUT</strong> (multi-cluster) cho <em>nhiều query đồng thời</em> khỏi xếp hàng. Nhầm hai cái này là lỗi tối ưu phổ biến nhất.</p></div>
+
+<h2 id="t2-4">4. ⭐ RBAC: role hierarchy &amp; GRANT</h2>
+<p>Snowflake phân quyền hoàn toàn qua <strong>role</strong> (không gán quyền trực tiếp cho user). User được gán role; role nắm privilege trên đối tượng; role có thể kế thừa role khác tạo thành cây phân cấp. Quy tắc vàng: quyền chảy <em>lên</em> cây — role cha có mọi quyền của role con được grant cho nó.</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">                 ACCOUNTADMIN          (cao nhất, hạn chế tối đa)
+                      │
+                 SYSADMIN  ───────────  SECURITYADMIN
+                      │  (sở hữu mọi      (quản role &amp; grant)
+                      │   object)              │
+        ┌─────────────┼─────────────┐     USERADMIN (tạo user/role)
+        │             │             │
+   ROLE_ETL      ROLE_ANALYST   ROLE_BI       PUBLIC (mọi user có)
+   (write)       (read+create)  (read)</pre></div>
+<div class="dcap">Cây role mẫu. Custom role (ETL/ANALYST/BI) nên gắn dưới SYSADMIN để admin thừa hưởng.</div>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — dựng RBAC tối thiểu sạch</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">CREATE ROLE role_analyst;</span>
+<span class="cmt">-- Cấp quyền dùng warehouse + đọc schema</span>
+<span class="cmd">GRANT USAGE ON WAREHOUSE wh_bi              TO ROLE role_analyst;</span>
+<span class="cmd">GRANT USAGE ON DATABASE  analytics          TO ROLE role_analyst;</span>
+<span class="cmd">GRANT USAGE ON SCHEMA    analytics.public   TO ROLE role_analyst;</span>
+<span class="cmd">GRANT SELECT ON ALL TABLES IN SCHEMA analytics.public TO ROLE role_analyst;</span>
+<span class="cmt">-- QUAN TRỌNG: future grant để bảng tạo SAU cũng tự được cấp quyền</span>
+<span class="cmd">GRANT SELECT ON FUTURE TABLES IN SCHEMA analytics.public TO ROLE role_analyst;</span>
+<span class="cmt">-- Gán role cho user + gắn vào cây dưới SYSADMIN</span>
+<span class="cmd">GRANT ROLE role_analyst TO USER an_nguyen;</span>
+<span class="cmd">GRANT ROLE role_analyst TO ROLE sysadmin;</span>
+</div>
+</div>
+<div class="box danger"><span class="t">Sai lầm hay gặp</span><p>Quên <code class="inline">GRANT ... ON FUTURE TABLES</code> → bảng mới tạo không ai đọc được, sáng hôm sau dashboard trống. Và đừng dùng <code class="inline">ACCOUNTADMIN</code> để chạy job hằng ngày — đó là role "chữa cháy", không phải role vận hành.</p></div>
+
+<h2 id="t2-5">5. Databases, schemas, đối tượng</h2>
+<p>Namespace của Snowflake là <strong>database.schema.object</strong> (ba cấp). Database chứa schema; schema chứa table/view/stage/function. Nguyên tắc tổ chức tốt: tách theo <em>tầng dữ liệu</em> hoặc <em>domain</em>, dùng schema riêng cho raw / staging / marts.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — namespace 3 cấp</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">CREATE DATABASE analytics;</span>
+<span class="cmd">CREATE SCHEMA analytics.raw;     -- dữ liệu thô vừa nạp</span>
+<span class="cmd">CREATE SCHEMA analytics.marts;   -- bảng phục vụ BI</span>
+<span class="cmd">CREATE TABLE analytics.marts.fct_orders (</span>
+<span class="cmd">  order_id   NUMBER,</span>
+<span class="cmd">  order_date DATE,</span>
+<span class="cmd">  region     STRING,</span>
+<span class="cmd">  amount     NUMBER(12,2)</span>
+<span class="cmd">);</span>
+</div>
+</div>
+
+<h2 id="t2-6">6. Stages &amp; COPY INTO (batch load)</h2>
+<p>Nạp batch đi qua <strong>stage</strong> — vùng chứa file trung gian. <em>Internal stage</em> nằm trong Snowflake; <em>external stage</em> trỏ tới bucket S3/GCS/Blob của bạn. Sau khi file ở stage, <code class="inline">COPY INTO</code> đọc và đẩy vào bảng, dùng một <strong>file format</strong> mô tả cách parse (CSV/JSON/Parquet…).</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — external stage + COPY INTO</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmt">-- 1) Định nghĩa cách parse file</span>
+<span class="cmd">CREATE FILE FORMAT ff_csv</span>
+<span class="cmd">  TYPE = CSV FIELD_OPTIONALLY_ENCLOSED_BY = '"' SKIP_HEADER = 1;</span>
+<span class="cmt">-- 2) Trỏ tới bucket S3 (quyền qua storage integration)</span>
+<span class="cmd">CREATE STAGE stg_orders</span>
+<span class="cmd">  URL = 's3://my-bucket/orders/'</span>
+<span class="cmd">  STORAGE_INTEGRATION = s3_int</span>
+<span class="cmd">  FILE_FORMAT = ff_csv;</span>
+<span class="cmt">-- 3) Nạp; ON_ERROR + PURGE để pipeline an toàn</span>
+<span class="cmd">COPY INTO analytics.raw.orders</span>
+<span class="cmd">  FROM @stg_orders</span>
+<span class="cmd">  ON_ERROR = 'SKIP_FILE'    -- bỏ qua file lỗi, không hỏng cả batch</span>
+<span class="cmd">  PURGE = TRUE;             -- xoá file ở stage sau khi nạp thành công</span>
+</div>
+</div>
+<div class="box tip"><span class="t">COPY tự chống trùng</span><p><code class="inline">COPY INTO</code> ghi nhớ file đã nạp trong ~64 ngày, nên chạy lại lệnh sẽ <em>không</em> nạp trùng file cũ — rất hữu ích khi job retry. Đây là khác biệt lớn so với tự bê file vào bảng kiểu data lake.</p></div>
+
+<h2 id="t2-7">7. Snowpipe (auto-ingest gần real-time)</h2>
+<p>Khi cần nạp <em>liên tục</em> theo từng file mới đến (vd log đổ vào S3 mỗi phút), <strong>Snowpipe</strong> tự động chạy COPY khi có file mới — không cần VWH của bạn, dùng compute serverless do Snowflake quản lý (tính phí theo lượng nạp). Kết hợp event notification (S3 → SQS) để nạp ngay khi file rơi vào bucket.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Snowpipe auto-ingest</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">CREATE PIPE pipe_orders</span>
+<span class="cmd">  AUTO_INGEST = TRUE        -- nghe event từ cloud (S3 SQS / GCS Pub/Sub)</span>
+<span class="cmd">AS</span>
+<span class="cmd">  COPY INTO analytics.raw.orders</span>
+<span class="cmd">  FROM @stg_orders FILE_FORMAT = ff_csv;</span>
+<span class="cmt">-- Lấy ARN/notification channel để cấu hình event bên S3</span>
+<span class="cmd">SHOW PIPES;</span>
+</div>
+</div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Cần đưa clickstream từ S3 vào Snowflake với độ trễ &lt; 2 phút, không muốn duy trì một VWH chạy 24/7 chỉ để poll file. <strong>Bài học:</strong> dùng Snowpipe AUTO_INGEST + S3 event. File rơi vào bucket là Snowpipe nạp gần như tức thì bằng compute serverless, trả tiền theo dữ liệu nạp chứ không phải theo giờ VWH bật. Batch lớn theo lịch thì vẫn dùng COPY INTO trên VWH riêng để rẻ hơn trên khối lượng lớn.</p></div>
+
+<div class="box note"><span class="t">⭐ Điểm chốt</span><p>Vận hành Snowflake xoay quanh: <strong>sizing đúng</strong> (XS→4XL, credit gấp đôi mỗi cấp; scale UP cho query nặng, scale OUT/multi-cluster cho concurrency), <strong>auto-suspend/resume</strong> để không đốt credit, <strong>RBAC qua role hierarchy</strong> (nhớ FUTURE grant, không dùng ACCOUNTADMIN vận hành), và nạp dữ liệu <strong>COPY INTO</strong> cho batch / <strong>Snowpipe</strong> cho gần real-time.</p></div>
+</section>
+
+<section class="panel" id="t3">
+<div class="lead">Module 20 — Cloud DW &amp; Lakehouse</div>
+<h1>Tính năng <span class="hl">nâng cao</span> Snowflake</h1>
+<p class="intro-p">Đây là nơi Snowflake thật sự khác biệt: Time Travel cho phép "tua ngược" bảng, Zero-copy Clone tạo bản sao tức thì không tốn storage, Streams + Tasks dựng pipeline ELT ngay trong DB, và ba lớp cache giải thích vì sao query lặp lại gần như miễn phí. Đây là tab dài và quan trọng nhất phía Snowflake.</p>
+
+<div class="toc">
+<a href="#t3-1">› 1. ⭐ Time Travel &amp; Fail-safe</a>
+<a href="#t3-2">› 2. ⭐ Zero-copy Cloning</a>
+<a href="#t3-3">› 3. Streams (CDC offset)</a>
+<a href="#t3-4">› 4. Tasks &amp; pipeline ELT (Stream + Task)</a>
+<a href="#t3-5">› 5. Materialized Views &amp; Search Optimization</a>
+<a href="#t3-6">› 6. Ba lớp cache</a>
+<a href="#t3-7">› 7. Snowpark (DataFrame API / UDF / Python)</a>
+</div>
+
+<h2 id="t3-1">1. ⭐ Time Travel &amp; Fail-safe</h2>
+<p><strong>Time Travel</strong> cho phép truy vấn bảng <em>tại một thời điểm trong quá khứ</em> hoặc khôi phục bảng/schema/database đã bị thay đổi/xoá. Vì micro-partition là bất biến, phiên bản cũ vẫn nằm đó trong khoảng <strong>retention</strong>: mặc định 1 ngày (Standard Edition), có thể đặt <strong>0–90 ngày</strong> (Enterprise+). Hết retention, dữ liệu rơi vào <strong>Fail-safe</strong> — 7 ngày chỉ Snowflake khôi phục được (cho thảm hoạ), bạn không truy cập trực tiếp.</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">  bây giờ ──────────────── quá khứ ───────────────────────►
+   ▲                          ▲                         ▲
+   │   TIME TRAVEL (0–90d)     │   FAIL-SAFE (7d)        │
+   │   bạn tự AT/BEFORE,        │   chỉ Snowflake Support  │
+   │   UNDROP, CLONE phiên cũ   │   khôi phục (thảm hoạ)   │  → xoá hẳn
+   └──────────────────────────┴─────────────────────────┘</pre></div>
+<div class="dcap">Dòng thời gian giữ liệu: Time Travel (bạn dùng) → Fail-safe (Snowflake giữ) → xoá.</div>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Time Travel: query, undrop, khôi phục</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmt">-- Đặt retention 30 ngày cho bảng quan trọng</span>
+<span class="cmd">ALTER TABLE fct_orders SET DATA_RETENTION_TIME_IN_DAYS = 30;</span>
+<span class="cmt">-- Đọc bảng như nó 1 giờ trước (sau khi lỡ UPDATE sai)</span>
+<span class="cmd">SELECT * FROM fct_orders AT(OFFSET =&gt; -3600);</span>
+<span class="cmt">-- Hoặc tại một mốc thời gian / trước một query_id cụ thể</span>
+<span class="cmd">SELECT * FROM fct_orders BEFORE(STATEMENT =&gt; '01abc...query_id');</span>
+<span class="cmd">SELECT * FROM fct_orders AT(TIMESTAMP =&gt; '2026-06-28 08:00:00'::TIMESTAMP);</span>
+<span class="cmt">-- Khôi phục bảng bị DROP nhầm</span>
+<span class="cmd">UNDROP TABLE fct_orders;</span>
+</div>
+</div>
+<div class="box warn"><span class="t">Retention tốn tiền storage</span><p>Retention dài giữ nhiều phiên bản micro-partition → tốn thêm storage (nhất là bảng cập nhật nhiều). 90 ngày cho bảng đổi liên tục có thể nhân storage lên đáng kể. Đặt theo nhu cầu thực: 7–30 ngày cho bảng quan trọng, 0–1 ngày cho bảng staging tạm.</p></div>
+
+<h2 id="t3-2">2. ⭐ Zero-copy Cloning</h2>
+<p><code class="inline">CLONE</code> tạo bản sao của bảng/schema/database <strong>tức thì</strong> và <strong>gần như không tốn storage</strong>: clone chỉ trỏ tới cùng micro-partition (metadata copy). Storage mới chỉ phát sinh khi clone hoặc bản gốc <em>thay đổi</em> (copy-on-write). Đây là siêu năng lực cho môi trường dev/test và "what-if".</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — clone tức thì cho môi trường dev</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmt">-- Nhân nguyên một database production làm sandbox dev — vài giây, ~0 storage</span>
+<span class="cmd">CREATE DATABASE analytics_dev CLONE analytics;</span>
+<span class="cmt">-- Clone kèm Time Travel: tạo bản sao bảng như NÓ 1 ngày trước</span>
+<span class="cmd">CREATE TABLE fct_orders_yesterday</span>
+<span class="cmd">  CLONE fct_orders AT(OFFSET =&gt; -86400);</span>
+</div>
+</div>
+<div class="box tip"><span class="t">Ứng dụng mạnh</span><p>Dev/test trên dữ liệu thật mà không nhân chi phí lưu trữ; chạy ETL "thử" trên clone, đối chiếu, rồi mới áp lên prod; clone trước khi migration lớn để rollback tức thì.</p></div>
+
+<h2 id="t3-3">3. Streams (CDC offset)</h2>
+<p>Một <strong>Stream</strong> là đối tượng theo dõi <em>thay đổi</em> (INSERT/UPDATE/DELETE) trên một bảng kể từ lần đọc trước — về bản chất là một con trỏ <em>offset</em> (CDC). Đọc stream trả về các dòng đã đổi cùng metadata <code class="inline">METADATA$ACTION</code> / <code class="inline">METADATA$ISUPDATE</code>. Khi bạn <em>consume</em> stream trong một transaction, offset tự tiến lên — lần sau chỉ thấy thay đổi mới.</p>
+
+<h2 id="t3-4">4. Tasks &amp; pipeline ELT (Stream + Task)</h2>
+<p><strong>Task</strong> chạy một câu SQL theo lịch (CRON) hoặc khi task cha xong (tạo DAG). Ghép <strong>Stream + Task</strong> là cách kinh điển dựng pipeline ELT incremental hoàn toàn trong Snowflake: stream bắt thay đổi ở bảng raw, task định kỳ MERGE chúng vào bảng đích — chỉ chạy khi stream có dữ liệu (<code class="inline">SYSTEM$STREAM_HAS_DATA</code>).</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — pipeline ELT: Stream bắt CDC → Task MERGE</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmt">-- 1) Stream theo dõi thay đổi trên bảng raw</span>
+<span class="cmd">CREATE STREAM str_orders ON TABLE analytics.raw.orders;</span>
+<span class="cmt">-- 2) Task chạy mỗi 5 phút, CHỈ khi stream có dữ liệu → tiết kiệm credit</span>
+<span class="cmd">CREATE TASK tsk_merge_orders</span>
+<span class="cmd">  WAREHOUSE = wh_etl</span>
+<span class="cmd">  SCHEDULE  = '5 MINUTE'</span>
+<span class="cmd">  WHEN SYSTEM$STREAM_HAS_DATA('str_orders')</span>
+<span class="cmd">AS</span>
+<span class="cmd">  MERGE INTO analytics.marts.fct_orders t</span>
+<span class="cmd">  USING str_orders s ON t.order_id = s.order_id</span>
+<span class="cmd">  WHEN MATCHED AND s.METADATA$ACTION = 'DELETE' THEN DELETE</span>
+<span class="cmd">  WHEN MATCHED THEN UPDATE SET t.amount = s.amount</span>
+<span class="cmd">  WHEN NOT MATCHED THEN INSERT (order_id, amount) VALUES (s.order_id, s.amount);</span>
+<span class="cmt">-- 3) Task tạo ra ở trạng thái suspended → phải RESUME mới chạy</span>
+<span class="cmd">ALTER TASK tsk_merge_orders RESUME;</span>
+</div>
+</div>
+<div class="box note"><span class="t">METADATA$ISUPDATE</span><p>Ví dụ trên đã đơn giản hoá: một UPDATE ở bảng nguồn xuất hiện trong stream dưới dạng <em>cặp</em> DELETE + INSERT (đều có <code class="inline">METADATA$ISUPDATE = TRUE</code>), nên code production phải xử lý cột <code class="inline">METADATA$ISUPDATE</code> để không nhân đôi dòng.</p></div>
+<div class="box danger"><span class="t">Quên RESUME = pipeline đứng im</span><p>Task mới tạo luôn ở trạng thái <em>suspended</em>. Quên <code class="inline">ALTER TASK ... RESUME</code> là lỗi vận hành kinh điển khiến pipeline "tạo xong mà không chạy". Với DAG, resume task con trước, task gốc sau cùng.</p></div>
+
+<h2 id="t3-5">5. Materialized Views &amp; Search Optimization</h2>
+<p><strong>Materialized View (MV)</strong>: kết quả truy vấn được tính sẵn và <em>tự động làm mới</em> nền khi bảng nguồn đổi — tăng tốc các aggregate lặp lại. Đắt hơn view thường (tốn storage + credit refresh) nên chỉ dùng cho truy vấn nặng, lặp nhiều, trên dữ liệu ít đổi.</p>
+<p><strong>Search Optimization Service</strong>: thêm cấu trúc tìm kiếm để tăng tốc <em>point lookup</em> (lọc bằng <code class="inline">=</code> hoặc <code class="inline">IN</code> trên cột selective) — thứ mà pruning thường làm chưa tốt. Dùng khi bảng lớn nhưng hay tìm "kim trong đống cỏ".</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — MV &amp; search optimization</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">CREATE MATERIALIZED VIEW mv_daily_rev AS</span>
+<span class="cmd">  SELECT order_date, region, SUM(amount) AS rev</span>
+<span class="cmd">  FROM fct_orders GROUP BY 1, 2;</span>
+<span class="cmt">-- Tăng tốc point lookup theo email/id trên bảng lớn</span>
+<span class="cmd">ALTER TABLE dim_customer ADD SEARCH OPTIMIZATION ON EQUALITY(email);</span>
+</div>
+</div>
+
+<h2 id="t3-6">6. Ba lớp cache</h2>
+<p>Hiệu năng "kỳ diệu" của Snowflake phần lớn nhờ ba lớp cache xếp chồng:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Lớp cache</th><th>Ở đâu</th><th>Chứa gì</th><th>Cần VWH?</th></tr>
+<tr><td><strong>Metadata cache</strong></td><td>Cloud Services</td><td>Thống kê MIN/MAX, <code class="inline">COUNT</code>, MIN/MAX cột</td><td>Không — trả ngay</td></tr>
+<tr><td><strong>Result cache</strong></td><td>Cloud Services</td><td>Kết quả query y hệt trong 24h (nếu data không đổi)</td><td>Không — gần như miễn phí</td></tr>
+<tr><td><strong>Local disk (warehouse) cache</strong></td><td>SSD của VWH</td><td>Micro-partition đã đọc gần đây</td><td>Có — mất khi suspend</td></tr>
+</table></div>
+<div class="box tip"><span class="t">Vì sao query lặp lại "free"</span><p>Chạy lại đúng một query mà bảng nguồn chưa đổi → Snowflake trả từ <strong>result cache</strong> tức thì, không bật VWH, không tốn credit. <code class="inline">SELECT COUNT(*)</code> trả từ <strong>metadata cache</strong> mà không quét gì. Đây là lý do nên hạn chế <em>auto-suspend = 0</em>: giữ local cache nóng cho query mới.</p></div>
+
+<h2 id="t3-7">7. Snowpark (DataFrame API / UDF / Python)</h2>
+<p><strong>Snowpark</strong> cho phép viết logic xử lý dữ liệu bằng <strong>Python/Scala/Java</strong> với API kiểu DataFrame (giống PySpark), nhưng được <em>biên dịch xuống SQL</em> và chạy ngay trên compute Snowflake — không kéo dữ liệu ra ngoài. Kèm theo là <strong>Python UDF/UDTF</strong> và <strong>Stored Procedure</strong> chạy trong sandbox an toàn. Đây là cách Snowflake đáp trả thế mạnh data-science của Databricks.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">python — Snowpark DataFrame chạy trong Snowflake</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">from snowflake.snowpark import Session</span>
+<span class="cmd">from snowflake.snowpark.functions import col, sum as sum_</span>
+<span class="cmd">session = Session.builder.configs(connection_params).create()</span>
+<span class="cmt"># DataFrame lazy — chỉ chạy khi .collect()/.show(); push-down xuống SQL</span>
+<span class="cmd">df = (session.table("analytics.marts.fct_orders")</span>
+<span class="cmd">        .filter(col("region") == "APAC")</span>
+<span class="cmd">        .group_by("order_date")</span>
+<span class="cmd">        .agg(sum_("amount").alias("rev")))</span>
+<span class="cmd">df.show()</span>
+</div>
+</div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Một bản release pipeline ETL ghi sai logic, làm hỏng số liệu doanh thu trong bảng <code class="inline">fct_orders</code>, phát hiện sau 3 giờ. <strong>Bài học:</strong> dùng Time Travel để <code class="inline">CREATE TABLE fct_orders_good CLONE fct_orders AT(OFFSET =&gt; -14400)</code> (zero-copy, tức thì) đối chiếu, rồi <code class="inline">INSERT OVERWRITE</code> khôi phục — không cần restore backup, không downtime. Bộ ba Time Travel + Clone biến "thảm hoạ dữ liệu" thành thao tác vài phút.</p></div>
+
+<div class="box note"><span class="t">⭐ Điểm chốt</span><p>Nâng cao Snowflake = <strong>Time Travel</strong> (0–90 ngày, AT/BEFORE/UNDROP) + <strong>Fail-safe</strong> 7 ngày; <strong>Zero-copy Clone</strong> (sandbox tức thì, ~0 storage); <strong>Stream + Task</strong> dựng ELT incremental trong DB (nhớ RESUME task); <strong>MV &amp; Search Optimization</strong> cho query lặp/point-lookup; <strong>ba lớp cache</strong> (metadata/result/local) khiến query lặp gần như free; và <strong>Snowpark</strong> cho Python/DataFrame chạy ngay trong Snowflake.</p></div>
+</section>
+
+<section class="panel" id="t4">
+<div class="lead">Module 20 — Cloud DW &amp; Lakehouse</div>
+<h1>Chi phí &amp; <span class="hl">tối ưu</span> Snowflake</h1>
+<p class="intro-p">Snowflake dễ tốn tiền âm thầm vì bật VWH là tính credit theo giây. Tab này chỉ cách hiểu mô hình credit, đọc Query Profile để tìm điểm nghẽn (đặc biệt là <em>spilling</em>), dựng Resource Monitor để chặn vượt ngân sách, và right-size warehouse để cân bằng tốc độ với chi phí.</p>
+
+<div class="toc">
+<a href="#t4-1">› 1. Mô hình credit (compute + storage + cloud services)</a>
+<a href="#t4-2">› 2. ⭐ Đọc Query Profile &amp; spilling</a>
+<a href="#t4-3">› 3. Resource Monitors (quota + suspend)</a>
+<a href="#t4-4">› 4. ⭐ Right-sizing &amp; tuning auto-suspend</a>
+<a href="#t4-5">› 5. Tránh spilling cho query nặng</a>
+<a href="#t4-6">› 6. Chi phí serverless (Snowpipe, Tasks, Clustering)</a>
+<a href="#t4-7">› 7. Theo dõi chi phí qua ACCOUNT_USAGE</a>
+</div>
+
+<h2 id="t4-1">1. Mô hình credit</h2>
+<p>Hoá đơn Snowflake có ba phần độc lập:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Thành phần</th><th>Tính theo</th><th>Ghi chú</th></tr>
+<tr><td><strong>Compute credits</strong></td><td>Size VWH × thời gian chạy (theo giây, min 60s)</td><td>Phần lớn hoá đơn; nhân theo bảng size ở Module 02</td></tr>
+<tr><td><strong>Storage</strong></td><td>$/TB/tháng (dữ liệu nén + Time Travel + Fail-safe)</td><td>Rẻ; retention dài làm tăng phần này</td></tr>
+<tr><td><strong>Cloud Services</strong></td><td>Credit, nhưng <em>miễn phí nếu &lt; 10%</em> compute/ngày</td><td>Chỉ bị tính khi vượt ngưỡng (vd nhiều DDL/metadata)</td></tr>
+<tr><td><strong>Serverless</strong></td><td>Snowpipe, Tasks serverless, Auto-clustering, Search Opt</td><td>Tính riêng theo lượng việc, không qua VWH của bạn</td></tr>
+</table></div>
+
+<h2 id="t4-2">2. ⭐ Đọc Query Profile &amp; spilling</h2>
+<p>Query Profile (trong UI hoặc qua <code class="inline">QUERY_HISTORY</code>) là công cụ debug hiệu năng số một. Ba thứ phải nhìn:</p>
+<ul>
+<li><strong>Most expensive node</strong>: operator chiếm nhiều thời gian nhất (thường là Join, Aggregate, hoặc TableScan). Bắt đầu tối ưu từ đây.</li>
+<li><strong>Partitions scanned / total</strong>: tỉ lệ thấp = pruning tốt. Nếu scan gần như toàn bộ trong khi query có lọc → pruning hỏng (cân nhắc clustering key).</li>
+<li><strong>Spilling</strong>: <em>spill to local storage</em> (tràn RAM xuống SSD) còn chấp nhận được; <em>spill to remote storage</em> (tràn xuống object storage) là báo động đỏ — query làm chậm thảm hại vì RAM không đủ.</li>
+</ul>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — tìm query đắt &amp; query bị spill remote</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">SELECT query_id, warehouse_size,</span>
+<span class="cmd">       execution_time/1000 AS sec,</span>
+<span class="cmd">       partitions_scanned, partitions_total,</span>
+<span class="cmd">       bytes_spilled_to_local_storage   AS spill_local,</span>
+<span class="cmd">       bytes_spilled_to_remote_storage  AS spill_remote</span>
+<span class="cmd">FROM   SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY</span>
+<span class="cmd">WHERE  start_time &gt; DATEADD('day', -1, CURRENT_TIMESTAMP())</span>
+<span class="cmd">  AND  bytes_spilled_to_remote_storage &gt; 0   -- query thiếu RAM trầm trọng</span>
+<span class="cmd">ORDER BY spill_remote DESC LIMIT 20;</span>
+</div>
+</div>
+
+<h2 id="t4-3">3. Resource Monitors (quota + suspend)</h2>
+<p><strong>Resource Monitor</strong> đặt hạn mức credit theo chu kỳ (ngày/tuần/tháng) và <em>hành động</em> khi đạt ngưỡng: cảnh báo, hoặc <code class="inline">SUSPEND</code> (cho query đang chạy xong rồi tắt), hoặc <code class="inline">SUSPEND_IMMEDIATE</code> (kill ngay). Đây là phanh tay chống hoá đơn sốc.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — resource monitor chặn vượt ngân sách</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">CREATE RESOURCE MONITOR rm_monthly</span>
+<span class="cmd">  WITH CREDIT_QUOTA = 1000           -- 1000 credit / chu kỳ</span>
+<span class="cmd">  FREQUENCY = MONTHLY START_TIMESTAMP = IMMEDIATELY</span>
+<span class="cmd">  TRIGGERS</span>
+<span class="cmd">    ON 75 PERCENT  DO NOTIFY                 -- 75%: cảnh báo</span>
+<span class="cmd">    ON 90 PERCENT  DO SUSPEND                -- 90%: cho query xong rồi dừng</span>
+<span class="cmd">    ON 100 PERCENT DO SUSPEND_IMMEDIATE;     -- 100%: kill ngay</span>
+<span class="cmt">-- Gắn monitor vào warehouse cụ thể (hoặc cả account)</span>
+<span class="cmd">ALTER WAREHOUSE wh_etl SET RESOURCE_MONITOR = rm_monthly;</span>
+</div>
+</div>
+<div class="box tip"><span class="t">Luôn đặt trước khi giao cho team</span><p>Một VWH 4XL bị ai đó để auto-resume rồi quên là cách đốt vài nghìn USD/ngày. Resource Monitor + auto-suspend là hai phanh phải bật ngay từ đầu cho mọi account dùng chung.</p></div>
+
+<h2 id="t4-4">4. ⭐ Right-sizing &amp; tuning auto-suspend</h2>
+<p>Nguyên tắc right-sizing: <strong>VWH lớn gấp đôi thường chạy nhanh ~gấp đôi cho query nặng</strong> → chi phí tổng tương đương nhưng trả kết quả nhanh hơn <em>và</em> tránh spilling. Ngược lại, query nhỏ chạy trên VWH to chỉ phí tiền (không nhanh thêm vì không đủ việc để song song).</p>
+<div class="tbl-wrap"><table>
+<tr><th>Tình huống</th><th>Hành động đúng</th></tr>
+<tr><td>Một query nặng, có spill, chạy lâu</td><td>Scale UP (size to hơn) — nhanh hơn, hết spill, tổng credit ~bằng</td></tr>
+<tr><td>Nhiều query nhỏ xếp hàng đồng thời</td><td>Scale OUT (multi-cluster) — giảm chờ, đừng tăng size</td></tr>
+<tr><td>VWH bật cả ngày, query thưa</td><td>Hạ size + auto-suspend ngắn (60–120s)</td></tr>
+<tr><td>Dashboard hỏi liên tục</td><td>Giữ size vừa + auto-suspend dài (300–600s) để cache nóng</td></tr>
+</table></div>
+<div class="box warn"><span class="t">Auto-suspend quá ngắn cũng hại</span><p>Đặt suspend 5–10s cho VWH dùng liên tục → cache lạnh liên miên, query đầu mỗi lần chậm và đọc lại micro-partition từ storage (chậm hơn, không rẻ hơn vì vẫn tính min 60s mỗi resume). Cân giữa "tắt nhanh đỡ tốn" và "giữ cache nóng".</p></div>
+
+<h2 id="t4-5">5. Tránh spilling cho query nặng</h2>
+<p>Spilling xảy ra khi RAM của VWH không đủ chứa dữ liệu trung gian (join lớn, sort/aggregate cardinality cao). Cách xử lý theo thứ tự ưu tiên: (1) <strong>tăng size VWH</strong> cho query đó (nhiều RAM hơn) — thường rẻ vì chạy nhanh hơn; (2) giảm dữ liệu xử lý (lọc sớm, project ít cột, broadcast bảng nhỏ); (3) kiểm tra pruning để khỏi quét thừa.</p>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Một report cuối tháng join 2 bảng tỉ dòng chạy 40 phút trên VWH Medium, Query Profile báo <em>spill to remote storage</em> hàng trăm GB. Tăng VWH lên 2XL "nghe có vẻ đắt". <strong>Bài học:</strong> 2XL có RAM gấp 16 lần Medium → hết spill remote, query chạy còn ~3 phút. Credit/giờ gấp 16 nhưng thời gian giảm ~13 lần ⇒ <em>tổng credit gần như bằng nhau</em>, mà còn xong sớm để VWH suspend. Right-sizing không phải "luôn chọn nhỏ" — mà chọn size khiến tổng credit thấp nhất.</p></div>
+
+<h2 id="t4-6">6. Chi phí serverless (Snowpipe, Tasks, Clustering)</h2>
+<p>Các tính năng serverless không dùng VWH của bạn mà dùng compute do Snowflake quản lý, tính phí riêng: <strong>Snowpipe</strong> theo lượng dữ liệu nạp (+ phí per-file), <strong>serverless Tasks</strong> theo thời gian chạy, <strong>Auto-clustering</strong> theo lượng re-cluster, <strong>Search Optimization &amp; MV</strong> theo lượng bảo trì nền. Tiện nhưng dễ âm thầm tốn — theo dõi qua các bảng history tương ứng.</p>
+
+<h2 id="t4-7">7. Theo dõi chi phí qua ACCOUNT_USAGE</h2>
+<p>Schema <code class="inline">SNOWFLAKE.ACCOUNT_USAGE</code> là nguồn sự thật để FinOps: ai/VWH nào đốt credit, query nào đắt, storage tăng ở đâu.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — credit theo warehouse trong 30 ngày</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">SELECT warehouse_name,</span>
+<span class="cmd">       ROUND(SUM(credits_used), 1) AS credits,</span>
+<span class="cmd">       ROUND(SUM(credits_used) * 3, 1) AS approx_usd   -- ~giá/credit của bạn</span>
+<span class="cmd">FROM   SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY</span>
+<span class="cmd">WHERE  start_time &gt; DATEADD('day', -30, CURRENT_TIMESTAMP())</span>
+<span class="cmd">GROUP  BY 1 ORDER BY credits DESC;</span>
+</div>
+</div>
+
+<div class="box note"><span class="t">⭐ Điểm chốt</span><p>Chi phí Snowflake = <strong>compute credit</strong> (size × giây, min 60s) + <strong>storage</strong> ($/TB nén, tăng theo retention) + <strong>cloud services</strong> (free nếu &lt;10%) + <strong>serverless</strong>. Tối ưu: đọc <strong>Query Profile</strong> (most expensive node, partitions scanned, đặc biệt <em>spill remote</em>), <strong>right-size</strong> (scale UP để hết spill thường rẻ hơn vì xong nhanh), bật <strong>Resource Monitor</strong> + auto-suspend hợp lý, và giám sát qua <strong>ACCOUNT_USAGE</strong>.</p></div>
+</section>
+
+<section class="panel" id="t5">
+<div class="lead">Module 20 — Cloud DW &amp; Lakehouse</div>
+<h1>Databricks &amp; <span class="hl">Lakehouse</span></h1>
+<p class="intro-p">Databricks tiếp cận từ hướng ngược với Snowflake: bắt đầu từ data lake mở (file trên S3/ADLS) rồi thêm lớp giao dịch (Delta Lake) và quản trị (Unity Catalog) để có "lakehouse". Nó mạnh ở data engineering, ML và streaming. Tab này dựng nền tảng: cluster, Unity Catalog, Delta, Photon, và kiến trúc Medallion.</p>
+
+<div class="toc">
+<a href="#t5-1">› 1. Workspace &amp; mô hình lakehouse của Databricks</a>
+<a href="#t5-2">› 2. ⭐ Cluster types (all-purpose · job · SQL warehouse)</a>
+<a href="#t5-3">› 3. DBFS &amp; lưu trữ</a>
+<a href="#t5-4">› 4. ⭐ Unity Catalog (namespace 3 cấp, governance, lineage)</a>
+<a href="#t5-5">› 5. Delta Lake (định dạng mặc định)</a>
+<a href="#t5-6">› 6. Photon engine (vectorized C++)</a>
+<a href="#t5-7">› 7. Medallion architecture (Bronze/Silver/Gold)</a>
+</div>
+
+<h2 id="t5-1">1. Workspace &amp; mô hình lakehouse của Databricks</h2>
+<p>Một <strong>workspace</strong> Databricks là môi trường gồm notebook, cluster, job, dữ liệu và quản trị. Triết lý: dữ liệu nằm dưới dạng <strong>file mở (Delta/Parquet) trên object storage của BẠN</strong> (S3/ADLS/GCS), còn Databricks cung cấp compute (Spark) + lớp quản trị. Khác Snowflake (storage là hộp đen nội bộ), ở đây bạn vẫn sở hữu và thấy file — đổi lại phải tự lo nhiều hơn.</p>
+
+<h2 id="t5-2">2. ⭐ Cluster types (all-purpose · job · SQL warehouse)</h2>
+<p>Compute Databricks là <strong>cluster Spark</strong>, có ba loại với mục đích và chi phí khác nhau — chọn sai loại là lỗi tốn tiền phổ biến:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Loại cluster</th><th>Dùng cho</th><th>Đặc điểm chi phí</th></tr>
+<tr><td><strong>All-purpose</strong> (interactive)</td><td>Phát triển trong notebook, khám phá, cộng tác</td><td>Đắt nhất; nhiều người dùng chung; đừng để chạy job sản xuất</td></tr>
+<tr><td><strong>Job cluster</strong></td><td>Chạy một job theo lịch rồi tự terminate</td><td>Rẻ hơn nhiều cho production; bật cho job, tắt khi xong</td></tr>
+<tr><td><strong>SQL Warehouse</strong></td><td>BI/SQL (giống VWH Snowflake), có serverless</td><td>Tối ưu cho truy vấn SQL, Photon mặc định; serverless bật nhanh</td></tr>
+</table></div>
+<div class="box danger"><span class="t">Lỗi tốn tiền kinh điển</span><p>Chạy job production trên <strong>all-purpose cluster</strong> (vì tiện, đang mở sẵn) đắt hơn nhiều so với <strong>job cluster</strong> tự tắt. Quy tắc: notebook dev → all-purpose; pipeline theo lịch → job cluster; dashboard/SQL → SQL warehouse.</p></div>
+
+<h2 id="t5-3">3. DBFS &amp; lưu trữ</h2>
+<p><strong>DBFS</strong> (Databricks File System) là lớp trừu tượng trên object storage, cho phép truy cập file qua đường dẫn thống nhất (<code class="inline">/mnt/...</code>, <code class="inline">dbfs:/...</code>). Tuy nhiên với governance hiện đại, dữ liệu nên đăng ký qua Unity Catalog (managed/external location) thay vì mount DBFS thủ công — sạch hơn và có kiểm soát truy cập.</p>
+
+<h2 id="t5-4">4. ⭐ Unity Catalog (namespace 3 cấp, governance, lineage)</h2>
+<p><strong>Unity Catalog (UC)</strong> là lớp quản trị thống nhất cho toàn bộ tài sản dữ liệu trên Databricks, với namespace ba cấp: <code class="inline">catalog.schema.table</code>. UC quản lý quyền (GRANT trên catalog/schema/table/column), <strong>lineage tự động</strong> (theo vết dữ liệu chảy qua bảng/notebook/job), audit log, và data discovery — tất cả ở cấp account, dùng chung nhiều workspace.</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">  ACCOUNT
+   └── METASTORE (Unity Catalog, cấp account, nhiều workspace dùng chung)
+        └── CATALOG        prod / dev / sandbox
+             └── SCHEMA    bronze / silver / gold
+                  └── TABLE / VIEW / VOLUME / FUNCTION / MODEL
+                       └── governance: GRANT, row/column mask, LINEAGE, AUDIT</pre></div>
+<div class="dcap">Cây Unity Catalog: catalog.schema.object, quản trị tập trung + lineage tự động.</div>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Unity Catalog namespace &amp; grant</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">CREATE CATALOG IF NOT EXISTS prod;</span>
+<span class="cmd">CREATE SCHEMA  prod.silver;</span>
+<span class="cmd">CREATE TABLE   prod.silver.orders (order_id BIGINT, amount DECIMAL(12,2))</span>
+<span class="cmd">  USING DELTA;                              -- Delta là mặc định</span>
+<span class="cmt">-- Phân quyền theo cây 3 cấp</span>
+<span class="cmd">GRANT USE CATALOG ON CATALOG prod         TO `analysts`;</span>
+<span class="cmd">GRANT USE SCHEMA  ON SCHEMA  prod.silver  TO `analysts`;</span>
+<span class="cmd">GRANT SELECT ON TABLE   prod.silver.orders TO `analysts`;</span>
+</div>
+</div>
+
+<h2 id="t5-5">5. Delta Lake (định dạng mặc định)</h2>
+<p><strong>Delta Lake</strong> là table format mặc định trên Databricks: file Parquet + một <em>transaction log</em> (<code class="inline">_delta_log</code>, các file JSON/checkpoint) ghi lại mọi commit. Nó mang ACID, <strong>time travel</strong> (<code class="inline">VERSION AS OF</code>), <code class="inline">MERGE</code>/<code class="inline">UPDATE</code>/<code class="inline">DELETE</code>, schema evolution, và <code class="inline">OPTIMIZE</code>/Z-order cho file layout — tất cả trên file mở mà engine khác (Spark, Trino qua Delta connector) cũng đọc được.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">python/sql — Delta: MERGE upsert &amp; time travel</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmt"># PySpark: upsert (CDC) vào bảng Delta</span>
+<span class="cmd">from delta.tables import DeltaTable</span>
+<span class="cmd">tgt = DeltaTable.forName(spark, "prod.silver.orders")</span>
+<span class="cmd">(tgt.alias("t").merge(updates.alias("s"), "t.order_id = s.order_id")</span>
+<span class="cmd">    .whenMatchedUpdateAll()</span>
+<span class="cmd">    .whenNotMatchedInsertAll()</span>
+<span class="cmd">    .execute())</span>
+<span class="cmt">-- SQL: đọc phiên bản cũ (time travel) + dọn file nhỏ</span>
+<span class="cmd">SELECT * FROM prod.silver.orders VERSION AS OF 42;</span>
+<span class="cmd">OPTIMIZE prod.silver.orders ZORDER BY (order_date);</span>
+</div>
+</div>
+
+<h2 id="t5-6">6. Photon engine (vectorized C++)</h2>
+<p><strong>Photon</strong> là engine thực thi viết lại bằng <strong>C++ vectorized</strong> (thay cho JVM của Spark gốc) cho các workload SQL/DataFrame — tăng tốc đáng kể, đặc biệt với aggregate, join, và quét cột. Photon là mặc định trên SQL Warehouse và bật được cho cluster. Đổi lại tốc độ, DBU tính cao hơn (~2×) khi Photon bật, nên cân lợi ích thực tế.</p>
+<div class="box tip"><span class="t">Khi nào Photon đáng</span><p>Photon thắng lớn cho SQL analytics và ETL nặng kiểu scan/join/aggregate. Với workload thuần Python UDF/ML không vector hoá được, Photon giúp ít — cân nhắc tắt để khỏi trả DBU cao vô ích.</p></div>
+
+<h2 id="t5-7">7. Medallion architecture (Bronze/Silver/Gold)</h2>
+<p><strong>Medallion</strong> là pattern tổ chức dữ liệu theo ba tầng chất lượng tăng dần — chuẩn de-facto trên Databricks:</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">  nguồn ──► 🥉 BRONZE ──► 🥈 SILVER ──► 🥇 GOLD ──► BI / ML
+            (raw,         (đã làm sạch,   (tổng hợp theo
+             append-only,  chuẩn hoá,      business: fact/dim,
+             giữ nguyên    dedup, ép kiểu,  aggregate sẵn cho
+             lịch sử)      validate)        dashboard/feature)</pre></div>
+<div class="dcap">Dữ liệu đi từ thô (Bronze) → sạch (Silver) → phục vụ (Gold). Mỗi tầng là bảng Delta riêng.</div>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">python — Bronze → Silver bằng PySpark + Delta</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmt"># Bronze: nạp thô, giữ nguyên</span>
+<span class="cmd">(spark.read.json("s3://raw/orders/")</span>
+<span class="cmd">      .write.format("delta").mode("append")</span>
+<span class="cmd">      .saveAsTable("prod.bronze.orders"))</span>
+<span class="cmt"># Silver: làm sạch + ép kiểu + dedup</span>
+<span class="cmd">from pyspark.sql import functions as F</span>
+<span class="cmd">silver = (spark.table("prod.bronze.orders")</span>
+<span class="cmd">          .withColumn("amount", F.col("amount").cast("decimal(12,2)"))</span>
+<span class="cmd">          .dropDuplicates(["order_id"])</span>
+<span class="cmd">          .filter(F.col("order_id").isNotNull()))</span>
+<span class="cmd">silver.write.format("delta").mode("overwrite").saveAsTable("prod.silver.orders")</span>
+</div>
+</div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Đội data science cần dữ liệu sạch để train model, còn đội BI cần aggregate cho dashboard, cả hai đang tự làm sạch lại từ raw — trùng lặp, không nhất quán. <strong>Bài học:</strong> dựng Medallion: Bronze giữ raw bất biến (audit/replay), Silver là một bản sạch chuẩn dùng chung, Gold là các mart/feature table. Cả DS lẫn BI đọc từ Silver/Gold thay vì mỗi đội tự xử lý raw — một sự thật, ít lỗi, dễ lineage qua Unity Catalog.</p></div>
+
+<div class="box note"><span class="t">⭐ Điểm chốt</span><p>Databricks = lakehouse mở: file <strong>Delta Lake</strong> (Parquet + transaction log, ACID + time travel + MERGE) trên storage của bạn, compute là <strong>cluster Spark</strong> (all-purpose cho dev, <em>job cluster</em> cho production, <em>SQL warehouse</em> cho BI), tăng tốc bằng <strong>Photon</strong> (C++ vectorized), quản trị tập trung bằng <strong>Unity Catalog</strong> (catalog.schema.table + lineage), tổ chức dữ liệu theo <strong>Medallion</strong> Bronze/Silver/Gold.</p></div>
+</section>
+
+<section class="panel" id="t6">
+<div class="lead">Module 20 — Cloud DW &amp; Lakehouse</div>
+<h1>Databricks <span class="hl">nâng cao</span> &amp; pipeline</h1>
+<p class="intro-p">Phần làm nên sức mạnh data-engineering của Databricks: Auto Loader nạp incremental không cần quản lý state, Delta Live Tables dựng pipeline khai báo với kiểm soát chất lượng, Structured Streaming cho real-time, MLflow cho vòng đời ML, và mô hình chi phí DBU để không vỡ ngân sách.</p>
+
+<div class="toc">
+<a href="#t6-1">› 1. ⭐ Auto Loader (cloudFiles incremental ingest)</a>
+<a href="#t6-2">› 2. ⭐ Delta Live Tables (pipeline khai báo + expectations)</a>
+<a href="#t6-3">› 3. Structured Streaming trên Databricks</a>
+<a href="#t6-4">› 4. MLflow (tracking + model registry)</a>
+<a href="#t6-5">› 5. Jobs / Workflows (orchestration)</a>
+<a href="#t6-6">› 6. Cluster policies</a>
+<a href="#t6-7">› 7. Chi phí: DBU, spot, autoscaling, serverless</a>
+</div>
+
+<h2 id="t6-1">1. ⭐ Auto Loader (cloudFiles incremental ingest)</h2>
+<p><strong>Auto Loader</strong> (nguồn <code class="inline">cloudFiles</code>) nạp <em>incremental</em> các file mới đến trong một thư mục object storage — tự theo dõi file nào đã xử lý (qua checkpoint + RocksDB state, hoặc file notification), nên bạn không phải tự quản lý "đã đọc tới đâu". Đây là cách chuẩn để ingest liên tục vào tầng Bronze.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">python — Auto Loader nạp incremental vào Bronze</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">df = (spark.readStream.format("cloudFiles")</span>
+<span class="cmd">       .option("cloudFiles.format", "json")</span>
+<span class="cmd">       .option("cloudFiles.schemaLocation", "/chk/orders/schema")  # tự suy &amp; lưu schema</span>
+<span class="cmd">       .load("s3://raw/orders/"))</span>
+<span class="cmd">(df.writeStream.format("delta")</span>
+<span class="cmd">    .option("checkpointLocation", "/chk/orders")   # nhớ file đã xử lý</span>
+<span class="cmd">    .trigger(availableNow=True)                    # xử lý hết file mới rồi dừng</span>
+<span class="cmd">    .toTable("prod.bronze.orders"))</span>
+</div>
+</div>
+<div class="box tip"><span class="t">trigger(availableNow) cho batch incremental</span><p>Không phải lúc nào cũng cần stream chạy 24/7. <code class="inline">trigger(availableNow=True)</code> nạp hết file mới kể từ checkpoint rồi <em>tự dừng</em> — chạy theo lịch trên job cluster, rẻ như batch nhưng vẫn incremental nhờ checkpoint.</p></div>
+
+<h2 id="t6-2">2. ⭐ Delta Live Tables (pipeline khai báo + expectations)</h2>
+<p><strong>Delta Live Tables (DLT)</strong> để bạn <em>khai báo</em> các bảng và phép biến đổi; Databricks lo dependency, orchestration, retry, và quản lý cluster. Điểm mạnh là <strong>expectations</strong> — ràng buộc chất lượng dữ liệu ngay trong pipeline (drop dòng xấu, hoặc fail pipeline nếu vi phạm).</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">python — DLT khai báo Bronze→Silver + expectations</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">import dlt</span>
+<span class="cmd">from pyspark.sql import functions as F</span>
+<span class="cmd">@dlt.table(name="bronze_orders")</span>
+<span class="cmd">def bronze_orders():</span>
+<span class="cmd">    return (spark.readStream.format("cloudFiles")</span>
+<span class="cmd">            .option("cloudFiles.format", "json").load("s3://raw/orders/"))</span>
+<span class="cmt"># Expectations: dòng vi phạm bị DROP; thống kê chất lượng lên UI pipeline</span>
+<span class="cmd">@dlt.table(name="silver_orders")</span>
+<span class="cmd">@dlt.expect_or_drop("valid_id", "order_id IS NOT NULL")</span>
+<span class="cmd">@dlt.expect_or_drop("positive_amt", "amount &gt; 0")</span>
+<span class="cmd">def silver_orders():</span>
+<span class="cmd">    return (dlt.read_stream("bronze_orders")</span>
+<span class="cmd">            .withColumn("amount", F.col("amount").cast("decimal(12,2)")))</span>
+</div>
+</div>
+<div class="box warn"><span class="t">DLT tiện nhưng khoá vào Databricks</span><p>DLT giảm rất nhiều boilerplate (dependency, retry, monitoring), nhưng pipeline viết bằng API DLT chỉ chạy trên Databricks. Cân nhắc lock-in: với pipeline cốt lõi cần portable, PySpark + Delta thuần có thể chạy nơi khác dễ hơn.</p></div>
+
+<h2 id="t6-3">3. Structured Streaming trên Databricks</h2>
+<p>Spark <strong>Structured Streaming</strong> xử lý dòng dữ liệu liên tục như một bảng vô hạn, ghi vào Delta với đảm bảo <em>exactly-once</em> nhờ checkpoint + transaction log. Dùng cho real-time ingest, aggregate cửa sổ thời gian, hoặc nối với Kafka/Kinesis.</p>
+
+<h2 id="t6-4">4. MLflow (tracking + model registry)</h2>
+<p><strong>MLflow</strong> là nền tảng vòng đời ML tích hợp sẵn: <em>tracking</em> (log tham số/metric/artifact mỗi lần train), <em>model registry</em> (quản phiên bản model + giai đoạn Staging/Production), và deploy. Đây là một lý do lớn các đội ML chọn Databricks.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">python — MLflow tracking + đăng ký model</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">import mlflow</span>
+<span class="cmd">with mlflow.start_run():</span>
+<span class="cmd">    mlflow.log_param("max_depth", 8)</span>
+<span class="cmd">    mlflow.log_metric("auc", 0.91)</span>
+<span class="cmt"># Log + đăng ký vào Unity Catalog model registry</span>
+<span class="cmd">    mlflow.sklearn.log_model(model, "model",</span>
+<span class="cmd">        registered_model_name="prod.ml.churn")</span>
+</div>
+</div>
+
+<h2 id="t6-5">5. Jobs / Workflows (orchestration)</h2>
+<p><strong>Workflows (Jobs)</strong> là orchestrator gốc của Databricks: định nghĩa các task (notebook, JAR, Python, DLT pipeline, dbt…) thành DAG, đặt lịch, retry, và — quan trọng — chạy trên <strong>job cluster</strong> tự tạo/tự tắt (rẻ hơn all-purpose). Đây là nơi pipeline sản xuất nên chạy.</p>
+
+<h2 id="t6-6">6. Cluster policies</h2>
+<p><strong>Cluster policy</strong> ràng buộc cấu hình cluster mà user được tạo: giới hạn loại/instance, bắt buộc tag chi phí, ép autoscaling, cấm node quá to. Đây là công cụ governance + chống đốt tiền ở cấp tổ chức.</p>
+
+<h2 id="t6-7">7. Chi phí: DBU, spot, autoscaling, serverless</h2>
+<p>Hoá đơn Databricks = <strong>DBU</strong> (Databricks Unit) × giá theo tier (Standard/Premium/Enterprise) + tiền máy ảo của cloud provider (EC2/VM). DBU/giờ phụ thuộc loại workload (job rẻ hơn all-purpose), loại instance, và Photon (cao hơn). Ba đòn giảm chi phí chính:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Kỹ thuật</th><th>Cách hoạt động</th><th>Lưu ý</th></tr>
+<tr><td><strong>Spot instances</strong></td><td>Dùng máy ảo giá rẻ (spot) cho worker</td><td>Có thể bị thu hồi → dùng cho job chịu được retry, giữ driver on-demand</td></tr>
+<tr><td><strong>Autoscaling</strong></td><td>Tự tăng/giảm worker theo tải</td><td>Đặt min/max hợp lý; tránh max quá cao</td></tr>
+<tr><td><strong>Serverless SQL</strong></td><td>Compute do Databricks quản, bật trong giây</td><td>Đỡ phải warm cluster cho BI; tính theo dùng thật</td></tr>
+<tr><td><strong>Job cluster + auto-terminate</strong></td><td>Cluster sống đúng thời gian job, tự tắt</td><td>Luôn ưu tiên cho production thay vì all-purpose</td></tr>
+</table></div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Hoá đơn Databricks tăng vọt; điều tra thấy 70% DBU đến từ một all-purpose cluster để chạy 24/7 phục vụ cả dev lẫn vài job đêm, lại bật Photon. <strong>Bài học:</strong> chuyển job đêm sang <em>job cluster</em> (tự tắt, worker spot, tắt Photon vì là Python UDF), đặt <em>cluster policy</em> giới hạn instance, dùng <em>serverless SQL</em> cho dashboard. DBU giảm mạnh mà không đụng tới logic pipeline — đa số tiết kiệm đến từ chọn đúng loại compute, không phải sửa code.</p></div>
+
+<div class="box note"><span class="t">⭐ Điểm chốt</span><p>Databricks nâng cao: <strong>Auto Loader</strong> (cloudFiles, incremental tự checkpoint, dùng <code class="inline">availableNow</code> cho batch), <strong>DLT</strong> (pipeline khai báo + expectations chất lượng, nhưng lock-in), <strong>Structured Streaming</strong> exactly-once vào Delta, <strong>MLflow</strong> (tracking + registry), <strong>Workflows</strong> chạy trên job cluster. Chi phí theo <strong>DBU</strong>: dùng job cluster, spot, autoscaling, serverless SQL, và cluster policy để kiểm soát.</p></div>
+</section>
+
+<section class="panel" id="t7">
+<div class="lead">Module 20 — Cloud DW &amp; Lakehouse</div>
+<h1>So sánh &amp; <span class="hl">chọn lựa</span>: Snowflake · Databricks · BigQuery</h1>
+<p class="intro-p">Câu hỏi thực tế nhất: nên chọn nền tảng nào? Ba "ông lớn" hội tụ về cùng tham vọng (làm cả DW lẫn lakehouse lẫn AI) nhưng xuất phát từ ba triết lý khác nhau. Tab này so sánh chi tiết, đưa khuyến nghị theo workload, bàn kiến trúc kết hợp, và cảnh báo về lock-in khi di trú.</p>
+
+<div class="toc">
+<a href="#t7-1">› 1. Ba triết lý xuất phát</a>
+<a href="#t7-2">› 2. ⭐ Bảng so sánh chi tiết</a>
+<a href="#t7-3">› 3. ⭐ Khi nào chọn cái nào</a>
+<a href="#t7-4">› 4. BigQuery — nét riêng cần biết</a>
+<a href="#t7-5">› 5. Kiến trúc kết hợp (cùng tồn tại)</a>
+<a href="#t7-6">› 6. Di trú &amp; lock-in</a>
+<a href="#t7-7">› 7. Khuyến nghị tổng kết</a>
+</div>
+
+<h2 id="t7-1">1. Ba triết lý xuất phát</h2>
+<div class="grid3">
+<div class="mini"><h4>Snowflake</h4><p style="font-size:13.5px">Từ <strong>warehouse</strong> đi lên: SQL-first, vận hành cực dễ, storage là hộp đen tối ưu. Mạnh nhất ở BI/analytics SQL.</p></div>
+<div class="mini"><h4>Databricks</h4><p style="font-size:13.5px">Từ <strong>data lake + Spark</strong> đi lên: lakehouse mở (Delta), mạnh ML/streaming/data engineering. File là của bạn.</p></div>
+<div class="mini"><h4>BigQuery</h4><p style="font-size:13.5px">Từ <strong>serverless GCP</strong> đi lên: không quản cluster, scale tự động, tích hợp sâu hệ sinh thái Google.</p></div>
+</div>
+
+<h2 id="t7-2">2. ⭐ Bảng so sánh chi tiết</h2>
+<div class="tbl-wrap"><table>
+<tr><th>Tiêu chí</th><th>Snowflake</th><th>Databricks</th><th>BigQuery</th></tr>
+<tr><td>Mô hình storage</td><td>Hộp đen nội bộ (micro-partition trên cloud)</td><td>File mở Delta/Parquet trên storage của bạn</td><td>Managed columnar (Capacitor) trên Google storage</td></tr>
+<tr><td>Compute / pricing</td><td>Virtual Warehouse, <strong>credit theo giây</strong></td><td>Cluster Spark, <strong>DBU + máy ảo</strong></td><td>Serverless: <strong>on-demand $/TB quét</strong> hoặc slot (capacity)</td></tr>
+<tr><td>SQL</td><td>Rất mạnh, ANSI, trải nghiệm tốt nhất</td><td>Tốt (Photon + Databricks SQL), gốc là Spark</td><td>Rất mạnh, ANSI, GoogleSQL</td></tr>
+<tr><td>ML / AI</td><td>Snowpark, Cortex; đang bắt kịp</td><td><strong>Mạnh nhất</strong>: MLflow, notebook, Spark ML, GPU</td><td>BigQuery ML (train bằng SQL), Vertex AI</td></tr>
+<tr><td>Streaming</td><td>Snowpipe (gần real-time), Streams/Tasks</td><td><strong>Mạnh nhất</strong>: Structured Streaming, DLT, Auto Loader</td><td>Streaming inserts, Dataflow tích hợp</td></tr>
+<tr><td>Governance</td><td>RBAC, account-level, tốt</td><td>Unity Catalog (lineage tự động, đa workspace)</td><td>IAM của GCP, Dataplex</td></tr>
+<tr><td>Open format / lock-in</td><td>Lock-in cao (storage đóng); đọc Iceberg ngày càng tốt</td><td><strong>Mở nhất</strong> (Delta/Iceberg, file của bạn)</td><td>Lock-in cao (gắn GCP); đọc external/Iceberg được</td></tr>
+<tr><td>Ease of use / vận hành</td><td><strong>Dễ nhất</strong>: gần như không tune hạ tầng</td><td>Cần kỹ năng Spark/cluster; nhiều "nút"</td><td>Rất dễ (serverless), nhưng cần hiểu mô hình quét</td></tr>
+<tr><td>Multi-cloud</td><td>AWS/Azure/GCP</td><td>AWS/Azure/GCP</td><td>Chỉ GCP</td></tr>
+</table></div>
+
+<h2 id="t7-3">3. ⭐ Khi nào chọn cái nào</h2>
+<div class="tbl-wrap"><table>
+<tr><th>Nhu cầu chủ đạo</th><th>Chọn</th><th>Vì sao</th></tr>
+<tr><td>BI/analytics SQL nặng, đội mạnh SQL, muốn vận hành tối giản</td><td><strong>Snowflake</strong></td><td>SQL-first, concurrency tốt, gần như zero-tuning, tách compute cho từng đội</td></tr>
+<tr><td>ML, data science, streaming, ETL phức tạp với Spark</td><td><strong>Databricks</strong></td><td>Lakehouse mở, MLflow/Spark/streaming mạnh nhất, dữ liệu mở</td></tr>
+<tr><td>Đã ở GCP, muốn serverless thuần, không quản hạ tầng</td><td><strong>BigQuery</strong></td><td>Serverless, scale tự động, tích hợp sâu Google (Sheets, Looker, Vertex)</td></tr>
+<tr><td>Cần tránh lock-in storage, nhiều engine cùng đọc</td><td><strong>Databricks</strong> (hoặc lakehouse mở)</td><td>File Delta/Iceberg của bạn, không bị nhốt trong một engine</td></tr>
+</table></div>
+<div class="box tip"><span class="t">Heuristic nhanh</span><p><strong>BI-heavy SQL → Snowflake. ML/streaming/data science → Databricks. Serverless GCP-native → BigQuery.</strong> Ranh giới đang mờ dần (Snowflake thêm Snowpark/Cortex, Databricks thêm Databricks SQL), nên đánh giá theo <em>workload chính</em> và <em>kỹ năng đội</em>, đừng theo hype.</p></div>
+
+<h2 id="t7-4">4. BigQuery — nét riêng cần biết</h2>
+<p>BigQuery khác biệt nhất ở mô hình giá: <strong>on-demand</strong> tính theo <em>số byte quét</em> mỗi truy vấn (chọn ít cột + lọc partition là tiết kiệm trực tiếp), hoặc <strong>capacity (slot)</strong> mua theo công suất ổn định. Không có cluster để quản; scale do Google lo. Đổi lại, query "quét nhầm" toàn bảng có thể tốn bất ngờ — luôn dùng partition + clustering và tránh <code class="inline">SELECT *</code>.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — BigQuery: bảng partition + clustering để giảm byte quét</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">CREATE TABLE analytics.fct_orders</span>
+<span class="cmd">PARTITION BY DATE(order_ts)         -- giảm byte quét theo ngày</span>
+<span class="cmd">CLUSTER BY region AS                 -- gom theo cột hay lọc</span>
+<span class="cmd">SELECT * FROM analytics.raw_orders;</span>
+<span class="cmt">-- Lọc partition + chỉ chọn cột cần ⇒ quét ít byte ⇒ rẻ</span>
+<span class="cmd">SELECT region, SUM(amount)</span>
+<span class="cmd">FROM   analytics.fct_orders</span>
+<span class="cmd">WHERE  DATE(order_ts) BETWEEN '2026-06-01' AND '2026-06-07'</span>
+<span class="cmd">GROUP  BY region;</span>
+</div>
+</div>
+
+<h2 id="t7-5">5. Kiến trúc kết hợp (cùng tồn tại)</h2>
+<p>Trong thực tế nhiều tổ chức dùng <em>hơn một</em>: Databricks lo ingest/transform/ML trên lakehouse mở, ghi ra bảng Delta/Iceberg; Snowflake (hoặc BigQuery) phục vụ BI SQL cho người dùng cuối. Với table format mở (Iceberg, Delta UniForm), cả hai có thể <strong>đọc cùng một bảng</strong> mà không cần copy.</p>
+<div class="diagram"><pre style="color:#d1d5db;font-family:JetBrains Mono, monospace;font-size:13px;line-height:1.7">  nguồn ──► DATABRICKS ──► bảng Delta/Iceberg ──► SNOWFLAKE / BIGQUERY
+            (ingest, ETL,    trên S3/ADLS/GCS        (BI SQL, dashboard,
+             ML, streaming)  (table format MỞ)        người dùng cuối)
+                                   ▲
+                          một bản dữ liệu, nhiều engine đọc</pre></div>
+<div class="dcap">Pattern phổ biến: engineering/ML ở Databricks, serving BI ở Snowflake/BigQuery, chung table format mở.</div>
+
+<h2 id="t7-6">6. Di trú &amp; lock-in</h2>
+<p>Ba điểm cần lượng định trước khi cam kết:</p>
+<ul>
+<li><strong>Storage lock-in</strong>: Snowflake giữ dữ liệu ở định dạng nội bộ — rời đi phải export. Databricks giữ file mở của bạn — dễ mang đi nhất. BigQuery gắn với GCP.</li>
+<li><strong>SQL/feature lock-in</strong>: các tính năng độc quyền (Snowpark, DLT, BigQuery ML, Streams/Tasks) tiện nhưng không portable. Pipeline cốt lõi nên giữ logic tương đối chuẩn.</li>
+<li><strong>Chi phí di trú</strong>: viết lại SQL/pipeline, dịch UDF, re-test số liệu, đào tạo đội. Đừng đánh giá thấp; thường lớn hơn chi phí license tiết kiệm được.</li>
+</ul>
+<div class="box danger"><span class="t">Bẫy lock-in</span><p>Dùng càng nhiều tính năng độc quyền (proprietary), giá trị càng cao nhưng càng khó rời. Quyết định tỉnh táo: chấp nhận lock-in ở tầng serving (đổi lại vận hành dễ) nhưng giữ tầng dữ liệu + pipeline cốt lõi ở định dạng/công nghệ mở để còn đường lui.</p></div>
+
+<h2 id="t7-7">7. Khuyến nghị tổng kết</h2>
+<div class="grid3">
+<div class="mini"><h4>Chọn Snowflake nếu…</h4><p style="font-size:13.5px">Trọng tâm là BI/SQL, đội thạo SQL hơn Spark, muốn vận hành tối giản và concurrency cao, đa cloud.</p></div>
+<div class="mini"><h4>Chọn Databricks nếu…</h4><p style="font-size:13.5px">Trọng tâm là ML/data science/streaming, ETL phức tạp, cần dữ liệu mở và tránh lock-in storage.</p></div>
+<div class="mini"><h4>Chọn BigQuery nếu…</h4><p style="font-size:13.5px">Đã ở GCP, muốn serverless thuần không quản hạ tầng, tích hợp sâu Google Looker/Vertex/Sheets.</p></div>
+</div>
+<div class="box scn"><span class="t"><span>Tình huống thực tế</span></span><p><strong>Bối cảnh:</strong> Startup phân vân "Snowflake hay Databricks" cho data platform đầu tiên. Đội 3 người, chủ yếu phân tích sản phẩm bằng SQL, chưa có ML, dữ liệu vài TB. <strong>Bài học:</strong> chọn <em>Snowflake</em> — vận hành gần như zero, lên dashboard nhanh, không cần kỹ năng Spark/cluster. Khi nào ML/streaming thành trọng tâm thì thêm Databricks bên cạnh đọc chung table format mở. Chọn theo workload <em>hiện tại</em> + kỹ năng đội, không phải theo nền tảng "xịn nhất" trên giấy.</p></div>
+
+<div class="box note"><span class="t">⭐ Điểm chốt</span><p>Ba nền tảng hội tụ nhưng khác gốc: <strong>Snowflake</strong> = SQL/BI + vận hành dễ nhất (storage đóng, lock-in cao); <strong>Databricks</strong> = ML/streaming/engineering + lakehouse mở (ít lock-in nhất); <strong>BigQuery</strong> = serverless GCP-native (tính theo byte quét). Heuristic: <em>BI-heavy → Snowflake, ML/streaming → Databricks, GCP serverless → BigQuery</em>. Kiến trúc kết hợp (Databricks ETL/ML + Snowflake/BigQuery serving qua table format mở) rất phổ biến; luôn cân nhắc lock-in storage/feature và chi phí di trú trước khi cam kết.</p></div>
+</section>
+
+<!-- ============ TAB 8 — FOUNDATIONAL THEORY ============ -->
+
+
+<section class="panel deep" id="t8">
+<div class="lead">Chương 8 — Lý thuyết nền tảng</div>
+<h1>Lý thuyết <span class="hl">Cloud Data Warehouse &amp; Lakehouse</span></h1>
+<p class="intro-p">Bảy chương đầu dạy bạn <em>dùng</em> Snowflake/Databricks. Ba chương cuối dạy bạn <em>hiểu</em> chúng — tới mức giải thích được vì sao mỗi quyết định kiến trúc tồn tại, đâu là trade-off, và khi nào chọn cái này thay cái kia.</p>
+<div class="toc">
+<a href="#t8-1">› 1. ⭐ Tách Storage – Compute: ý tưởng trung tâm</a>
+<a href="#t8-2">› 2. ⭐ Ba kiến trúc: shared-disk / shared-nothing / shared-data</a>
+<a href="#t8-3">› 3. Lưu trữ cột: lý thuyết I/O &amp; nén</a>
+<a href="#t8-4">› 4. MPP &amp; song song hoá: Amdahl &amp; shuffle</a>
+<a href="#t8-5">› 5. Tính co giãn &amp; kinh tế học per-second</a>
+<a href="#t8-6">› 6. ⭐ Bất biến + metadata: nguyên lý nền tảng</a>
+<a href="#t8-7">› 7. So sánh: khi nào dùng DW vs Lakehouse</a>
+<a href="#t8-8">› 8. ⭐ Cost model: compute-on-demand vs reserved</a>
+</div>
+
+<h2 id="t8-1">1. ⭐ Tách Storage – Compute</h2>
+<p>Nguyên lý cốt lõi của mọi data platform cloud hiện đại: <strong>storage (dữ liệu) tách rời compute (xử lý)</strong>. Điều này cho phép scale độc lập: bật/tắt compute theo nhu cầu, trả tiền theo giây.</p>
+
+<h3>Tại sao điều này quan trọng?</h3>
+<p>Warehouse truyền thống (Oracle Exadata, Teradata, IBM Netezza) gắn chặt storage và compute. Khi bạn muốn thêm CPU cho nhiều query đồng thời, bạn phải mua thêm cả storage — dù storage không cần thiết. Ngược lại, khi muốn thêm storage nhưng không cần thêm compute, bạn vẫn phải mua thêm cả hai.</p>
+
+<div class="defbox">
+<div class="term-def">Snowflake: Storage = S3/Blob/GCS + Metadata. Compute = Virtual Warehouse (VM clusters).</div>
+<p>Compute chỉ đọc/ghi storage qua network. Một storage, nhiều warehouse độc lập.</p>
+</div>
+
+<h3>Implications quan trọng</h3>
+<ul>
+<li><strong>Zero-copy cloning</strong>: clone tạo pointer tới cùng storage, không copy data — gần như tức thì dù bảng terabyte</li>
+<li><strong>Data sharing</strong>: chia sẻ data mà không copy — người nhận đọc trực tiếp từ share</li>
+<li><strong>Multi-cluster scaling</strong>: bật thêm warehouse không ảnh hưởng data đang có</li>
+<li><strong>Fail-safe</strong>: storage (S3/Blob) có độ bền 11 năm (11 nine's durability), không phụ thuộc compute</li>
+</ul>
+
+<h2 id="t8-2">2. ⭐ Ba kiến trúc so sánh</h2>
+
+<div class="tbl-wrap"><table>
+<tr><th>Kiến trúc</th><th>Storage</th><th>Compute</th><th>Ưu điểm</th><th>Nhược điểm</th><th>Ví dụ</th></tr>
+<tr><td><strong>Shared-disk</strong></td><td>1 storage dùng chung qua SAN/NAS</td><td>Nhiều compute node, mỗi node có CPU + memory</td><td>Quản lý đơn giản, backup dễ, consistent</td><td>I/O qua mạng chậm, storage là bottleneck</td><td>Oracle RAC, SQL Server AlwaysOn</td></tr>
+<tr><td><strong>Shared-nothing (MPP)</strong></td><td>Mỗi node có đĩa riêng (DAS)</td><td>Compute gắn chặt với storage trên node đó</td><td>Scale tốt cho partitioned data, throughput cao</td><td>Reshuffling khi thêm node, storage không share được</td><td>Teradata, Redshift, Exasol</td></tr>
+<tr><td><strong>Shared-data</strong></td><td>1 storage trung tâm (object store)</td><td>Nhiều compute cluster độc lập</td><td>Scale độc lập, zero-copy, multi-engine</td><td>Network latency cho I/O, cần cache hiệu quả</td><td>Snowflake, BigQuery, Redshift Spectrum</td></tr>
+</table></div>
+
+<h3>Deep dive: Tại sao Snowflake chọn Shared-data?</h3>
+<p>Snowflake phân tích thấy rằng <strong>network bandwidth giữa compute và object storage đủ nhanh</strong> (hiện nay 100 Gbps, Snowflake dùng proprietary protocol), trong khi <strong>việc tách storage-compute mở ra quá nhiều lợi ích operational</strong>: auto-suspend/resume, multi-cluster, instant clone, secure sharing.</p>
+
+<h3>Trade-off cần hiểu</h3>
+<div class="box warn"><span class="t">Caveat quan trọng</span><p>Shared-data phù hợp cho <strong>analytic workloads</strong> (batch queries, ELT, data science). Cho <strong>high-frequency point lookups</strong> (single-row reads, sub-second latency), local SSD storage (shared-nothing) vẫn thắng. Đó là lý do Snowflake có <em>Hybrid Tables</em> (2023) để hybrid giữa two worlds.</p></div>
+
+<h2 id="t8-3">3. Lưu trữ cột: lý thuyết I/O &amp; nén</h2>
+<p>Analytics queries thường scan nhiều dòng nhưng chỉ vài cột. <strong>Lưu trữ theo cột</strong> (columnar storage) nén và đọc chỉ cột cần, giảm I/O 10-100x.</p>
+
+<h3>Tại sao columnar tốt cho analytics?</h3>
+<ul>
+<li><strong>Column-wise compression</strong>: mỗi cột có uniform data type, compress tốt hơn row-wise (dictionary encoding, RLE, bit packing)</li>
+<li><strong>Column projection</strong>: query <code class="inline">SELECT name, amount FROM orders</code> chỉ đọc 2 cột, bỏ qua 48 cột khác</li>
+<li><strong>Vectorized execution</strong>: xử lý batch 1000-10000 rows cùng lúc với SIMD instructions</li>
+</ul>
+
+<h3>Các encoding types phổ biến</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Encoding</th><th>Hoạt động khi nào</th><th>Compression ratio</th><th>Ví dụ</th></tr>
+<tr><td><strong>Dictionary</strong></td><td>Low cardinality (ít distinct values)</td><td>10-100x</td><td>country_code (200 values), status (5 values)</td></tr>
+<tr><td><strong>RLE</strong></td><td>Sequential duplicates</td><td>5-20x</td><td>date, category, region</td></tr>
+<tr><td><strong>Delta</strong></td><td>Ordered numeric sequences</td><td>3-10x</td><td>id, timestamp, sequence</td></tr>
+<tr><td><strong>ZSTD</strong></td><td>High cardinality, random data</td><td>2-5x</td><td>TEXT, free-form fields</td></tr>
+<tr><td><strong>Bit-pack</strong></td><td>Booleans, tiny integers</td><td>8x cho boolean</td><td>is_active, flags</td></tr>
+</table></div>
+
+<h3>Columnar trong Snowflake vs Delta</h3>
+<p><strong>Snowflake</strong>: dùng proprietary columnar format (micro-partitions là 16MB compressed blocks chứa ~50-500 rows theo columnar). <strong>Delta/Iceberg</strong>: Parquet files (columnar Apache project), mỗi file thường 128MB-1GB.</p>
+
+<div class="box note"><span class="t">Best practice</span><p>Với Snowflake: không cần quản lý partition manually — automatic clustering xử lý. Với Delta: chọn partition columns cẩn thận (tránh high cardinality như timestamp nguyên vì tạo quá nhiều files), dùng ZORDER cho frequently filtered columns.</p></div>
+
+<h2 id="t8-4">4. MPP &amp; song song hoá</h2>
+<p><strong>MPP (Massively Parallel Processing)</strong> chia query thành nhiều task chạy song song trên nhiều node. Định luật Amdahl: speedup tối đa bị giới hạn bởi phần không thể song song hoá.</p>
+
+<h3>Định luật Amdahl visualized</h3>
+<p>Nếu 90% công việc có thể song song hoá và 10% phải sequential:<br>
+- 1 node: 100% work<br>
+- 10 nodes song song: 10% + 90%/10 = 19% thời gian → <strong>5.2x speedup</strong><br>
+- 100 nodes: 10% + 90%/100 = 10.9% → <strong>9.2x speedup</strong></p>
+<p>Kết luận: thêm node vô hạn không đạt được tuyến tính. Thường 16-64 nodes là sweet spot cho hầu hết workloads.</p>
+
+<h3>Shuffle: kẻ thù không thể tránh</h3>
+<p><strong>Shuffle</strong> là tái phân phối data giữa các node khi data cần ở node khác để xử lý. Xảy ra khi:</p>
+<ul>
+<li><strong>Join</strong>: rows với cùng join key phải đến cùng node (hash join)</li>
+<li><strong>Group By</strong>: rows với cùng group key phải đến cùng node</li>
+<li><strong>Distinct</strong>: deduplication cần shuffle để collect duplicates</li>
+<li><strong>Window functions</strong>: partition by columns cần shuffle</li>
+</ul>
+
+<h3>Types of join strategies</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Strategy</th><th>Khi nào dùng</th><th>Shuffle?</th><th>Trade-off</th></tr>
+<tr><td><strong>Broadcast</strong></td><td>1 bảng nhỏ (&lt;10MB)</td><td>Không</td><td>Copy bảng nhỏ tới mọi node</td></tr>
+<tr><td><strong>Hash</strong></td><td>Large-large join</td><td>Có (key-based)</td><td>Cân bằng load tốt</td></tr>
+<tr><td><strong>Sort-merge</strong></td><td>Range predicates, pre-sorted</td><td>Có (range)</td><td>Ít shuffle nếu data đã sorted</td></tr>
+<tr><td><strong>Loop</strong></td><td>Small tables, legacy</td><td>Không</td><td>O(n*m), chỉ dùng khi n < 1000</td></tr>
+</table></div>
+
+<h3>Tuning tips cho shuffle</h3>
+<ul>
+<li>Filter data trước khi join (reduce shuffle volume)</li>
+<li>Broadcast small dimension tables thay vì shuffle cả hai</li>
+<li>Join trên partition keys để tránh shuffle</li>
+<li>Skewed keys (hot keys) gây ra个别 node overloaded — dùng salted keys</li>
+</ul>
+
+<h2 id="t8-5">5. Tính co giãn &amp; kinh tế học per-second</h2>
+<p>Cloud cho phép scale compute <em>theo giây</em>: bật khi cần, tắt khi rảnh. Điều này thay đổi mô hình kinh tế: không mua server dư capacity cho peak.</p>
+
+<h3>Traditional CapEx vs Cloud OpEx</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Aspect</th><th>On-prem / CapEx</th><th>Cloud / OpEx</th></tr>
+<tr><td>Capacity planning</td><td>Dự báo 3-5 năm, mua dư 30-50%</td><td>Scale real-time, trả đúng nhu cầu</td></tr>
+<tr><td>Time to provision</td><td>6-18 tháng (mua, setup, deploy)</td><td>30 giây - 5 phút</td></tr>
+<tr><td>Cost model</td><td>Amortized capex + opex cố định</td><td>Per-second/credit consumption</td></tr>
+<tr><td>Peak handling</td><td>Over-provision hoặc batch processing đêm</td><td>Auto-scale hoặc serverless</td></tr>
+<tr><td>Idle cost</td><td>100% — server vẫn chạy 24/7</td><td>0% nếu auto-suspend</td></tr>
+</table></div>
+
+<h3>Serverless vs Provisioned: khi nào?</h3>
+<p><strong>Serverless</strong> (Snowflake, BigQuery): trả theo bytes scanned hoặc compute seconds — tốt cho unpredictable workloads, occasional queries, dev/test.</p>
+<p><strong>Provisioned</strong> (Redshift RA3, Databricks): trả theo cluster uptime — tốt cho predictable, high-volume, steady-state workloads.</p>
+
+<h3>Right-sizing: UP vs OUT</h3>
+<p><strong>Scale UP</strong>: tăng power (CPU/memory) của mỗi node. Tốt cho single-query latency (data warehouse dashboards, heavy analytics).</p>
+<p><strong>Scale OUT</strong>: tăng number of nodes. Tốt cho concurrency (nhiều users/query đồng thời), better parallelism.</p>
+
+<h2 id="t8-6">6. ⭐ Bất biến + metadata: nguyên lý nền tảng</h2>
+<p>Nguyên lý thống nhất mọi tính năng kỳ diệu: <strong>dữ liệu bất biến + metadata phong phú</strong>. Micro-partition (Snowflake) hoặc data file (Delta/Iceberg) là bất biến — khi đổi, tạo file mới, giữ file cũ.</p>
+
+<h3>Tại sao bất biến (Immutable) là nguyên lý mạnh?</h3>
+<div class="defbox">
+<div class="term-def">Immutability = khi data được commit, nó không thay đổi. Thay đổi = tạo version mới, giữ version cũ.</div>
+</div>
+
+<p>Từ immutability, ta suy ra:</p>
+<ul>
+<li><strong>Parallel reads an toàn</strong>: reader không bao giờ thấy partial update — không cần locking</li>
+<li><strong>Replayable</strong>: replay log từ checkpoint để rebuild trạng thái</li>
+<li><strong>Accidental deletion recoverable</strong>: file cũ vẫn tồn tại ở đâu đó</li>
+<li><strong>Multi-version concurrency control (MVCC)</strong>: reader và writer không conflict</li>
+</ul>
+
+<h3>Immutability trong thực tế</h3>
+
+<div class="tbl-wrap"><table>
+<tr><th>Hệ thống</th><th>Đơn vị bất biến</th><th>Metadata tracking</th><th>Retention</th></tr>
+<tr><td>Snowflake</td><td>Micro-partition (16MB compressed)</td><td>PSF (Persistent Service Framework)</td><td>Time Travel 0-90 days</td></tr>
+<tr><td>Delta Lake</td><td>Parquet file + commit in _delta_log</td><td>Transaction log (JSON actions)</td><td>Vacuum retention configurable</td></tr>
+<tr><td>Iceberg</td><td>Data files + manifest</td><td>Manifest + snapshot metadata</td><td>Snapshot expiry configurable</td></tr>
+<tr><td>BigQuery</td><td>Table snapshots</td><td>Internal metadata store</td><td>Automatic 7 days, configurable</td></tr>
+</table></div>
+
+<h3>Pruning: cách metadata enable performance</h3>
+<p><strong>Partition pruning</strong>: metadata chứa min/max values của mỗi partition/file. Query <code class="inline">WHERE date = '2024-01-15'</code> → đọc metadata → skip 364 partitions không khớp → chỉ đọc 1 partition.</p>
+
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Xem pruning effectiveness</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Snowflake: kiểm tra partitions scanned</span>
+<span class="cmd">SELECT * FROM table(result_scan(last_query_id())) LIMIT 1;</span>
+<span class="cmd">EXPLAIN SELECT * FROM orders WHERE order_date = '2024-01-15';</span>
+<span class="out">-> TableScan [orders] — partitions scanned: 1 of 365</span>
+</div>
+</div>
+
+<h3>Time Travel: immutability + retention</h3>
+<p>Bởi vì file cũ không bị xoá ngay, và metadata tracking tất cả versions, ta có thể đọc data tại thời điểm trong quá khứ.</p>
+
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Time Travel examples</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Đọc data 2 giờ trước</span>
+<span class="cmd">SELECT * FROM orders AT(OFFSET => -3600);</span>
+<span class="cmd">-- Đọc data tại thời điểm cụ thể</span>
+<span class="cmd">SELECT * FROM orders AT(TIMESTAMP => '2024-01-15 10:00:00');</span>
+<span class="cmd">-- Đọc data version cụ thể</span>
+<span class="cmd">SELECT * FROM orders AT(VERSION => 42);</span>
+</div>
+</div>
+
+<h3>CDC Incremental: immutability = changelog tự nhiên</h3>
+<p>Thay vì scan toàn bộ bảng để tìm thay đổi, ta chỉ cần đọc file mới được tạo:</p>
+<ul>
+<li>CDC source → tạo append-only event log</li>
+<li>Databricks Auto Loader → nhận diện new files, ignore existing</li>
+<li>Snowflake Streams → tracking changes tự động</li>
+<li>Debezium → captureDB changes → Kafka → downstream</li>
+</ul>
+
+<h2 id="t8-7">7. Khi nào dùng DW vs Lakehouse?</h2>
+
+<div class="tbl-wrap"><table>
+<tr><th>Criteria</th><th>Data Warehouse</th><th>Data Lakehouse</th></tr>
+<tr><td><strong>Primary workload</strong></td><td>BI, reporting, ad-hoc SQL</td><td>ML/AI, streaming, data science</td></tr>
+<tr><td><strong>Data types</strong></td><td>Structured only</td><td>Structured + semi-structured + unstructured</td></tr>
+<tr><td><strong>ACID compliance</strong></td><td>Native</td><td>Via Delta/Iceberg (optional)</td></tr>
+<tr><td><strong>Update/Delete</strong></td><td>Native DML</td><td>Supported (với Delta/Iceberg)</td></tr>
+<tr><td><strong>Schema</strong></td><td>Enforced at write</td><td>Schema on read hoặc enforced</td></tr>
+<tr><td><strong>Cost model</strong></td><td>Per-query hoặc provisioned</td><td>Storage cheap, compute per-job</td></tr>
+<tr><td><strong>Latency</strong></td><td>Sub-second với caching</td><td>Minutes to hours (batch) hoặc real-time via streaming</td></tr>
+<tr><td><strong>Use case example</strong></td><td>Finance dashboards, regulatory reporting</td><td>ML feature store, log analytics, IoT</td></tr>
+</table></div>
+
+<h3>Modern pattern: DW + Lakehouse hybrid</h3>
+<p>Ngày nay nhiều organization dùng cả hai: <strong>Lakehouse cho raw data và ML</strong>, <strong>DW cho curated business metrics</strong>. Tool: Snowflake for DW + Delta tables for lakehouse in Databricks.</p>
+
+<h2 id="t8-8">8. ⭐ Cost model: compute-on-demand vs reserved</h2>
+
+<h3>Snowflake Credit Model chi tiết</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Warehouse Size</th><th>Credits/second</th><th>Credits/hour</th><th>Nodes</th></tr>
+<tr><td>X-Small</td><td>1/60</td><td>1</td><td>1</td></tr>
+<tr><td>Small</td><td>1/30</td><td>2</td><td>2</td></tr>
+<tr><td>Medium</td><td>1/15</td><td>4</td><td>4</td></tr>
+<tr><td>Large</td><td>1/7.5</td><td>8</td><td>8</td></tr>
+<tr><td>X-Large</td><td>1/3.75</td><td>16</td><td>16</td></tr>
+<tr><td>2X-Large</td><td>1/1.875</td><td>32</td><td>32</td></tr>
+<tr><td>3X-Large</td><td>1/0.9375</td><td>64</td><td>64</td></tr>
+<tr><td>4X-Large</td><td>1/0.46875</td><td>128</td><td>128</td></tr>
+</table></div>
+
+<h3>Databricks DBU Model</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Workload</th><th>DBU/hour (approx)</th><th>Instance cost factor</th></tr>
+<tr><td>All-Purpose (Interactive)</td><td>Higher</td><td>2-4x</td></tr>
+<tr><td>Job Cluster</td><td>Medium</td><td>1x</td></tr>
+<tr><td>SQL Warehouse</td><td>Medium</td><td>1-2x</td></tr>
+<tr><td>Serverless</td><td>Highest</td><td>Managed, auto-scale</td></tr>
+</table></div>
+
+<h3>Cost optimization checklist</h3>
+<div class="card">
+<ul style="font-size:13px">
+<li>□ Auto-suspend ≤ 60s cho VWH ít dùng (dev, ad-hoc)</li>
+<li>□ Auto-suspend 300-600s cho dashboard/query VWH</li>
+<li>□ Không dùng ACCOUNTADMIN cho production jobs</li>
+<li>□ Right-size: UP (power) cho single-query, OUT (multi-cluster) cho concurrency</li>
+<li>□ Resource Monitor với alert 80%, action 100%</li>
+<li>□ Use result cache (free in Snowflake)</li>
+<li>□ Partition pruning: cluster by frequently filtered columns</li>
+<li>□ Avoid SELECT * — chỉ đọc cột cần</li>
+<li>□ Batch micro-batches thay vì continuous streaming</li>
+</ul>
+</div>
+
+<div class="box note"><span class="t">Điểm chốt</span><p>Lý thuyết nền tảng: <strong>tách storage–compute</strong> → scale độc lập, zero-copy, multi-engine; <strong>lưu trữ cột</strong> → giảm I/O 10-100x; <strong>MPP</strong> → song song hoá với Amdahl limit; <strong>bất biến + metadata</strong> → Pruning, Time Travel, CDC incremental đều suy ra từ nguyên lý này.</p></div>
+</section>
+
+<section class="panel deep" id="t9">
+<div class="lead">Chương 9 — Snowflake Internals</div>
+<h1>Kiến trúc <span class="hl">nội bộ</span> Snowflake</h1>
+<p class="intro-p">Sâu hơn kiến trúc ba lớp: metadata store, query optimizer, Dynamic Tables, Cortex (AI/ML), và Secure Data Sharing. Hiểu internals giúp bạn debug performance issues và optimize cost.</p>
+<div class="toc">
+<a href="#t9-1">› 1. Metadata Store (PSF) — nguồn sức mạnh</a>
+<a href="#t9-2">› 2. Query Optimizer &amp; EXPLAIN</a>
+<a href="#t9-3">› 3. Transaction Manager &amp; ACID</a>
+<a href="#t9-4">› 4. ⭐ Dynamic Tables</a>
+<a href="#t9-5">› 5. Snowflake Cortex (AI/ML)</a>
+<a href="#t9-6">› 6. Secure Data Sharing</a>
+<a href="#t9-7">› 7. Caching layers</a>
+<a href="#t9-8">› 8. Query execution flow chi tiết</a>
+</div>
+
+<h2 id="t9-1">1. Metadata Store (PSF)</h2>
+<p>Cloud Services layer sử dụng <strong>metadata store</strong> (PSF - Persistent Service Framework) lưu trữ metadata về mọi đối tượng: bảng, cột, micro-partition, thống kê, quyền, lịch sử query. Đây là "bộ não" của Snowflake.</p>
+
+<h3>Tại sao metadata là game-changer?</h3>
+<ul>
+<li><strong>Metadata caching</strong>: khi query chạy, metadata được cache ở nhiều levels (query result cache, warehouse local cache, metadata service)</li>
+<li><strong>Zero-copy operations</strong>: CLONE, CREATE TABLE ... LIKE không copy data, chỉ metadata</li>
+<li><strong>Automatic optimization</strong>: optimizer biết distribution của data để chọn join strategy</li>
+</ul>
+
+<h3>Các loại metadata được track</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Metadata</th><th>Nội dung</th><th>Dùng để</th></tr>
+<tr><td>Min/Max values</td><td>Min, max của mỗi cột trong partition</td><td>Partition pruning</td></tr>
+<tr><td>Null count</td><td>Số null values</td><td>Query optimization</td></tr>
+<tr><td>Distinct count</td><td>Ước tính distinct values</td><td>Cardinality estimation</td></tr>
+<tr><td>Micro-partition ID</td><td>Location, size, status</td><td>Data access</td></tr>
+<tr><td>Table statistics</td><td>Row count, bytes, last DML</td><td>Query planning</td></tr>
+<tr><td>Access control</td><td>Roles, privileges</td><td>Authorization</td></tr>
+</table></div>
+
+<h3>Xem metadata trong practice</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Metadata queries</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Xem clustering information (metadata về partition distribution)</span>
+<span class="cmd">SELECT SYSTEM$CLUSTERING_INFORMATION('prod', 'orders', '(region, order_date)');</span>
+<span class="cmd">-- Xem table statistics</span>
+<span class="cmd">SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.TABLE_STORAGE_METRICS WHERE table_name = 'ORDERS';</span>
+<span class="cmd">-- Xem partition pruning trong query plan</span>
+<span class="cmd">EXPLAIN SELECT * FROM orders WHERE order_date = '2024-01-15';</span>
+</div>
+</div>
+
+<h2 id="t9-2">2. Query Optimizer &amp; EXPLAIN</h2>
+<p>Snowflake dùng <strong>cost-based optimizer (CBO)</strong> dựa vào metadata để chọn plan tốt nhất. Không có user-tuned hints như Oracle.</p>
+
+<h3>Các loại join strategy tự động</h3>
+<ul>
+<li><strong>Broadcast hash join</strong>: khi 1 bảng < 10MB sau filter → broadcast tới mọi node</li>
+<li><strong>Shuffle hash join</strong>: khi cả 2 bảng lớn → hash theo join key và shuffle</li>
+<li><strong>Sort-merge join</strong>: khi inputs pre-sorted theo join key</li>
+<li><strong>Coprocessor</strong>: aggregate computation pushed down tới storage nodes</li>
+</ul>
+
+<h3>Xem và interpret EXPLAIN output</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — EXPLAIN để xem execution plan</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">EXPLAIN USING TEXT</span>
+<span class="cmd">SELECT o.order_id, c.name, SUM(o.amount) as total</span>
+<span class="cmd">FROM fct_orders o</span>
+<span class="cmd">JOIN dim_customer c ON o.customer_id = c.id</span>
+<span class="cmd">WHERE o.order_date >= '2024-01-01'</span>
+<span class="cmd">GROUP BY o.order_id, c.name;</span>
+<span class="out">Singleton Scan [fct_orders] — partition pruned, only 1 partition</span>
+<span class="out">Filter [c] — pushed predicate: order_date >= 2024-01-01</span>
+<span class="out">Hash Join [dim_customer] — broadcast join (small table)</span>
+<span class="out">Aggregate — group by pushed to storage</span>
+</div>
+</div>
+
+<h3>Query Profile: GUI visualization</h3>
+<p>Ngoài EXPLAIN text, Snowflake cung cấp <strong>Query Profile</strong> trong UI — click vào query ID → thấy visual profile với:</p>
+<ul>
+<li>Operator tree với thời gian mỗi operator</li>
+<li>Spilling warnings (memory không đủ)</li>
+<li>Pruning statistics</li>
+<li>Remote I/O vs local I/O breakdown</li>
+</ul>
+
+<h2 id="t9-3">3. Transaction Manager &amp; ACID</h2>
+<p>Snowflake đảm bảo <strong>ACID</strong> cho mọi DML. Isolation level mặc định: Default (Serializable cho DDL, snapshot cho DML).</p>
+
+<h3>ACID trong Snowflake</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Property</th><th>Implementation</th><th>Notes</th></tr>
+<tr><td><strong>Atomicity</strong></td><td>Transaction boundary, all-or-nothing</td><td>COMMIT hoặc ROLLBACK</td></tr>
+<tr><td><strong>Consistency</strong></td><td>Schema validation, constraints</td><td>NOT NULL, PK, FK enforced</td></tr>
+<tr><td><strong>Isolation</strong></td><td>Snapshot isolation (default)</td><td>Readers không block writers, không thấy uncommitted</td></tr>
+<tr><td><strong>Durability</strong></td><td>Storage = object store có durability 99.999999999%</td><td>Tự động, không cần user action</td></tr>
+</table></div>
+
+<h3>Transaction isolation levels</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Isolation levels</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Default: snapshot isolation cho DML</span>
+<span class="cmd">BEGIN TRANSACTION;</span>
+<span class="cmd">INSERT INTO t VALUES (1); -- session 1</span>
+<span class="cmd">-- session 2 chạy: SELECT * FROM t -- không thấy row mới</span>
+<span class="cmd">COMMIT;</span>
+<span class="cmd">-- session 2 chạy: SELECT * FROM t -- giờ thấy row mới</span>
+</div>
+</div>
+
+<h2 id="t9-4">4. ⭐ Dynamic Tables</h2>
+<p><strong>Dynamic Tables</strong> là cách modern dựng pipeline ELT: bạn <em>khai báo</em> kết quả mong muốn, Snowflake tự xác định phụ thuộc, lên lịch làm mới. Thay thế cho Streams + Tasks trong nhiều use cases.</p>
+
+<h3>Dynamic Tables vs Streams + Tasks</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Aspect</th><th>Dynamic Tables</th><th>Streams + Tasks</th></tr>
+<tr><td>Model</td><td>Declarative (what, not how)</td><td>Imperative (step-by-step)</td></tr>
+<tr><td>Dependency</td><td>Auto-detected từ SELECT</td><td>Manual CREATE TASK ... AFTER</td></tr>
+<tr><td>Scheduling</td><td>Declarative lag (e.g., 5 min)</td><td>Cron-based hoặc event-based</td></tr>
+<tr><td>Failure handling</td><td>Automatic retry, full refresh option</td><td>Manual error handling</td></tr>
+<tr><td>Observability</td><td>Native monitoring dashboard</td><td>Task history view</td></tr>
+</table></div>
+
+<h3>Ví dụ đầy đủ Dynamic Tables pipeline</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Dynamic Tables full pipeline</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Tier 1: Bronze - ingest raw data</span>
+<span class="cmd">CREATE OR REPLACE DYNAMIC TABLE dt_bronze_orders</span>
+<span class="cmd">  TARGET_LAG = '5 minutes'</span>
+<span class="cmd">  WAREHOUSE = wh_ingest</span>
+<span class="cmd">AS</span>
+<span class="cmd">SELECT * FROM raw_orders;</span>
+<span class="cmd">-- Tier 2: Silver - cleaned &amp; deduplicated</span>
+<span class="cmd">CREATE OR REPLACE DYNAMIC TABLE dt_silver_orders</span>
+<span class="cmd">  TARGET_LAG = '15 minutes'</span>
+<span class="cmd">  WAREHOUSE = wh_transform</span>
+<span class="cmd">AS</span>
+<span class="cmd">SELECT DISTINCT order_id, customer_id, amount, order_date</span>
+<span class="cmd">FROM dt_bronze_orders</span>
+<span class="cmd">WHERE amount > 0 AND amount IS NOT NULL;</span>
+<span class="cmd">-- Tier 3: Gold - aggregated metrics</span>
+<span class="cmd">CREATE OR REPLACE DYNAMIC TABLE dt_gold_daily_metrics</span>
+<span class="cmd">  TARGET_LAG = '1 hour'</span>
+<span class="cmd">  WAREHOUSE = wh_analytics</span>
+<span class="cmd">AS</span>
+<span class="cmd">SELECT</span>
+<span class="cmd">  DATE(order_date) as metric_date,</span>
+<span class="cmd">  COUNT(*) as order_count,</span>
+<span class="cmd">  SUM(amount) as total_revenue,</span>
+<span class="cmd">  COUNT(DISTINCT customer_id) as unique_customers</span>
+<span class="cmd">FROM dt_silver_orders</span>
+<span class="cmd">GROUP BY DATE(order_date);</span>
+</div>
+</div>
+<p>Lưu ý: incremental refresh là việc Snowflake tự làm dựa trên change tracking — bạn <strong>không</strong> tự viết điều kiện <code class="inline">&gt; MAX(...)</code> trong định nghĩa dynamic table.</p>
+
+<h3>Dependency graph</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — View dependency graph</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Xem trạng thái tất cả DTs (target lag, warehouse, scheduling state)</span>
+<span class="cmd">SHOW DYNAMIC TABLES;</span>
+<span class="cmd">-- Lịch sử refresh (table function trong INFORMATION_SCHEMA)</span>
+<span class="cmd">SELECT name, state, refresh_start_time, refresh_end_time</span>
+<span class="cmd">FROM TABLE(INFORMATION_SCHEMA.DYNAMIC_TABLE_REFRESH_HISTORY())</span>
+<span class="cmd">ORDER BY refresh_start_time DESC;</span>
+</div>
+</div>
+
+<h2 id="t9-5">5. Snowflake Cortex (AI/ML)</h2>
+<p><strong>Cortex</strong> đưa LLM vào Snowflake: phân tích sentiment, dịch ngôn ngữ tự nhiên thành SQL (Cortex Analyst), embeddings, và managed ML models.</p>
+
+<h3>Cortex capabilities</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Function</th><th>Mô tả</th><th>Use case</th></tr>
+<tr><td>CORTEX COMPLETE</td><td>LLM inference (Claude, Llama, Mistral)</td><td>Text generation, classification</td></tr>
+<tr><td>CORTEX ANALYST</td><td>Natural language → SQL (semantic model)</td><td>Self-service BI</td></tr>
+<tr><td>CORTEX EMBEDDINGS</td><td>Text → vector embeddings</td><td>Semantic search, RAG</td></tr>
+<tr><td>CORTEX CLASSIFY</td><td>Zero/few-shot classification</td><td>Sentiment, categorization</td></tr>
+<tr><td>CORTEX TRANSLATE</td><td>Machine translation</td><td>Multi-language support</td></tr>
+</table></div>
+
+<h3>Cortex Analyst: NL → SQL</h3>
+<p>Cortex Analyst dùng <strong>semantic model là file YAML đặt trên stage</strong> và được gọi qua <strong>REST API</strong> — không phải DDL hay hàm SQL.</p>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">yaml — sales_model.yaml (upload lên stage)</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">name: sales_model</span>
+<span class="cmd">tables:</span>
+<span class="cmd">  - name: orders</span>
+<span class="cmd">    base_table:</span>
+<span class="cmd">      database: sales_db</span>
+<span class="cmd">      schema: public</span>
+<span class="cmd">      table: orders</span>
+<span class="cmd">    dimensions:</span>
+<span class="cmd">      - name: region</span>
+<span class="cmd">        expr: region</span>
+<span class="cmd">      - name: order_date</span>
+<span class="cmd">        expr: order_date</span>
+<span class="cmd">    measures:</span>
+<span class="cmd">      - name: revenue</span>
+<span class="cmd">        expr: amount</span>
+<span class="cmd">        default_aggregation: sum</span>
+<span class="cmd">      - name: order_count</span>
+<span class="cmd">        expr: order_id</span>
+<span class="cmd">        default_aggregation: count</span>
+</div>
+</div>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">http — gọi Cortex Analyst qua REST API</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">POST /api/v2/cortex/analyst/message</span>
+<span class="cmd">{"messages":[{"role":"user","content":[{"type":"text",</span>
+<span class="cmd cont">   "text":"What was the revenue by region for Q4 2024?"}]}],</span>
+<span class="cmd cont"> "semantic_model_file":"@my_stage/sales_model.yaml"}</span>
+</div>
+</div>
+
+<h3>Cortex COMPLETE: LLM inference</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — LLM inference examples</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Sentiment analysis</span>
+<span class="cmd">SELECT</span>
+<span class="cmd">  review_id,</span>
+<span class="cmd">  SNOWFLAKE.CORTEX.COMPLETE(</span>
+<span class="cmd">    'claude-3-5-sonnet',  -- (tên model tại thời điểm viết — xem danh sách model Cortex hiện hành)</span>
+<span class="cmd">    CONCAT('Classify sentiment (positive/negative/neutral): ', review_text)</span>
+<span class="cmd">  ) as sentiment</span>
+<span class="cmd">FROM customer_reviews;</span>
+<span class="cmd">-- Text summarization</span>
+<span class="cmd">SELECT SNOWFLAKE.CORTEX.COMPLETE('llama3.3-70b',</span>
+<span class="cmd">  CONCAT('Summarize in 3 bullets: ', article_text))</span>
+<span class="cmd">FROM articles;</span>
+</div>
+</div>
+
+<h2 id="t9-6">6. Secure Data Sharing</h2>
+<p>Chia sẻ dữ liệu an toàn mà không cần copy — người nhận đọc trực tiếp từ share của bạn. Không tốn storage cho bên nhận.</p>
+
+<h3>Sharing architecture</h3>
+<div class="defbox">
+<div class="term-def">Outbound Share: bạn tạo share từ database của mình → provider account</div>
+<div class="term-def">Inbound Share: bạn tạo database từ share của người khác → consumer account</div>
+</div>
+
+<h3>Types of sharing</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Type</th><th>Mô tả</th><th>Provider cost</th><th>Consumer access</th></tr>
+<tr><td>Direct share</td><td>Share trực tiếp tới account khác</td><td>Storage + compute</td><td>Read-only database</td></tr>
+<tr><td>Listing (Marketplace)</td><td>Share qua Snowflake Marketplace</td><td>Storage + compute</td><td>3rd party discover &amp; subscribe</td></tr>
+<tr><td>Private exchange</td><td>Listing riêng cho selected accounts</td><td>Storage + compute</td><td>Whitelisted accounts</td></tr>
+</table></div>
+
+<h3>Ví dụ đầy đủ</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Secure sharing setup</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Provider: Tạo share</span>
+<span class="cmd">CREATE SHARE share_analytics;</span>
+<span class="cmd">-- Grant objects vào share</span>
+<span class="cmd">GRANT USAGE ON DATABASE analytics_db TO SHARE share_analytics;</span>
+<span class="cmd">GRANT SELECT ON analytics_db.public.monthly_revenue TO SHARE share_analytics;</span>
+<span class="cmd">GRANT SELECT ON analytics_db.public.customer_summary TO SHARE share_analytics;</span>
+<span class="cmd">-- Grant cho specific accounts</span>
+<span class="cmd">ALTER SHARE share_analytics ADD ACCOUNTS = (</span>
+<span class="cmd">  'org_name.account1',</span>
+<span class="cmd">  'org_name.account2'</span>
+<span class="cmd">);</span>
+<span class="cmd">-- Consumer: Tạo database từ share</span>
+<span class="cmd">CREATE DATABASE partner_revenue FROM SHARE provider_org.share_analytics;</span>
+</div>
+</div>
+
+<h3>Row &amp; Column access trong shares</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Row-level security in shares</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Provider: Tạo view với row filter trước khi share</span>
+<span class="cmd">CREATE VIEW shared_revenue AS</span>
+<span class="cmd">SELECT region, amount</span>
+<span class="cmd">FROM revenue</span>
+<span class="cmd">WHERE region IN (</span>
+<span class="cmd">  SELECT allowed_region FROM sharing_config</span>
+<span class="cmd">  WHERE consumer_account = CURRENT_ACCOUNT()</span>
+<span class="cmd">);</span>
+<span class="cmd">GRANT SELECT ON shared_revenue TO SHARE share_analytics;</span>
+</div>
+</div>
+
+<h2 id="9-7">7. Caching layers</h2>
+<p>Snowflake có nhiều caching layers để optimize query performance:</p>
+
+<div class="tbl-wrap"><table>
+<tr><th>Cache</th><th>Level</th><th>Scope</th><th>TTL</th><th>Invalidation</th></tr>
+<tr><td>Result cache</td><td>Global</td><td>Same SQL text</td><td>24 hours</td><td>Table DDL/DML</td></tr>
+<tr><td>Warehouse cache</td><td>Per warehouse</td><td>Micro-partitions</td><td>While running</td><td>Suspend/resume</td></tr>
+<tr><td>Metadata cache</td><td>Cloud Services</td><td>Table stats</td><td>Variable</td><td>Auto-refresh</td></tr>
+<tr><td>Local disk cache</td><td>Per node</td><td>Data blocks</td><td>While running</td><td>Node failure</td></tr>
+</table></div>
+
+<h3>Force fresh result (bypass cache)</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Cache management</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Bypass result cache</span>
+<span class="cmd">SELECT * FROM orders WHERE amount > 1000 LIMIT 100;</span>
+<span class="cmd">ALTER SESSION SET USE_CACHED_RESULT = FALSE;</span>
+<span class="cmd">SELECT * FROM orders WHERE amount > 1000 LIMIT 100; -- fresh</span>
+<span class="cmd">-- Check cache hit</span>
+<span class="cmd">SELECT query_id, bytes_spilled_to_local_storage,</span>
+<span class="cmd">  result_cache_hit FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY;</span>
+</div>
+</div>
+
+<h2 id="t9-8">8. Query execution flow chi tiết</h2>
+<p>Hiểu query execution flow giúp debug performance issues:</p>
+
+<ol style="font-size:14px">
+<li><strong>Parse &amp; Resolve</strong>: Parse SQL, resolve object names (database.schema.table)</li>
+<li><strong>Bind</strong>: Type checking, implicit conversions, security validation</li>
+<li><strong>Optimize</strong>: CBO tạo execution plan dựa trên metadata và statistics</li>
+<li><strong>Compile</strong>: Plan được compile thành executable code (gửi tới warehouse)</li>
+<li><strong>Execute</strong>: Virtual warehouse đọc storage, xử lý data, aggregate</li>
+<li><strong>Return</strong>: Results stream về client, cached nếu appropriate</li>
+</ol>
+
+<div class="box note"><span class="t">Điểm chốt</span><p>Snowflake Internals = <strong>metadata store</strong> (PSF) → pruning, zero-copy; <strong>CBO optimizer</strong> → auto-join strategy; <strong>Dynamic Tables</strong> → declarative ELT; <strong>Cortex</strong> → AI/ML native; <strong>Secure Share</strong> → zero-copy sharing; <strong>caching layers</strong> → result + partition + metadata.</p></div>
+</section>
+
+<section class="panel deep" id="t10">
+<div class="lead">Chương 10 — Delta &amp; Databricks Internals</div>
+<h1>Kiến trúc <span class="hl">nội bộ</span> Delta Lake &amp; Databricks</h1>
+<p class="intro-p">Sâu hơn Delta: transaction log, Z-order, Liquid Clustering, Delta UniForm, Vector Search, và Spark execution internals. Hiểu internals giúp debug và optimize Databricks workloads.</p>
+<div class="toc">
+<a href="#t10-1">› 1. ⭐ Delta Transaction Log</a>
+<a href="#t10-2">› 2. OPTIMIZE, Z-order, Compaction</a>
+<a href="#t10-3">› 3. ⭐ Liquid Clustering (2024+)</a>
+<a href="#t10-4">› 4. Delta UniForm</a>
+<a href="#t10-5">› 5. ⭐ Vector Search</a>
+<a href="#t10-6">› 6. Spark Execution Internals</a>
+<a href="#t10-7">› 7. Photon Engine</a>
+<a href="#t10-8">› 8. Unity Catalog internals</a>
+</div>
+
+<h2 id="t10-1">1. ⭐ Delta Transaction Log Mechanics</h2>
+<p>Mỗi thao tác ghi vào Delta table tạo một <strong>commit</strong> trong <code class="inline">_delta_log/</code> — file JSON chứa action (Add/Remove/Metadata/Protocol). Transaction log là nguồn sự thật cho mọi tính năng.</p>
+
+<h3>Log structure chi tiết</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">text — _delta_log/ structure</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="out">_delta_log/</span>
+<span class="out">├── 00000000000000000000.json  ← commit 0 (table created)</span>
+<span class="out">├── 00000000000000000001.json  ← commit 1 (initial data)</span>
+<span class="out">├── 00000000000000000002.json  ← commit 2 (new data added)</span>
+<span class="out">├── 00000000000000000003.json  ← commit 3 (file removed)</span>
+<span class="out">└── 0000000000000000000n.json  ← latest commit</span>
+</div>
+</div>
+
+<h3>Action types trong commit</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Action</th><th>Mô tả</th><th>Fields</th></tr>
+<tr><td><strong>add</strong></td><td>File mới được thêm</td><td>path, size, partitionValues, stats</td></tr>
+<tr><td><strong>remove</strong></td><td>File bị xoá</td><td>path, deletionTimestamp</td></tr>
+<tr><td><strong>metadata</strong></td><td>Schema hoặc table properties thay đổi</td><td>schema, partitionColumns</td></tr>
+<tr><td><strong>protocol</strong></td><td>Protocol version thay đổi</td><td>minReaderVersion, minWriterVersion</td></tr>
+<tr><td><strong>txn</strong></td><td>Streaming watermark</td><td>appId, txnId, lastUpdated</td></tr>
+</table></div>
+
+<h3>Sample commit JSON</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">json — Delta commit example</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">{"add":{"path":"part-00000-xxx.parquet","size":1024000,</span>
+<span class="cmd">"partitionValues":{"region":"US","date":"2024-01-15"},</span>
+<span class="cmd">"stats":"{"numRecords":5000,"minAmount":10,"maxAmount":9999}""}}</span>
+<span class="cmd">{"remove":{"path":"part-00001-yyy.parquet",</span>
+<span class="cmd">"deletionTimestamp":1705334400000}}</span>
+</div>
+</div>
+
+<h3>Time Travel implementation</h3>
+<p>Để đọc version cũ, Delta đọc log từ beginning tới version đó để rebuild snapshot:</p>
+<ol style="font-size:13px">
+<li>Đọc tất cả commits từ 0 tới target version</li>
+<li>Apply adds/removes theo thứ tự</li>
+<li>Result = trạng thái bảng tại thời điểm đó</li>
+</ol>
+
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">python — Time Travel in PySpark</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd"># Đọc version cụ thể</span>
+<span class="cmd">df = spark.read.format("delta").option("versionAsOf", 42).load("s3://prod/silver/orders")</span>
+<span class="cmd"># Đọc timestamp cụ thể</span>
+<span class="cmd">df = spark.read.format("delta").option("timestampAsOf", "2024-01-15").load("s3://prod/silver/orders")</span>
+<span class="cmd"># Xem lịch sử</span>
+<span class="cmd">spark.sql("DESCRIBE HISTORY delta.`s3://prod/silver/orders`").show()</span>
+</div>
+</div>
+
+<h3>Optimistic concurrency control</h3>
+<p>Delta dùng <strong>optimistic concurrency</strong>: thử commit, nếu conflict thì retry với backoff.</p>
+<ol style="font-size:13px">
+<li>Reader đọc log, biết current version</li>
+<li>Writer tạo new commit với version = current + 1</li>
+<li>Nếu commit thất bại (someone else committed first), retry</li>
+<li>Max concurrent writers = số retries × (1 + backoff)</li>
+</ol>
+
+<h2 id="t10-2">2. OPTIMIZE, Z-order, Compaction</h2>
+<p>File nhỏ là kẻ thù của performance. Delta cung cấp OPTIMIZE (gom file), ZORDER BY (sắp xếp multi-column), VACUUM (xoá file cũ).</p>
+
+<h3>Tại sao file nhỏ chậm?</h3>
+<ul>
+<li><strong>Metadata overhead</strong>: mỗi file có metadata cần parse → nhiều file = nhiều overhead</li>
+<li><strong>Memory pressure</strong>: Spark task xử lý 1 file → small files = many tasks = high scheduling overhead</li>
+<li><strong>Network hops</strong>: shuffle với nhiều small files = nhiều network roundtrips</li>
+<li><strong>HDFS/S3 overhead</strong>: each file operation = latency</li>
+</ul>
+
+<h3>OPTIMIZE command</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — OPTIMIZE với Z-order</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Gom files thành target size (default 1GB)</span>
+<span class="cmd">OPTIMIZE prod.silver.orders;</span>
+<span class="cmd">-- Với Z-order cho multi-dimensional filtering</span>
+<span class="cmd">OPTIMIZE prod.silver.orders ZORDER BY (region, order_date, customer_id);</span>
+<span class="cmd">-- Chỉ optimize partitions cần thiết</span>
+<span class="cmd">OPTIMIZE prod.silver.orders WHERE year = 2024;</span>
+</div>
+</div>
+
+<h3>Z-order: multi-dimensional co-location</h3>
+<p><strong>Z-order</strong> là space-filling curve map nhiều columns vào 1 dimension, đưa related values gần nhau trong file layout. Tốt cho queries filter trên nhiều columns đồng thời.</p>
+
+<div class="defbox">
+<div class="term-def">Trade-off Z-order</div>
+<p>Z-order tốt cho queries filter trên N columns đồng thời. Nếu query chỉ filter 1 column, sorting theo column đó (bin-packing) thường tốt hơn. Tối đa 2-3 Z-order columns.</p>
+</div>
+
+<h3>Binning vs Z-order</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Aspect</th><th>Z-order</th><th>Bin-packing (default)</th></tr>
+<tr><td>Multi-column queries</td><td>Tốt (N columns đồng thời)</td><td>Chỉ tốt cho 1 column</td></tr>
+<tr><td>Single column queries</td><td>OK</td><td>Tốt nhất</td></tr>
+<tr><td>Computation cost</td><td>Higher (curve calculation)</td><td>Low</td></tr>
+<tr><td>Rewrite size</td><td>Lớn hơn</td><td>Smaller</td></tr>
+<tr><td>Best for</td><td>ML features, analytics</td><td>Time-series, append-only</td></tr>
+</table></div>
+
+<h3>VACUUM: cleanup old files</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — VACUUM cleanup</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Xoá files cũ hơn 168 giờ (7 days)</span>
+<span class="cmd">VACUUM prod.silver.orders RETAIN 168 HOURS;</span>
+<span class="cmd">-- Dry run: xem sẽ xoá gì</span>
+<span class="cmd">VACUUM prod.silver.orders RETAIN 168 HOURS DRY RUN;</span>
+<span class="cmd">-- Disable retention check (for testing)</span>
+<span class="cmd">SET spark.databricks.delta.retentionDurationCheck.enabled = false;</span>
+</div>
+</div>
+
+<div class="box warn"><span class="t">Caveat</span><p>VACUUM xoá files không còn referenced bởi log. Nếu bạn có Time Travel retention > 7 days, đừng VACUUM với RETAIN < that value, hoặc mất ability đọc old versions.</p></div>
+
+<h2 id="t10-3">3. ⭐ Liquid Clustering (Databricks 2024+)</h2>
+<p><strong>Liquid Clustering</strong> tự điều chỉnh file layout theo workload thực tế, không cần khai báo trước. Thay thế partitioning và manual Z-order trong nhiều cases.</p>
+
+<h3>So sánh: Partitioning vs Clustering</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Aspect</th><th>Static Partitioning</th><th>Liquid Clustering</th></tr>
+<tr><td>Control</th><td>User defines partition columns</td><td>System auto-optimizes</td></tr>
+<tr><td>File count</td><td>Nhiều file mỗi partition (mỗi partition là một thư mục); partition nhỏ sinh small-file problem</td><td>Target size ~1GB</td></tr>
+<tr><td>High cardinality</td><td>Too many partitions (e.g., user_id)</td><td>OK (no partition explosion)</td></tr>
+<tr><td>Dynamic workloads</td><td>Manual re-partition needed</td><td>Auto-reclusters periodically</td></tr>
+<tr><td>Maintenance</td><td>ADD PARTITION / DROP PARTITION</td><td>Vẫn cần chạy <code class="inline">OPTIMIZE</code> định kỳ để recluster (trừ khi bật Predictive Optimization)</td></tr>
+</table></div>
+
+<h3>Ví dụ đầy đủ</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Liquid Clustering</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Tạo table với liquid clustering</span>
+<span class="cmd">CREATE TABLE prod.silver.orders (</span>
+<span class="cmd">  order_id BIGINT,</span>
+<span class="cmd">  customer_id BIGINT,</span>
+<span class="cmd">  amount DECIMAL(10,2),</span>
+<span class="cmd">  order_date DATE</span>
+<span class="cmd">) USING DELTA</span>
+<span class="cmd">CLUSTER BY (customer_id, order_date);</span>
+<span class="cmd">-- Thay đổi clustering columns (recluster async)</span>
+<span class="cmd">ALTER TABLE prod.silver.orders CLUSTER BY (region, order_date);</span>
+<span class="cmd">-- Xem clustering status</span>
+<span class="cmd">DESCRIBE DETAIL prod.silver.orders;</span>
+</div>
+</div>
+
+<h3>Khi nào dùng Liquid Clustering?</h3>
+<ul>
+<li><strong>High cardinality</strong>: customer_id, product_id, user_id (partitioning không khả thi)</li>
+<li><strong>Dynamic workloads</strong>: query patterns thay đổi theo thời gian</li>
+<li><strong>Large tables</strong>: > 1TB, frequent filter on multiple columns</li>
+<li><strong>ML feature tables</strong>: filter by entity + timestamp đồng thời</li>
+</ul>
+
+<h3>Khi nào vẫn dùng partitioning?</h3>
+<ul>
+<li><strong>Very large time-series</strong>: query only recent data, partition by date/month</li>
+<li><strong>Data governance</strong>: need separate ACL per partition</li>
+<li><strong>Incremental processing</strong>: partition = processing unit</li>
+</ul>
+
+<h2 id="t10-4">4. Delta UniForm</h2>
+<p><strong>Delta UniForm</strong> tạo thêm Iceberg metadata khi ghi, cho phép đọc từ Spark, Trino, Presto, Snowflake mà không cần thêm tools.</p>
+
+<h3>UniForm architecture</h3>
+<div class="defbox">
+<div class="term-def">UniForm = Delta table + automatic Iceberg metadata generation</div>
+<p>Khi bạn ghi vào Delta table với UniForm enabled, Delta tự động tạo Iceberg-compatible metadata files (avro format) trong thư mục <code class="inline">metadata/</code> của bảng. Engines khác đọc qua Iceberg protocol.</p>
+</div>
+
+<h3>Enable UniForm</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Enable Delta UniForm</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Tạo table với UniForm (Iceberg metadata)</span>
+<span class="cmd">CREATE TABLE prod.silver.orders USING DELTA</span>
+<span class="cmd">TBLPROPERTIES (</span>
+<span class="cmd">  'delta.universalFormat.enabledFormats' = 'iceberg'</span>
+<span class="cmd">);</span>
+<span class="cmd">-- Thêm vào existing table</span>
+<span class="cmd">ALTER TABLE prod.silver.orders</span>
+<span class="cmd">SET TBLPROPERTIES ('delta.universalFormat.enabledFormats' = 'iceberg');</span>
+</div>
+</div>
+
+<h3>Read from other engines</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Read Delta from Trino/Snowflake</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Trino: đọc Delta table như Iceberg</span>
+<span class="cmd">SELECT * FROM iceberg.prod_silver.orders;</span>
+<span class="cmd">-- Snowflake: tạo Iceberg table trỏ qua catalog integration (REST/Glue),</span>
+<span class="cmd">-- rồi query như bảng thường</span>
+<span class="cmd">CREATE ICEBERG TABLE orders</span>
+<span class="cmd">  CATALOG = my_catalog_integration</span>
+<span class="cmd">  CATALOG_TABLE_NAME = 'orders';</span>
+<span class="cmd">SELECT * FROM orders;</span>
+</div>
+</div>
+
+<h2 id="t10-5">5. ⭐ Vector Search</h2>
+<p><strong>Mosaic AI Vector Search</strong> tích hợp với Unity Catalog: lưu vector cùng bảng Delta, index sync tự động từ source table. Index được tạo và query qua <strong>Python SDK / REST API</strong> (không phải SQL DDL).</p>
+
+<h3>Vector search use cases</h3>
+<ul>
+<li><strong>Semantic search</strong>: tìm documents tương tự về nghĩa (RAG systems)</li>
+<li><strong>Recommendation</strong>: tìm items gần nhất trong embedding space</li>
+<li><strong>Anomaly detection</strong>: points far from neighbors = anomaly</li>
+<li><strong>Image similarity</strong>: embeddings từ CNN/ViT</li>
+</ul>
+
+<h3>Index types</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Index</th><th>Khi nào dùng</th><th>Recall</th><th>Build time</th><th>Memory</th></tr>
+<tr><td><strong>HNSW</strong></td><td>High recall, low latency</td><td>Very high (95%+)</td><td>Medium</td><td>High</td></tr>
+<tr><td><strong>IVF</strong></td><td>Very large datasets</td><td>High (90%+)</td><td>Fast</td><td>Medium</td></tr>
+<tr><td><strong>BRUTE_FORCE</strong></td><td>Small datasets, baseline</td><td>100%</td><td>None</td><td>None</td></tr>
+</table></div>
+
+<h3>Full example: RAG application</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql + python — Vector search full pipeline</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- 1. Tạo source Delta table với vector column (SQL)</span>
+<span class="cmd">CREATE TABLE prod.ml.document_embeddings (</span>
+<span class="cmd">  id BIGINT GENERATED ALWAYS AS IDENTITY,</span>
+<span class="cmd">  chunk_id STRING,</span>
+<span class="cmd">  content STRING,</span>
+<span class="cmd">  embedding ARRAY&lt;FLOAT&gt;,</span>
+<span class="cmd">  created_at TIMESTAMP</span>
+<span class="cmd">);</span>
+<span class="cmt">Index KHÔNG tạo bằng SQL DDL — dùng Python SDK của Mosaic AI Vector Search</span>
+<span class="cmd"># 2. Tạo delta sync index (Python)</span>
+<span class="cmd">from databricks.vector_search.client import VectorSearchClient</span>
+<span class="cmd">client = VectorSearchClient()</span>
+<span class="cmd">index = client.create_delta_sync_index(</span>
+<span class="cmd">    endpoint_name="vs_endpoint",</span>
+<span class="cmd">    index_name="prod.ml.idx_embeddings",</span>
+<span class="cmd">    source_table_name="prod.ml.document_embeddings",</span>
+<span class="cmd">    pipeline_type="TRIGGERED",</span>
+<span class="cmd">    primary_key="id",</span>
+<span class="cmd">    embedding_dimension=1536,</span>
+<span class="cmd">    embedding_vector_column="embedding")</span>
+<span class="cmd"># 3. Semantic search query (Python)</span>
+<span class="cmd">results = index.similarity_search(</span>
+<span class="cmd">    query_vector=query_embedding,</span>
+<span class="cmd">    columns=["id", "content"],</span>
+<span class="cmd">    num_results=5)</span>
+</div>
+</div>
+
+<h2 id="t10-6">6. Spark Execution Internals</h2>
+<p>Spark job chia thành <strong>stage</strong> (group tasks), mỗi stage chia thành <strong>task</strong> (chạy trên một partition). Driver điều phối, executor chạy task.</p>
+
+<h3>Execution hierarchy</h3>
+<div class="defbox">
+<div class="term-def">Job → Stage → Task</div>
+<p><strong>Job</strong>: 1 action (collect, count, write). <strong>Stage</strong>: boundary = shuffle (data phải exchange giữa partitions). <strong>Task</strong>: xử lý 1 partition trên 1 executor.</p>
+</div>
+
+<h3>Shuffle: critical boundary</h3>
+<p>Shuffle xảy ra khi data phải redistribute giữa nodes. Shuffle write = disk I/O, network; Shuffle read = disk I/O, network.</p>
+
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">text — Stage boundaries</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">Query: SELECT region, SUM(amount) FROM orders GROUP BY region</span>
+<span class="cmd">│</span>
+<span class="cmd">├── Stage 1: Read orders.parquet (one task per partition)</span>
+<span class="cmd">│   └── Map: extract region, amount</span>
+<span class="cmd">│</span>
+<span class="cmd">├── [SHUFFLE: write to disk, network to reducers]</span>
+<span class="cmd">│</span>
+<span class="cmd">├── Stage 2: Read shuffle output</span>
+<span class="cmd">│   └── Reduce: SUM by region</span>
+<span class="cmd">│</span>
+<span class="cmd">└── Stage 3: Write results (if action = write)</span>
+</div>
+</div>
+
+<h3>Partition và parallelism</h3>
+<ul>
+<li><strong>Default parallelism</strong>: = number of cores in cluster</li>
+<li><strong>Shuffle partitions</strong>: spark.sql.shuffle.partitions (default 200) — chia data cho reduce phase</li>
+<li><strong>Coalesce/Repartition</strong>: thay đổi số partitions</li>
+</ul>
+
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">python — Partition tuning</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd"># Tăng shuffle partitions cho large joins</span>
+<span class="cmd">spark.conf.set("spark.sql.shuffle.partitions", "800")</span>
+<span class="cmd"># Coalesce để giảm files sau write</span>
+<span class="cmd">df.coalesce(50).write.format("delta").save("path")</span>
+<span class="cmd"># Repartition để tăng parallelism</span>
+<span class="cmd">df.repartition(200, "region").write.format("delta").save("path")</span>
+</div>
+</div>
+
+<h2 id="t10-7">7. Photon Engine</h2>
+<p><strong>Photon</strong> là native vectorized execution engine viết bằng C++ cho Databricks, thay thế JVM-based execution cho SQL workloads.</p>
+
+<h3>Photon benefits</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Metric</th><th>JVM (Row-based)</th><th>Photon (Vectorized)</th></tr>
+<tr><td>Throughput</td><td>Baseline</td><td>3-10x faster</td></tr>
+<tr><td>Memory efficiency</td><td>Row objects</td><td>Columnar (Apache Arrow)</td></tr>
+<tr><td>CPU efficiency</td><td>One row at a time</td><td>SIMD vectorized</td></tr>
+<tr><td>Cost (DBU)</td><td>Standard</td><td>Same (serverless)</td></tr>
+</table></div>
+
+<h3>When Photon kicks in</h3>
+<p>Photon xử lý: SELECT, INSERT, UPDATE, DELETE, MERGE, CREATE TABLE AS SELECT, JOIN, aggregate, window functions.</p>
+
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Check Photon usage</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- EXPLAIN output shows if Photon used</span>
+<span class="cmd">EXPLAIN FORMATTED SELECT COUNT(*) FROM orders;</span>
+<span class="out">== Physical Plan ==</span>
+<span class="out">Count ( фотон )  ← indicates Photon used</span>
+<span class="cmd">-- Check cluster Photon status</span>
+<span class="cmd">DESCRIBE CLUSTER;</span>
+</div>
+</div>
+
+<h2 id="t10-8">8. Unity Catalog internals</h2>
+<p><strong>Unity Catalog</strong> là governance layer tập trung cho Databricks: metastore → catalog → schema → table/view/model.</p>
+
+<h3>Data lineage với Unity Catalog</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Lineage tracking</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Xem lineage của một table</span>
+<span class="cmd">SELECT * FROM system.information_schema.table_lineage</span>
+<span class="cmd">WHERE source_catalog = 'prod' AND source_schema = 'silver'</span>
+<span class="cmd">AND target_catalog = 'prod' AND target_schema = 'gold';</span>
+<span class="cmd">-- Lineage cho ML model (data → training → model)</span>
+<span class="cmd">SELECT * FROM system.information_schema.model_version_lineage</span>
+<span class="cmd">WHERE model_name = 'prod.ml.churn_model';</span>
+</div>
+</div>
+
+<div class="box note"><span class="t">Điểm chốt</span><p>Delta &amp; Databricks Internals = <strong>Delta log mechanics</strong> (add/remove/metadata actions); <strong>OPTIMIZE + Z-order</strong> (file compaction + co-location); <strong>Liquid Clustering</strong> (dynamic layout); <strong>UniForm</strong> (Iceberg compatibility); <strong>Vector Search</strong> (HNSW/IVF indexing); <strong>Spark execution</strong> (job → stage → task, shuffle); <strong>Photon</strong> (vectorized C++ engine); <strong>Unity Catalog</strong> (lineage + governance).</p></div>
+</section>
+
+<section class="panel" id="t11">
+<div class="lead">Module 20 — Thực chiến</div>
+<h1>Cheatsheet &amp; <span class="hl">Migration Patterns</span></h1>
+<p class="intro-p">Tổng hợp: cheatsheet nhanh, pattern di trú từ Redshift/On-prem, troubleshooting guides.</p>
+<div class="toc">
+<a href="#t11-1">› 1. ⭐ Snowflake Cheatsheet đầy đủ</a>
+<a href="#t11-2">› 2. ⭐ Databricks Cheatsheet đầy đủ</a>
+<a href="#t11-3">› 3. Migration: Redshift → Snowflake</a>
+<a href="#t11-4">› 4. Migration: On-prem → Databricks</a>
+<a href="#t11-5">› 5. Performance Tuning Quick Reference</a>
+<a href="#t11-6">› 6. Cost Optimization Checklist</a>
+<a href="#t11-7">› 7. Troubleshooting Guide</a>
+</div>
+
+<h2 id="t11-1">1. ⭐ Snowflake Cheatsheet đầy đủ</h2>
+<div class="grid2">
+<div class="card"><h4>Warehouse Management</h4><pre style="font-size:10.5px;line-height:1.4"><code>-- Create &amp; manage warehouse
+CREATE WAREHOUSE wh_xl 
+  WAREHOUSE_SIZE='X LARGE'
+  AUTO_SUSPEND=120
+  AUTO_RESUME=TRUE
+  MIN_CLUSTER_COUNT=2
+  MAX_CLUSTER_COUNT=10;
+
+ALTER WAREHOUSE wh_xl SUSPEND;
+ALTER WAREHOUSE wh_xl RESUME;
+
+-- Scaling policy
+ALTER WAREHOUSE wh_xl SET
+  SCALING_POLICY='STANDARD';
+
+-- Resource monitor
+CREATE RESOURCE MONITOR rm_quota
+  WITH CREDIT_QUOTA = 1000
+  TRIGGERS ON 80 PERCENT DO NOTIFY
+            ON 100 PERCENT DO SUSPEND;</code></pre></div>
+
+<div class="card"><h4>Table &amp; Clustering</h4><pre style="font-size:10.5px;line-height:1.4"><code>-- Create table with clustering
+CREATE TABLE prod.orders (
+  id BIGINT,
+  customer_id BIGINT,
+  amount DECIMAL(10,2),
+  order_date DATE
+) CLUSTER BY (order_date, customer_id);
+
+-- Check clustering quality
+SELECT SYSTEM$CLUSTERING_INFORMATION(
+  'prod', 'orders', 
+  '(order_date, customer_id)'
+);
+
+-- Recluster (rarely needed)
+ALTER TABLE prod.orders RECLUSTER;
+
+-- Clustering key change
+ALTER TABLE prod.orders CLUSTER BY (region);</code></pre></div>
+
+<div class="card"><h4>Load &amp; Ingest</h4><pre style="font-size:10.5px;line-height:1.4"><code>-- Stage management
+CREATE STAGE my_stage
+  URL='s3://bucket/path'
+  CREDENTIALS=(...);
+
+LIST @my_stage;
+-- Bulk load
+COPY INTO prod.orders
+FROM @my_stage/
+FILE_FORMAT='ff_csv'
+ON_ERROR='SKIP_FILE';
+
+-- Continuous ingest via Pipe
+CREATE PIPE prod.order_pipe
+  AUTO_INGEST=TRUE
+AS COPY INTO prod.orders
+FROM @my_stage/;</code></pre></div>
+
+<div class="card"><h4>Time Travel &amp; Clone</h4><pre style="font-size:10.5px;line-height:1.4"><code>-- Time Travel queries
+SELECT * FROM orders
+  AT(OFFSET => -86400); -- 24h ago
+
+SELECT * FROM orders
+  AT(TIMESTAMP => '2024-01-15');
+
+SELECT * FROM orders
+  BEFORE(STATEMENT => 'query_id');
+
+-- Undrop
+UNDROP TABLE prod.orders;
+
+-- Zero-copy clone
+CREATE TABLE prod.orders_backup
+  CLONE prod.orders;
+
+-- Clone at point in time
+CREATE TABLE orders_recovery
+  CLONE prod.orders
+  AT(OFFSET => -3600);</code></pre></div>
+
+<div class="card"><h4>Streams &amp; Tasks</h4><pre style="font-size:10.5px;line-height:1.4"><code>-- Change Tracking (CDC)
+ALTER TABLE prod.orders
+  SET CHANGE_TRACKING = TRUE;
+
+-- Create stream
+CREATE STREAM prod.orders_stream
+  ON TABLE prod.orders
+  SHOW_INITIAL_ROWS = TRUE;
+
+-- Create task
+CREATE TASK prod.sync_task
+  WAREHOUSE = wh_etl
+  SCHEDULE = '5 MINUTE'
+  WHEN SYSTEM$STREAM_HAS_DATA('prod.orders_stream')
+AS MERGE INTO prod.orders_target t
+USING prod.orders_stream s
+ON t.id = s.id
+WHEN MATCHED THEN UPDATE SET ...
+WHEN NOT MATCHED THEN INSERT ...;
+
+ALTER TASK prod.sync_task RESUME;</code></pre></div>
+
+<div class="card"><h4>FinOps &amp; Monitoring</h4><pre style="font-size:10.5px;line-height:1.4"><code>-- Warehouse credits usage
+SELECT
+  warehouse_name,
+  SUM(credits_used) as credits,
+  SUM(credits_used_cloud_services) as cs_credits
+FROM SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY
+WHERE start_time >= DATE_TRUNC('DAY', CURRENT_DATE - 7)
+GROUP BY 1 ORDER BY 2 DESC;
+
+-- Query history (expensive queries)
+SELECT query_id, user_name, warehouse_name,
+  total_elapsed_time, bytes_spilled
+FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY
+WHERE start_time >= CURRENT_DATE - 1
+ORDER BY total_elapsed_time DESC LIMIT 10;
+
+-- Storage usage
+SELECT table_name, active_bytes, time_travel_bytes
+FROM SNOWFLAKE.ACCOUNT_USAGE.TABLE_STORAGE_METRICS;</code></pre></div>
+
+<div class="card"><h4>Zero-copy Sharing</h4><pre style="font-size:10.5px;line-height:1.4"><code>-- Provider: Create &amp; configure share
+CREATE SHARE prod_share;
+GRANT USAGE ON DATABASE prod TO SHARE prod_share;
+GRANT SELECT ON prod.public.orders TO SHARE prod_share;
+ALTER SHARE prod_share ADD ACCOUNTS = 'org.acct';
+
+-- Consumer: Access shared data
+SHOW SHARES;
+CREATE DATABASE orders_from_vendor 
+  FROM SHARE vendor_org.prod_share;</code></pre></div>
+
+<div class="card"><h4>Dynamic Tables</h4><pre style="font-size:10.5px;line-height:1.4"><code>-- Declarative ELT pipeline
+CREATE OR REPLACE DYNAMIC TABLE dt_silver
+  TARGET_LAG = '15 minutes'
+  WAREHOUSE = wh_transform
+AS
+SELECT key, MAX(val) as val
+FROM dt_bronze
+GROUP BY key;
+
+-- Check refresh status
+SELECT name, state, refresh_start_time
+FROM TABLE(INFORMATION_SCHEMA.DYNAMIC_TABLE_REFRESH_HISTORY());
+
+-- Suspend/resume
+ALTER DYNAMIC TABLE dt_silver SUSPEND;
+ALTER DYNAMIC TABLE dt_silver RESUME;</code></pre></div>
+</div>
+
+<h2 id="t11-2">2. ⭐ Databricks Cheatsheet đầy đủ</h2>
+<div class="grid2">
+<div class="card"><h4>Delta Table Operations</h4><pre style="font-size:10.5px;line-height:1.4"><code># Read/Write Delta
+df = (spark.read
+  .format("delta")
+  .load("s3://prod/silver/orders"))
+
+df.write.format("delta").mode("overwrite").option("mergeSchema", "true").save("path")
+
+# Merge (upsert)
+from delta.tables import DeltaTable
+dt = DeltaTable.forPath(spark, "path")
+dt.alias("t").merge(
+    source_df.alias("s"), 
+    "t.id = s.id"
+).whenMatchedUpdateAll().whenNotMatchedInsertAll().execute()
+
+# Delete/Update
+dt.update(condition="status = 'cancelled'", set={"active": "false"})
+dt.delete(condition="order_date < '2020-01-01'")</code></pre></div>
+
+<div class="card"><h4>Auto Loader &amp; Streaming</h4><pre style="font-size:10.5px;line-height:1.4"><code># Auto Loader (incremental file ingestion)
+df = (spark.readStream
+  .format("cloudFiles")
+  .option("cloudFiles.format", "json")
+  .option("schemaLocation", "/checkpoint/schema")
+  .option("cloudFiles.schemaInference", "true")
+  .load("s3://raw/orders/"))
+
+query = (df.writeStream
+  .format("delta")
+  .option("checkpointLocation", "/checkpoint/data")
+  .trigger(availableNow=True)
+  .table("prod.bronze.orders"))
+
+# WaitingForBatch means micro-batch completed
+query.awaitTermination()</code></pre></div>
+
+<div class="card"><h4>Delta Live Tables (DLT)</h4><pre style="font-size:10.5px;line-height:1.4"><code>import dlt
+from pyspark.sql import functions as F
+
+@dlt.table(name="bronze_orders", comment="Raw orders from source")
+def bronze_orders():
+    return (spark.readStream
+        .format("cloudFiles")
+        .option("cloudFiles.format", "json")
+        .load("s3://raw/orders/"))
+
+@dlt.table(name="silver_orders")
+@dlt.expect_or_drop("order_id IS NOT NULL")
+@dlt.expect_or_drop("amount >= 0")
+def silver_orders():
+    return (dlt.read_stream("bronze_orders")
+        .filter("status != 'test'")
+        .select("order_id", "amount", "order_date"))
+
+@dlt.table(name="gold_daily_revenue",
+           partition_cols=["order_date"])
+def gold_daily():
+    return (dlt.read("silver_orders")
+        .groupBy("order_date")
+        .agg(F.sum("amount").alias("revenue")))</code></pre></div>
+
+<div class="card"><h4>MLflow &amp; Model Registry</h4><pre style="font-size:10.5px;line-height:1.4"><code>import mlflow
+
+# Track experiment
+mlflow.set_experiment("/Shared/churn_model")
+with mlflow.start_run():
+    mlflow.log_param("n_estimators", 100)
+    mlflow.log_metric("accuracy", 0.92)
+    model = train_model(X, y)
+    mlflow.sklearn.log_model(model, "model")
+
+# Register model
+model_uri = "runs:/abc123/model"
+mv = mlflow.register_model(model_uri, "prod.ml.churn_model")
+
+# Load for inference
+model = mlflow.pyfunc.load_model(
+    "models:/prod.ml.churn_model/Production")
+predictions = model.predict(features)</code></pre></div>
+
+<div class="card"><h4>OPTIMIZE &amp; ZORDER</h4><pre style="font-size:10.5px;line-height:1.4"><code># Optimize (compaction)
+spark.sql("""
+    OPTIMIZE prod.silver.orders
+    ZORDER BY (region, customer_id)
+""")
+
+# Vacuum (cleanup old files)
+spark.sql("""
+    VACUUM prod.silver.orders 
+    RETAIN 168 HOURS
+""")
+
+# History &amp; Time Travel
+spark.sql("DESCRIBE HISTORY prod.silver.orders").show()
+
+df = (spark.read
+    .format("delta")
+    .option("versionAsOf", 42)
+    .load("s3://prod/silver/orders"))</code></pre></div>
+
+<div class="card"><h4>Performance Tuning</h4><pre style="font-size:10.5px;line-height:1.4"><code># Shuffle partitions (for large joins)
+spark.conf.set("spark.sql.shuffle.partitions", "800")
+
+# Adaptive Query Execution
+spark.conf.set("spark.sql.adaptive.enabled", "true")
+spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+
+# Broadcast join threshold (default 10MB)
+spark.conf.set("spark.sql.autoBroadcastJoinThreshold", "100MB")
+
+# Delta cache (SSD cache)
+spark.conf.set("spark.databricks.io.cache.enabled", "true")
+
+# Check Spark UI for: 
+# - Stage/task distribution
+# - Shuffle spill
+# - GC time</code></pre></div>
+</div>
+
+<h2 id="t11-3">3. Migration: Redshift → Snowflake</h2>
+
+<h3>Pre-migration checklist</h3>
+<div class="card">
+<ul style="font-size:13px">
+<li>□ Audit Redshift: identify largest tables, queries, users, schedules</li>
+<li>□ Map Redshift concepts → Snowflake: DISTKEY → clustering, SORTKEY → clustering</li>
+<li>□ Test with COPY/UNLOAD scripts: S3 as bridge</li>
+<li>□ Validate data types: Redshift → Snowflake mapping</li>
+<li>□ Review WLM (Workload Management) → Warehouse configuration</li>
+<li>□ Plan cutover strategy: blue-green hoặc parallel run</li>
+<li>□ Set up monitoring: query history, credit usage</li>
+</ul>
+</div>
+
+<h3>Syntax differences</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Redshift</th><th>Snowflake</th><th>Notes</th></tr>
+<tr><td>DISTKEY(col)</td><td>CLUSTER BY (col)</td><td>Auto-managed mostly</td></tr>
+<tr><td>SORTKEY(col)</td><td>CLUSTER BY (col)</td><td>Snowflake automatic</td></tr>
+<tr><td>GETDATE()</td><td>CURRENT_TIMESTAMP()</td><td></td></tr>
+<tr><td>SYSDATE</td><td>CURRENT_DATE</td><td></td></tr>
+<tr><td>UNLOAD TO S3</td><td>COPY INTO @stage FROM S3</td><td></td></tr>
+<tr><td>SVV_ tables</td><td>ACCOUNT_USAGE schema</td><td></td></tr>
+<tr><td>WLM queues</td><td>Warehouse size + multi-cluster</td><td></td></tr>
+<tr><td>DECIMAL(10,0)</td><td>NUMBER(10,0) or BIGINT</td><td></td></tr>
+<tr><td>MAX(), MIN() on VARCHAR</td><td>Same</td><td></td></tr>
+<tr><td>LISTAGG</td><td>ARRAY_AGG or LISTAGG</td><td>Snowflake supports both</td></tr>
+</table></div>
+
+<h3>Migration script example</h3>
+<div class="term">
+<div class="term-bar"><span class="b r"></span><span class="b y"></span><span class="b g"></span><span class="term-title">sql — Redshift → Snowflake migration</span><button class="term-copy">copy</button></div>
+<div class="term-body">
+<span class="cmd">-- Step 1: UNLOAD from Redshift to S3</span>
+<span class="cmd">UNLOAD ('SELECT * FROM orders WHERE order_date >= 2024-01-01')</span>
+<span class="cmd">TO 's3://migration-bucket/orders/'</span>
+<span class="cmd">IAM_ROLE 'arn:aws:iam::123456:role/redshift_unload'</span>
+<span class="cmd">DELIMITER ',' ADDQUOTES PARALLEL ON;</span>
+<span class="cmd">-- Step 2: CREATE TABLE in Snowflake</span>
+<span class="cmd">CREATE TABLE prod.orders (...);</span>
+<span class="cmd">-- Step 3: COPY from S3 stage</span>
+<span class="cmd">COPY INTO prod.orders</span>
+<span class="cmd">FROM @migration_stage/orders/</span>
+<span class="cmd">FILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1)</span>
+<span class="cmd">ON_ERROR = 'SKIP_FILE_3';</span>
+</div>
+</div>
+
+<h2 id="t11-4">4. Migration: On-prem → Databricks</h2>
+
+<h3>Migration strategy overview</h3>
+<div class="card">
+<ol style="font-size:13px">
+<li><strong>Assess</strong>: inventory on-prem data, estimate sizes, identify ingestion patterns</li>
+<li><strong>Landing zone</strong>: create S3/ADLS bucket, configure Unity Catalog</li>
+<li><strong>Storage migration</strong>: bulk copy via S3DistCP hoặc native tools</li>
+<li><strong>Code translation</strong>: convert SQL/Hive to Spark/Delta syntax</li>
+<li><strong>Pipeline rebuild</strong>: Airflow → Databricks Jobs hoặc DLT</li>
+<li><strong>Validate</strong>: row counts, sums, sampling</li>
+<li><strong>Cutover</strong>: switch applications, monitor closely</li>
+</ol>
+</div>
+
+<h3>Code translation guide</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Hive/On-prem</th><th>Databricks/Spark</th><th>Notes</th></tr>
+<tr><td>LOAD DATA INPATH</td><td>spark.write or COPY INTO</td><td>Delta handles differently</td></tr>
+<tr><td>INSERT OVERWRITE</td><td>INSERT OVERWRITE or MERGE</td><td>Delta uses transactional</td></tr>
+<tr><td>hdfs:// paths</td><td>dbfs:/ or s3://</td><td>Use DBFS mount for migration</td></tr>
+<tr><td>Hive UDFs</td><td>Spark UDFs hoặc Pandas UDFs</td><td>Better performance</td></tr>
+<tr><td>Oozie/Airflow 1.x</td><td>Databricks Jobs hoặc Airflow 2.x + provider</td><td></td></tr>
+<tr><td>Impala SQL</td><td>Spark SQL</td><td>Mostly compatible, check functions</td></tr>
+</table></div>
+
+<h2 id="t11-5">5. Performance Tuning Quick Reference</h2>
+
+<h3>Snowflake performance</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Symptom</th><th>Diagnosis</th><th>Fix</th></tr>
+<tr><td>Query chậm</td><td>EXPLAIN → partitions scanned?</td><td>CLUSTER BY thêm/chỉnh</td></tr>
+<tr><td>Warehouse "running" state</td><td>Auto-suspend = off?</td><td>Set AUTO_SUSPEND ≤ 300s</td></tr>
+<tr><td>Spilling (bytes_spilled_to_remote)</td><td>Query profile</td><td>Tăng VWH size</td></tr>
+<tr><td>Many small partitions</td><td>CLUSTERING_INFORMATION</td><td>ALTER TABLE RECLUSTER</td></tr>
+<tr><td>Slow JOIN</td><td>Broadcast vs shuffle?</td><td>Filter tables trước join</td></tr>
+<tr><td>High compilation time</td><td>Complex queries, many UDFs</td><td>Reduce UDF usage, simplify</td></tr>
+</table></div>
+
+<h3>Databricks/Spark performance</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Symptom</th><th>Diagnosis</th><th>Fix</th></tr>
+<tr><td>Slow read</td><td>Spark UI → Stage 1 time</td><td>OPTIMIZE + ZORDER</td></tr>
+<tr><td>OOM / spilling</td><td>Spark UI → memory metrics</td><td>Tăng executor memory, partitions</td></tr>
+<tr><td>Skew (1 task long)</td><td>Stage metrics → task distribution</td><td>Salt skewed keys, increase parallelism</td></tr>
+<tr><td>Slow shuffle</td><td>Shuffle write/read size</td><td>Coalesce partitions, increase workers</td></tr>
+<tr><td>Delta cache miss</td><td>Check cache hit ratio</td><td>Enable cache, hot data pattern</td></tr>
+<tr><td>Slow joins</td><td>Broadcast vs shuffle?</td><td>Increase autoBroadcastJoinThreshold</td></tr>
+</table></div>
+
+<h2 id="t11-6">6. Cost Optimization Checklist</h2>
+
+<div class="grid2">
+<div class="card">
+<h4>Snowflake</h4>
+<ul style="font-size:12.5px">
+<li>□ Auto-suspend ≤ 60s cho VWH dev/test</li>
+<li>□ Auto-suspend 120-300s cho query VWH</li>
+<li>□ Right-size: UP (power) cho single query, OUT (multi-cluster) cho concurrency</li>
+<li>□ Resource Monitor với alert + action</li>
+<li>□ Không dùng ACCOUNTADMIN cho jobs</li>
+<li>□ Use result cache (free!)</li>
+<li>□ Partition prune: filter trước khi JOIN</li>
+<li>□ Avoid SELECT * — projection pushdown</li>
+<li>□ Materialized views cho expensive aggregations</li>
+<li>□ Cold data → Snowflake on-demand (pay-per-TB)</li>
+</ul>
+</div>
+
+<div class="card">
+<h4>Databricks</h4>
+<ul style="font-size:12.5px">
+<li>□ Job cluster cho production (không all-purpose)</li>
+<li>□ Spot instances cho non-critical workloads</li>
+<li>□ Auto-terminate ≤ 60 phút cho notebooks</li>
+<li>□ Cluster policy giới hạn max instance</li>
+<li>□ Photon chỉ khi workload phù hợp</li>
+<li>□ Disable DBFS cache nếu không cần</li>
+<li>□ Delta cache chỉ cho hot data</li>
+<li>□ Optimize file size (target 1GB)</li>
+<li>□ Trigger.availableNow() thay vì continuous</li>
+<li>□ Use Photon cho vectorizable SQL</li>
+</ul>
+</div>
+</div>
+
+<h2 id="t11-7">7. Troubleshooting Guide</h2>
+
+<h3>Snowflake troubleshooting</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Issue</th><th>Query/Command</th><th>Interpretation</th></tr>
+<tr><td>High credits</td><td>WAREHOUSE_METERING_HISTORY</td><td>Check per-warehouse usage</td></tr>
+<tr><td>Slow query</td><td>QUERY_HISTORY → bytes_scanned, partitions_scanned</td><td>Pruning not working?</td></tr>
+<tr><td>Warehouse always on</td><td>AUTO_SUSPEND setting</td><td>Should be 60-300s</td></tr>
+<tr><td>Clone slow</td><td>Normal is seconds, check storage</td><td>Metadata operation, not data copy</td></tr>
+<tr><td>Time travel fail</td><td>Check DATA_RETENTION_TIME</td><td>Default 1 day, max 90</td></tr>
+</table></div>
+
+<h3>Databricks troubleshooting</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Issue</th><th>Diagnostic</th><th>Solution</th></tr>
+<tr><td>Job failed</td><td>Xem driver log trong Spark UI</td><td>Common: OOM, schema mismatch, path not found</td></tr>
+<tr><td>Slow Delta writes</td><td>Many small files</td><td>OPTIMIZE sau write</td></tr>
+<tr><td>DLT pipeline error</td><td>Xem pipeline events</td><td>Common: schema drift, expectation failure</td></tr>
+<tr><td>Spark OOM</td><td>Executor memory / GC time</td><td>Tăng memory, giảm parallelism</td></tr>
+<tr><td>Skewed stages</td><td>Task duration variance</td><td>Salt keys hoặc filter outliers</td></tr>
+</table></div>
+
+<div class="box note"><span class="t">Tổng kết Module 20</span><p>Module 20 hoàn chỉnh với 11 tabs chuyên sâu: Kiến trúc (Storage–Compute), vận hành (Warehouses, Load), nâng cao (Streams, Tasks, CDC), chi phí &amp; tối ưu, Lakehouse (Delta, Unity Catalog), pipeline (DLT, Auto Loader), so sánh &amp; chọn lựa, lý thuyết nền tảng (Immutability, Columnar, MPP), Snowflake internals (Metadata, CBO, Dynamic Tables, Cortex), Delta internals (Transaction Log, Liquid Clustering, UniForm, Vector Search), và cheatsheet + migration patterns thực chiến.</p></div>
+</section>
+
+<footer>
+<a href="index.html">← Quay về index</a> · Module 20 — Snowflake &amp; Databricks · Khoá học Data Engineering Masterclass
+</footer>
+<script>
+  const btns = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.panel');
+  btns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.tab;
+      btns.forEach(b=>b.classList.remove('active'));
+      panels.forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(id).classList.add('active');
+      window.scrollTo({top:0, behavior:'smooth'});
+      btn.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+    });
+  });
+  document.querySelectorAll('.term-copy').forEach(btn=>{
+    if(btn.dataset.bound) return; btn.dataset.bound='1';
+    btn.addEventListener('click', ()=>{
+      const body = btn.closest('.term').querySelector('.term-body');
+      const text = body.querySelectorAll('.cmd').forEach?Array.from(body.querySelectorAll('.cmd')).map(e=>e.textContent).join('\n'):body.textContent;
+      navigator.clipboard.writeText(text).then(()=>{btn.textContent='✓';setTimeout(()=>btn.textContent='copy',1200)});
+    });
+  });
+</script>
+</body>
+</html>
