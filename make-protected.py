@@ -28,7 +28,7 @@ def main():
     if not password:
         print("Thiếu mật khẩu.\n  python make-protected.py \"MatKhau\" [input.html] [output.html]"); sys.exit(1)
     src = sys.argv[2] if len(sys.argv) > 2 else "masterclass-all-in-one.html"
-    dst = sys.argv[3] if len(sys.argv) > 3 else "masterclass-protected.html"
+    dst = sys.argv[3] if len(sys.argv) > 3 else "index.html"
     data = open(src, "rb").read()
 
     # Chip hiển thị trên trang khóa: đếm số masterclass từ meta-data của bản gộp (nếu có)
